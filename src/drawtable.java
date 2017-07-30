@@ -95,7 +95,7 @@ public class drawtable {
 		{
 			k=2*k;
 			if(k>n)k=n;
-			Algorithm.Quality qual1_unity=algo.getQual1(add_to_sample,k, items, search_in_DB, df_in_search_in_DB);
+			Algorithm.Quality qual1_unity=algo.getQual1(k, items, search_in_DB, df_in_search_in_DB);
 			qual1=qual1_unity.quality;
 			int pre_cost=qual1_unity.Coat;
 			System.out.println("cost is "+pre_cost);

@@ -4,9 +4,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
+import org.apache.lucene.document.Document;
+import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.IndexSearcher;
@@ -73,6 +77,65 @@ public class AlgorithmByTable {
 		if(i==trend.size())y=(int) trend.get(i-1).y;
 		return y;
 	}
+	public static void initial_create_sample(int num,HashSet<Integer> target_pool,IndexWriter target_IndexWriter,IndexSearcher source_IndexSearcher) throws CorruptIndexException, IOException
+	{
+		int counter=0;
+		int source_num=source_IndexSearcher.maxDoc();
+		Random rand=new Random(new Date().getTime());
+		while(counter<num)
+		{
+			int tmp=rand.nextInt(source_num);
+			if(!target_pool.contains(tmp))
+			{
+				target_pool.add(tmp);
+				counter++;
+			}
+			
+		}
+		for(int i :target_pool)
+		{
+			Document a=source_IndexSearcher.doc(i);
+			target_IndexWriter.addDocument(a);
+		}
+		target_IndexWriter.commit();
+		
+	}
+	public void one_turn_all_in_by_SET() throws IOException
+	{
+		Algorithm used=new Algorithm();
+		used.main_Field_Setter("text");
+		used.bound_Setter(0.001f, 0.20f);
+		
+		float db_size=db_IndexReader.numDocs();
+		float sample_size=0,total_hit=0;
+		float HR=0,OR=0;
+		
+		//
+		initial_create_sample(3000, (HashSet<Integer>) used.all_hits, sample_IndexWriter, db_IndexSearcher);
+		sample_IndexReader=IndexReader.open(sample_Directory);
+		sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
+		System.out.println("阶段1");
+		System.out.println("样本大小"+sample_IndexReader.numDocs());
+		
+		ArrayList<String> array=used.Algorithm_2(sample_IndexReader, sample_IndexSearcher, Algorithm.q);
+		System.out.println("阶段2");
+		System.out.println("一轮拿到词的个数为"+array.size());
+		
+		Set<String> container=new HashSet<>();
+		container.addAll(array);
+		total_hit+=used.add_from_original_to_sample(used.all_hits, sample_IndexWriter, db_IndexReader, db_IndexSearcher,container);
+		System.out.println("阶段3");
+		
+		sample_IndexReader=IndexReader.openIfChanged(sample_IndexReader);
+		sample_IndexSearcher.close();
+		sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
+		sample_size=sample_IndexReader.numDocs();
+		HR=sample_size/db_size;
+		OR=total_hit/sample_size;
+		System.out.println("HR="+HR);
+		System.out.println("OR="+OR);
+		
+	}
 	public void experiment_all_in()throws IOException
 	{
 		Algorithm used=new Algorithm();
@@ -104,7 +167,7 @@ public class AlgorithmByTable {
 			{
 				container.add(array.get(i));
 			}
-			total_hit+=used.add_from_original_to_sample(used.all_hits, sample_IndexWriter, sample_IndexReader, db_IndexSearcher,container);
+			total_hit+=used.add_from_original_to_sample(used.all_hits, sample_IndexWriter, db_IndexReader, db_IndexSearcher,container);
 			sample_IndexReader=IndexReader.openIfChanged(sample_IndexReader);
 			sample_IndexSearcher.close();
 			sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
@@ -184,8 +247,9 @@ public class AlgorithmByTable {
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		String txt_Path="D:/experiment/result_all_in.csv";
-		AlgorithmByTable tmp=new AlgorithmByTable(Algorithm.DB_path_Wiki, Algorithm.sample_D_path, Algorithm.initial_queries, txt_Path);
-		tmp.experiment_all_in();
+		AlgorithmByTable tmp=new AlgorithmByTable(Algorithm.DB_path_Wiki2, Algorithm.sample_D_path, Algorithm.initial_queries, txt_Path);
+		//tmp.experiment_all_in();
+		tmp.one_turn_all_in_by_SET();
 		tmp.destroy();
 	}
 

@@ -1,0 +1,138 @@
+public Quality getQual2_for_improved1(Set<Integer> all_hits_set,int k,ArrayList<String> Terms,Set<Integer> virtual_all_hits,Map<String, HashSet<Integer>> search_in_DB,Map<String, Integer> df_in_search_in_DB,Directory a3_Directory,IndexWriter a3_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,int pre_cost,Set<Integer> initial_pool,Map<String, HashSet<Integer>> update_df_D) throws IOException
+	{
+			Set<Integer> tmp_initial_pool=new HashSet<>();
+			tmp_initial_pool.addAll(initial_pool);
+		
+			k=k/2;
+			Quality preQual=getQual1(k, Terms, search_in_DB, df_in_search_in_DB);
+			
+			//处理临时initial_pool,去除前半部分
+			for(int i=0;i<k;i++)
+			{
+				initial_pool.removeAll(update_df_D.get(Terms.get(i)));
+			}
+			
+			
+			
+			float qual1=preQual.quality;
+			int qual1_cost=preQual.Coat;
+			virtual_q.clear();
+
+			for(int i=0;i<k;i++)
+			{
+				virtual_q.add(Terms.get(i));
+			}
+			
+			add_from_original_to_sample(virtual_all_hits,a3_IndexWriter, db_IndexReader, db_IndexSearcher, virtual_q);
+			//the first half
+			
+			//制作update_df_D的本地副本,同时处理该副本，删去本地已更新的前半部分
+			Map<String, HashSet<Integer>> tmp_df_D=new HashMap<>();
+			tmp_df_D.putAll(update_df_D);
+			Set<Integer> tmp_set=new HashSet<>();
+			for(String each:virtual_q)
+			{
+				tmp_set.addAll(tmp_df_D.get(each));
+				tmp_df_D.remove(each);
+			}
+			for(String each:tmp_df_D.keySet())
+			{
+				tmp_df_D.get(each).removeAll(tmp_set);
+			}
+			
+
+			IndexReader a3_IndexReader=IndexReader.open(a3_Directory);
+			IndexSearcher a3_IndexSearcher=new IndexSearcher(a3_IndexReader);
+			ArrayList<String> virtual_Term=Algorithm_2_for_improved1(a3_IndexReader, a3_IndexSearcher, tmp_initial_pool,tmp_df_D);
+
+			float improve_cost=(float) (0.0001*virtual_all_hits.size()*tmp_df_D.size());
+
+			int left_cost=pre_cost-qual1_cost-(int)improve_cost;
+			int New=0;
+			HashSet<Integer> inner=new HashSet<>();
+			
+			for(int local_cost=0,i=0;;i++)
+			{
+				TermQuery termQuery=new TermQuery(new Term(main_Field,virtual_Term.get(i)));
+				ScoreDoc[] hits=db_IndexSearcher.search(termQuery, 1000000).scoreDocs;
+				local_cost=local_cost+100+hits.length;
+				if(local_cost<left_cost)
+				{
+					
+					
+					for(ScoreDoc every_hit:hits)
+					{
+						inner.add(every_hit.doc);
+					}
+					
+					//System.out.println("quality2:query:\t"+virtual_Term.get(i));//text
+					//System.out.println("quality2:new\t"+inner.size());//text
+					//System.out.println("quality2:cost\t"+hits.length);//text
+					
+				}
+				else
+					break;
+			}
+			inner.removeAll(virtual_all_hits);
+			
+			
+			New=inner.size();
+			
+			
+			New=New+preQual.New;
+			a3_IndexSearcher.close();
+			a3_IndexReader.close();
+			System.out.println("quality2="+(float)New/pre_cost); 
+			
+			
+			return new Quality(New, pre_cost, (float)New/pre_cost);
+	}
+
+
+
+
+	public Set<String> Algorithm_3_for_improved1(Set<Integer> asset,Directory a3_Directory,IndexWriter a3_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,ArrayList<String> Terms,Set<Integer> initial_pool,Map<String, HashSet<Integer>> update_df_D) throws IOException
+	{
+		
+		
+		new_q.clear();
+		//calculate the new and cost for every query
+		Map<String, HashSet<Integer>> search_in_DB=new HashMap<>();
+		Map<String, Integer> df_in_search_in_DB=new HashMap<>();
+		
+		for(String eachTerm:Terms)
+		{
+			search_in_DB.put(eachTerm, update_df_D.get(eachTerm));
+			TermQuery termQuery=new TermQuery(new Term(main_Field,eachTerm));
+			ScoreDoc[] hits=db_IndexSearcher.search(termQuery, 100000).scoreDocs;
+			df_in_search_in_DB.put(eachTerm, hits.length);
+		}
+		
+		virtual_all_hits.clear();
+		a3_IndexWriter.deleteAll();
+		a3_IndexWriter.commit();
+		virtual_all_hits.addAll(asset);
+		initial_add_from_original_to_sample_by_SET(asset, a3_IndexWriter, db_IndexReader, db_IndexSearcher);
+
+		
+		
+		int k=1;
+		float qual1=0,qual2=-1,u=0.05f;
+		while(qual1>qual2)
+		{
+			k=2*k;
+			if(k<=Terms.size())
+			{
+				Quality qual1_unity=getQual1(k, Terms, search_in_DB, df_in_search_in_DB);
+				qual1=qual1_unity.quality;
+				int pre_cost=qual1_unity.Coat;
+ 				qual2=getQual2_for_improved1(asset,k, Terms, virtual_all_hits,search_in_DB, df_in_search_in_DB, a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher, pre_cost,initial_pool,update_df_D).quality;
+ 				System.out.println("k="+k);
+ 				System.out.println("\n\n\n");
+			}
+			else
+				break;
+		}
+		
+		return new_q;
+	}
