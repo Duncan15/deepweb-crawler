@@ -2,6 +2,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
@@ -61,15 +62,18 @@ public class Algorithm {
 	static Float lambda=null;
 	//output contains a list of <Size,queries>pairs
 	static Map<Integer,Integer> Output_1=new HashMap<Integer,Integer>();
+	
 	//q is a set of the queries
-	static Set<String> q=new HashSet<>();
+	static ArrayList<String> q=new ArrayList<>();
 	//new_q is a set of the new queries
-	static Set<String> new_q=new HashSet<>();
-	//hits is a set of ScoreDoc which has been hit
+	static ArrayList<String> new_q=new ArrayList<>();
 
 	private String main_Field;
 	private float lower_bound;
 	private float upper_bound;
+	private int algo2_Cost;
+	
+	private String stored_file;
 
 	//used for algorithm2
 	static Set<Integer> all_hits=new HashSet<>();
@@ -78,7 +82,7 @@ public class Algorithm {
 	Map<String, HashSet<Integer>> update_df_D=new HashMap<>();//the dynamic update df_D
 
 	//used for algorithm3
-	static Set<String> virtual_q=new HashSet<>();
+	static ArrayList<String> virtual_q=new ArrayList<>();
 	static Set<Integer> virtual_all_hits=new HashSet<>();
 
 	static Analyzer analyzer=new StandardAnalyzer(Version.LUCENE_31);
@@ -93,6 +97,10 @@ public class Algorithm {
 	{
 		this.upper_bound=upper;
 		this.lower_bound=lower;
+	}
+	public void stored_file_Setter(String tmp)
+	{
+		this.stored_file=tmp;
 	}
 	
 	public Quality getQual1(int k,ArrayList<String> Terms,Map<String, HashSet<Integer>> search_in_DB,Map<String, Integer> df_in_search_in_DB)
@@ -142,8 +150,6 @@ public class Algorithm {
 			int New=0;
 			HashSet<Integer> inner=new HashSet<>();
 			
-			
-			
 			for(int local_cost=0,i=0;;i++)
 			{
 				TermQuery termQuery=new TermQuery(new Term(main_Field,virtual_Term.get(i)));
@@ -157,10 +163,7 @@ public class Algorithm {
 					{
 						inner.add(every_hit.doc);
 					}
-					
-					//System.out.println("quality2:query:\t"+virtual_Term.get(i));//text
-					//System.out.println("quality2:new\t"+inner.size());//text
-					//System.out.println("quality2:cost\t"+hits.length);//text
+				
 					
 				}
 				else
@@ -184,13 +187,8 @@ public class Algorithm {
 	
 	public Quality getQual2_for_improved1(Set<Integer> all_hits_set,int k,ArrayList<String> Terms,Set<Integer> virtual_all_hits,Map<String, HashSet<Integer>> search_in_DB,Map<String, Integer> df_in_search_in_DB,Directory a3_Directory,IndexWriter a3_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,int pre_cost,int initial_pool,Map<String, HashSet<Integer>> update_df_D) throws IOException
 	{
-			
-			
-		
 			k=k/2;
 			Quality preQual=getQual1(k, Terms, search_in_DB, df_in_search_in_DB);
-
-			float qual1=preQual.quality;
 			int qual1_cost=preQual.Coat;
 			virtual_q.clear();
 
@@ -218,8 +216,6 @@ public class Algorithm {
 			{
 				tmp_df_D.get(each).removeAll(tmp_set);
 			}
-			
-			
 			
 			
 			add_from_original_to_sample(virtual_all_hits,a3_IndexWriter, db_IndexReader, db_IndexSearcher, virtual_q);
@@ -312,9 +308,8 @@ public class Algorithm {
 		}
 		d_IndexWriter.commit();
 	}
-	public float add_from_original_to_sample(Set<Integer> allhit,IndexWriter d_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,Set<String> new_q) throws IOException
+	public float add_from_original_to_sample(Set<Integer> allhit,IndexWriter d_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,ArrayList<String> new_q) throws IOException
 	{
-		int i=0;
 		float result=0;
 		for (String query:new_q)
 		{
@@ -336,9 +331,9 @@ public class Algorithm {
 		return result;
 	}
 
-	public ArrayList<String> Algorithm_2(IndexReader d_IndexReader,IndexSearcher d_IndexSearcher,Set<String> q_be_checked) throws IOException
+	public ArrayList<String> Algorithm_2(IndexReader d_IndexReader,IndexSearcher d_IndexSearcher,ArrayList<String> q_be_checked) throws IOException
 	{
-		int i=1;
+		
 		s_in_Algorithm_2.clear();
 		ArrayList<String> Terms=new ArrayList<>();
 		df_D.clear();
@@ -458,7 +453,7 @@ public class Algorithm {
 			{
 				update_df_D.get(iterator).removeAll(to_be_sub);
 			}
-			i++;
+			
 			System.out.println(max_Fre);
 			System.out.println(s_in_Algorithm_2.size());
 		}
@@ -467,9 +462,9 @@ public class Algorithm {
 	}
 	public ArrayList<String> Algorithm_2_for_improved1(IndexReader d_IndexReader,IndexSearcher d_IndexSearcher,int initial_pool,Map<String , HashSet<Integer>> update_df_D) throws IOException
 	{
-		int i=1;
 		s_in_Algorithm_2.clear();
 		df_D.clear();
+		algo2_Cost=0;//for compute
 		
 		//Terms存放返回值
 		ArrayList<String> Terms=new ArrayList<>();
@@ -483,6 +478,7 @@ public class Algorithm {
 		TermEnum d_Enum=d_IndexReader.terms();
 		while (d_Enum.next())
 		{
+			algo2_Cost++;//for compute
 			if(d_Enum.term().field().equals(main_Field)&&inner_update_df_D.containsKey(d_Enum.term().text()))
 			{
 				if((lower_bound*d_Size)<d_Enum.docFreq()&&d_Enum.docFreq()<=(upper_bound*d_Size))
@@ -519,6 +515,9 @@ public class Algorithm {
 				}
 				
 			}
+			algo2_Cost+=df_D.size();//for compute
+			
+			
 			//select the query which has the bigest df value
 			if(T.size()>1)
 			{
@@ -557,7 +556,8 @@ public class Algorithm {
 			{
 				inner_update_df_D.get(iterator).removeAll(to_be_sub);
 			}
-			i++;
+			
+			algo2_Cost+=inner_update_df_D.size();//for compute
 			
 			//System.out.println(s_in_Algorithm_2.size());
 			Terms.add(qi_final);
@@ -566,7 +566,7 @@ public class Algorithm {
 		return Terms;
 	}
 
-	public Set<String> Algorithm_3_for_improved1(Set<Integer> asset,Directory a3_Directory,IndexWriter a3_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,ArrayList<String> Terms,int initial_pool,Map<String, HashSet<Integer>> update_df_D) throws IOException
+	public ArrayList<String> Algorithm_3_for_improved1(Set<Integer> asset,Directory a3_Directory,IndexWriter a3_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,ArrayList<String> Terms,int initial_pool,Map<String, HashSet<Integer>> update_df_D) throws IOException
 	{
 		
 		
@@ -709,7 +709,7 @@ public class Algorithm {
 			}
 		}
 	}
-	public Set<String> Algorithm_3(Set<Integer> asset,Directory a3_Directory,IndexWriter a3_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,ArrayList<String> Terms) throws IOException
+	public ArrayList<String> Algorithm_3(Set<Integer> asset,Directory a3_Directory,IndexWriter a3_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,ArrayList<String> Terms) throws IOException
 	{
 		new_q.clear();
 
@@ -860,7 +860,7 @@ public class Algorithm {
 		int db_Size=db_IndexReader.numDocs();
 		Directory d_Directory=FSDirectory.open(new File(d_Path));
 		IndexWriter d_IndexWriter=new IndexWriter(d_Directory,indexWriterConfig);
-		Set<String> tmp=new HashSet<>();
+		ArrayList<String> tmp=new ArrayList<>();
 		tmp.add(initial_queries);
 		add_from_original_to_sample(all_hits,d_IndexWriter,db_IndexReader,db_IndexSearcher,tmp);
 		IndexReader d_IndexReader=IndexReader.open(d_Directory);
@@ -905,12 +905,13 @@ public class Algorithm {
 	
 	public void Algorithm_1_improved1(String path_in_algorithm3,String db_Path,String d_Path,int initial_num) throws IOException
 	{
-		int i=0;
+		BufferedWriter bufferedWriter=new BufferedWriter(new FileWriter(new File(stored_file)));
 		
 		Directory db_Directory=FSDirectory.open(new File(db_Path));
 		IndexReader db_IndexReader=IndexReader.open(db_Directory);
 		IndexSearcher db_IndexSearcher=new IndexSearcher(db_IndexReader);
-		int db_Size=db_IndexReader.numDocs();
+		
+		int db_size=db_IndexReader.numDocs();
 		
 		Directory d_Directory=FSDirectory.open(new File(d_Path));
 		IndexWriter d_IndexWriter=new IndexWriter(d_Directory,indexWriterConfig);
@@ -933,12 +934,18 @@ public class Algorithm {
 		update_df_D=initial_setting(initial_num, d_IndexReader, d_IndexSearcher);
 		
 		
-		int all_num=initial_num;
+		double all_num=initial_num;
+		double total_Cost=initial_num;//for compute
 		while(true)
 		{
-			i++;
 			
 			ArrayList<String> Terms=Algorithm_2_for_improved1(d_IndexReader,d_IndexSearcher,initial_pool,update_df_D);
+			total_Cost+=0.001*algo2_Cost;//for compute
+			//bufferedWriter.write((double)all_hits.size()/db_size+","+total_Cost);//for store message
+			bufferedWriter.write((double)all_hits.size()/db_size+","+1);//for draw HR_OR graph
+			bufferedWriter.newLine();
+			
+			
 			if(Terms.size()==0)
 			{
 				System.out.println("无词可选，异常退出");
@@ -976,8 +983,23 @@ public class Algorithm {
 				break;
 			}
 			
+			for(String each_term:new_q)
+			{
+				ArrayList<String> tmp_new_q=new ArrayList<>();
+				tmp_new_q.add(each_term);
+				double tmps=add_from_original_to_sample(all_hits,d_IndexWriter,db_IndexReader, db_IndexSearcher, tmp_new_q);
+				all_num+=tmps;
+				total_Cost=total_Cost+100+tmps;
+				double HR=(double)all_hits.size()/db_size;
+				double OR=all_num/all_hits.size();
+				System.out.println("HR="+HR);
+				System.out.println("OR="+OR);
+				//bufferedWriter.write(HR+","+total_Cost);//for store message
+				bufferedWriter.write(HR+","+OR);//for draw HR_OR graph
+				bufferedWriter.newLine();
+				
+			}
 			
-			add_from_original_to_sample(all_hits,d_IndexWriter,db_IndexReader, db_IndexSearcher, new_q);
 			d_IndexReader=IndexReader.openIfChanged(d_IndexReader);
 			d_IndexSearcher.close();
 			d_IndexSearcher=new IndexSearcher(d_IndexReader);
@@ -987,23 +1009,9 @@ public class Algorithm {
 			
 		}
 		
-		Set<Integer> text_set=new HashSet<>();
-		for(String each:q)
-		{
-			System.out.println(each);
-			TermQuery termQuery=new TermQuery(new Term(main_Field, each));
-			ScoreDoc[] hits=db_IndexSearcher.search(termQuery,1000000 ).scoreDocs;
-			for(ScoreDoc eachsc:hits)
-			{
-				text_set.add(eachsc.doc);
-			}
-			int hr_sum=text_set.size();
-			all_num+=hits.length;
-			System.out.println("HR="+(float)hr_sum/db_IndexReader.numDocs());
-			System.out.println("OR="+(float)all_num/hr_sum);
-		}
+	
 		
-		
+		bufferedWriter.close();
 		
 		d_IndexWriter.close();
 		a3_IndexWriter.close();
@@ -1019,10 +1027,13 @@ public class Algorithm {
 	
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
+		String stored_file="D:/experiment/reuters_mutipleturn_mutipleterm_HR_OR.csv";
 		Algorithm algorithm=new Algorithm();
 		//algorithm.Algorithm_1(path_for_algorithm3,DB_path,sample_D_path, 0.95f);
+		algorithm.stored_file_Setter(stored_file);
 		algorithm.main_Field_Setter("text");
 		algorithm.bound_Setter(0.001f, 0.20f);
+		//algorithm.bound_Setter(0.02f, 0.15f);
 		algorithm.Algorithm_1_improved1(path_for_algorithm3, wiki_new, sample_D_path, 3000);
 	}
 }
