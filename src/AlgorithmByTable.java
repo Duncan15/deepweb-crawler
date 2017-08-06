@@ -121,7 +121,7 @@ public class AlgorithmByTable {
 		System.out.println("阶段2");
 		System.out.println("一轮拿到词的个数为"+array.size());
 		
-		Set<String> container=new HashSet<>();
+		ArrayList<String> container=new ArrayList<>();
 		container.addAll(array);
 		total_hit+=used.add_from_original_to_sample(used.all_hits, sample_IndexWriter, db_IndexReader, db_IndexSearcher,container);
 		System.out.println("阶段3");
@@ -139,7 +139,7 @@ public class AlgorithmByTable {
 	public void experiment_all_in()throws IOException
 	{
 		Algorithm used=new Algorithm();
-		Set<String> container=new HashSet<>();
+		ArrayList<String> container=new ArrayList<>();
 		float db_size=db_IndexReader.numDocs();
 		float sample_size=0,total_hit=0;
 		float HR=0,OR=0;
@@ -182,7 +182,7 @@ public class AlgorithmByTable {
 	public void experiment() throws IOException
 	{
 		Algorithm used=new Algorithm();
-		Set<String> container=new HashSet<>();
+		ArrayList<String> container=new ArrayList<>();
 		float db_size=db_IndexReader.numDocs();
 		float sample_size=0,total_hit=0;
 		float HR=0,OR=0;

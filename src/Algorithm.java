@@ -941,8 +941,8 @@ public class Algorithm {
 			
 			ArrayList<String> Terms=Algorithm_2_for_improved1(d_IndexReader,d_IndexSearcher,initial_pool,update_df_D);
 			total_Cost+=0.001*algo2_Cost;//for compute
-			//bufferedWriter.write((double)all_hits.size()/db_size+","+total_Cost);//for store message
-			bufferedWriter.write((double)all_hits.size()/db_size+","+1);//for draw HR_OR graph
+			bufferedWriter.write((double)all_hits.size()/db_size+","+total_Cost);//for store message
+			//bufferedWriter.write((double)all_hits.size()/db_size+","+1);//for draw HR_OR graph
 			bufferedWriter.newLine();
 			
 			
@@ -977,11 +977,7 @@ public class Algorithm {
 			}
 			initial_pool-=global_to_be_sub.size();
 			System.out.println("全局initial_pool还剩"+initial_pool);
-			if(initial_pool==0)
-			{
-				System.out.println("初始样本实现全覆盖，正常退出");
-				break;
-			}
+			
 			
 			for(String each_term:new_q)
 			{
@@ -994,8 +990,8 @@ public class Algorithm {
 				double OR=all_num/all_hits.size();
 				System.out.println("HR="+HR);
 				System.out.println("OR="+OR);
-				//bufferedWriter.write(HR+","+total_Cost);//for store message
-				bufferedWriter.write(HR+","+OR);//for draw HR_OR graph
+				bufferedWriter.write(HR+","+total_Cost);//for store message
+				//bufferedWriter.write(HR+","+OR);//for draw HR_OR graph
 				bufferedWriter.newLine();
 				
 			}
@@ -1005,7 +1001,11 @@ public class Algorithm {
 			d_IndexSearcher=new IndexSearcher(d_IndexReader);
 			d_Size=d_IndexReader.numDocs();
 			
-			
+			if(initial_pool==0)
+			{
+				System.out.println("初始样本实现全覆盖，正常退出");
+				break;
+			}
 			
 		}
 		
@@ -1027,7 +1027,7 @@ public class Algorithm {
 	
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
-		String stored_file="D:/experiment/reuters_mutipleturn_mutipleterm_HR_OR.csv";
+		String stored_file="D:/experiment/reuter_mutipleturn_mutipleterm_HR_OR.csv";
 		Algorithm algorithm=new Algorithm();
 		//algorithm.Algorithm_1(path_for_algorithm3,DB_path,sample_D_path, 0.95f);
 		algorithm.stored_file_Setter(stored_file);

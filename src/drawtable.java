@@ -132,7 +132,7 @@ public class drawtable {
 		
 			ArrayList<String> items=algo.Algorithm_2(sample_IndexReader, sample_IndexSearcher, null);
 			System.out.println(items.size()+"¸öquery from algorithm2");
-			Set<String> results=algo.Algorithm_3(add_to_sample,a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher, items);
+			ArrayList<String> results=algo.Algorithm_3(add_to_sample,a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher, items);
 	
 			
 

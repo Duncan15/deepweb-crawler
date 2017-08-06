@@ -23,7 +23,7 @@ public class RandomAlgorithm {
 	private Random random;
 	private int location;
 	private HashSet<Integer> pool;
-	private HashSet<String> container;
+	private ArrayList<String> container;
 	public String randomAccess()
 	{
 		do
@@ -58,7 +58,7 @@ public class RandomAlgorithm {
 		BufferedWriter bufferedWriter=new BufferedWriter(new FileWriter(new File("D:/experiment/result_random.csv")));
 
 		Algorithm used=new Algorithm();
-		container=new HashSet<>();
+		container=new ArrayList<>();
 		Directory db_Directory=FSDirectory.open(new File(Algorithm.DB_path_Wiki));
 		IndexReader db_IndexReader=IndexReader.open(db_Directory);
 		IndexSearcher db_IndexSearcher=new IndexSearcher(db_IndexReader);
