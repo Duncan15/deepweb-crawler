@@ -1,3 +1,4 @@
+package Algorithm;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,7 +17,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 public class RandomAlgorithm {
-	final static String direcoryPath="D:/experiment/WebsterNew.txt";
+	final static String direcoryPath="WebsterNew.txt";
 	private BufferedReader buf;
 	private ArrayList<String> dictionary;
 	private int fileLength;
