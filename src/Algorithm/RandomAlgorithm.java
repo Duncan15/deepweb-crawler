@@ -17,7 +17,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 public class RandomAlgorithm {
-	final static String direcoryPath="WebsterNew.txt";
+	final static String direcoryPath="src/Algorithm/websterNew.txt";
 	private BufferedReader buf;
 	private ArrayList<String> dictionary;
 	private int fileLength;
