@@ -702,7 +702,7 @@ public class Algorithm_improved {
 		for(Pair each:term_df)
 		{
 			double tmps= myFunc.value(each.rank,coeffs);
-			each.total_df=(int) Math.pow(10, tmps);
+			each.total_df=(int) Math.pow(Math.E, tmps);
 		}
 		
 		return term_df;
