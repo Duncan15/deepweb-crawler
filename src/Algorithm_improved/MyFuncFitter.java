@@ -10,22 +10,26 @@ import org.apache.commons.math3.fitting.WeightedObservedPoint;
 import org.apache.commons.math3.linear.DiagonalMatrix;
 
 class MyFunc implements ParametricUnivariateFunction {
-    public double value(double t, double... parameters) {
+    public double value(double r, double... parameters) {
         //return parameters[0] * Math.pow(t, parameters[1]) * Math.exp(-parameters[2] * t);
-        return parameters[0]/Math.pow((t+parameters[1]),parameters[2]);
+        //return parameters[0]/Math.pow((r+parameters[1]),parameters[2]);
+    		return parameters[0] - parameters[2]*Math.log(r+parameters[1]);
     }
 
     // Jacobian matrix of the above. In this case, this is just an array of
     // partial derivatives of the above function, with one element for each parameter.
-    public double[] gradient(double t, double... parameters) {
+    public double[] gradient(double r, double... parameters) {
         final double a = parameters[0];
         final double b = parameters[1];
         final double c = parameters[2];
 
         return new double[] {
-            1/Math.pow((t+parameters[1]),parameters[2]),
-        		-c*a*Math.pow((t+b),(-c-1)),
-        		-a*Math.log(t+b)*Math.pow((t+b),-c)
+            1,
+            -c/(b+r),
+            -Math.log(b+r)
+        		//1/Math.pow((r+parameters[1]),parameters[2]),
+        		//-c*a*Math.pow((r+b),(-c-1)),
+        		//-a*Math.log(r+b)*Math.pow((r+b),-c)
         		//Math.exp(-c*t) * Math.pow(t, b),
             //a * Math.exp(-c*t) * Math.pow(t, b) * Math.log(t),
             //a * (-Math.exp(-c*t)) * Math.pow(t, b+1)
@@ -67,27 +71,27 @@ public class MyFuncFitter extends AbstractCurveFitter {
         // Add points here; for instance,
         WeightedObservedPoint point = new WeightedObservedPoint(1.0,
             1.0,
-            3.3333);
+            Math.log(34679));
         points.add(point);
         
         WeightedObservedPoint point1 = new WeightedObservedPoint(1.0,
-                2.0,
-                2.5);
+                119,
+                Math.log(43506));
         points.add(point1);
         
         WeightedObservedPoint point2 = new WeightedObservedPoint(1.0,
-                48.0,
-                0.2);
+                237,
+                Math.log(30064));
         points.add(point2);
         
         WeightedObservedPoint point3 = new WeightedObservedPoint(1.0,
-                98.0,
-                0.1);
+                355,
+                Math.log(20256));
         points.add(point3);
         
         WeightedObservedPoint point4 = new WeightedObservedPoint(1.0,
-                998.0,
-                0.01);
+                473,
+                Math.log(4745));
         points.add(point4);
             
 
@@ -95,3 +99,4 @@ public class MyFuncFitter extends AbstractCurveFitter {
         System.out.println(Arrays.toString(coeffs));
     }
 }
+

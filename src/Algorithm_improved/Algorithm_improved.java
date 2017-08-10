@@ -626,16 +626,16 @@ public class Algorithm_improved {
 		
 		//此处小概率出现point_num大于sample_Rank_TermSet_Map.size()的情况，暂未处理
 		int stepLength=sample_Rank_TermSet_Map.size()/(point_num+1);
-		int step=1;
+		double step=1;
 		for(int i=0;i<point_num;i++)
 		{
-			int step_size=sample_Rank_TermSet_Map.get(step).size();
-			String step_Term=(String) sample_Rank_TermSet_Map.get(step).toArray()[global_Random.nextInt(step_size)];
+			int step_size=sample_Rank_TermSet_Map.get((int)step).size();
+			String step_Term=(String) sample_Rank_TermSet_Map.get((int)step).toArray()[global_Random.nextInt(step_size)];
 			
 			TermQuery query=new TermQuery(new Term(main_Field, step_Term));
 			ScoreDoc[] termHits=db_IndexSearcher.search(query, INFINITY).scoreDocs;
 			//1.0为权重
-			points.add(new WeightedObservedPoint(1.0, step,termHits.length));
+			points.add(new WeightedObservedPoint(1.0, step,Math.log(termHits.length)));
 			
 			step+=stepLength;
 		}
@@ -701,7 +701,8 @@ public class Algorithm_improved {
 		MyFunc myFunc=new MyFunc();
 		for(Pair each:term_df)
 		{
-			each.total_df=(int) myFunc.value(each.rank,coeffs);
+			double tmps= myFunc.value(each.rank,coeffs);
+			each.total_df=(int) Math.pow(10, tmps);
 		}
 		
 		return term_df;
@@ -709,7 +710,7 @@ public class Algorithm_improved {
 	public ArrayList<String> selecting_algorithm(ArrayList<Pair> info,ArrayList<String> set_be_checked,boolean select_Flag) throws IOException
 	{
 		ArrayList<String> res=new ArrayList<>();
-		double biggest_New_Cost_Rate=0;
+		double biggest_New_Cost_Rate=0,New=0,Cost=0;
 		String qi_final=null;
 		
 		//BufferedWriter bufferedWriter=new BufferedWriter(new FileWriter(new File(stored_file)));
@@ -727,11 +728,15 @@ public class Algorithm_improved {
 				if(tmp>biggest_New_Cost_Rate)
 				{
 					biggest_New_Cost_Rate=tmp;
+					New=each.total_df-each.termSet.size();
+					Cost=each.total_df;
 					qi_final=each.term;
 				}
 			}
 			res.add(qi_final);
 			set_be_checked.add(qi_final);
+			System.out.println(qi_final);
+			System.out.println("new="+New+"\tcost="+Cost);
 			System.out.println("biggest New/Cost="+biggest_New_Cost_Rate);
 		}
 		else
@@ -759,7 +764,7 @@ public class Algorithm_improved {
 			initial_Term=randomAlgorithm.randomAccess();
 			TermQuery qi_query=new TermQuery(new Term(main_Field, initial_Term));
 			ScoreDoc[] add_to_sample=db_IndexSearcher.search(qi_query, INFINITY).scoreDocs;
-			if(add_to_sample.length>3000&&add_to_sample.length<10000)break;//确保取词足够
+			if(add_to_sample.length>10000)break;//确保取词足够
 		}
 		
 		System.out.println("initial term is "+initial_Term);
@@ -779,9 +784,17 @@ public class Algorithm_improved {
 			{
 				add_sample_by_term(each, true_Hits, sample_IndexWriter, db_IndexSearcher);
 			}
-			sample_IndexReader=IndexReader.openIfChanged(sample_IndexReader);
-			sample_IndexSearcher.close();
-			sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
+			
+			try
+			{
+				sample_IndexReader=IndexReader.openIfChanged(sample_IndexReader);
+				sample_IndexSearcher.close();
+				sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
 			d_Size=sample_IndexReader.numDocs();
 			System.out.println("当前sample大小为"+d_Size);
 		}
