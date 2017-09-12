@@ -136,3 +136,122 @@ public Quality getQual2_for_improved1(Set<Integer> all_hits_set,int k,ArrayList<
 		
 		return new_q;
 	}
+	
+	
+	
+	
+	int s_in_selecting_algo=0;
+			while(s_in_selecting_algo<0.999*d_Size)
+			{
+				for(Pair each:info)
+				{
+					//bufferedWriter.write(each.rank+","+each.total_df);
+					//bufferedWriter.newLine();
+					
+					if(set_be_checked.contains(each.term))continue;//已选中的词跳过
+					float tmp=(float)(each.total_df-each.sample_df)/each.total_df;
+				
+					if(tmp>biggest_New_Cost_Rate)
+					{
+						T.clear();
+						biggest_New_Cost_Rate=tmp;
+						New=each.total_df-each.sample_df;
+						Cost=each.total_df;
+						T.add(each);
+					}
+					else if(tmp==biggest_New_Cost_Rate)
+					{
+						T.add(each);
+					}
+					
+				}
+				Pair qi_info=T.get(global_Random.nextInt(T.size()));
+				String qi_final=qi_info.term;
+				res.add(qi_final);
+				set_be_checked.add(qi_final);
+				System.out.println(qi_final);
+				System.out.println("new="+New+"\tcost="+Cost);
+				System.out.println("New/Cost="+biggest_New_Cost_Rate);
+				
+				Set<Integer> to_be_sub=new HashSet<>();
+				to_be_sub.addAll(qi_info.termSet);
+				for(Pair each:info)
+				{
+					each.termSet.removeAll(to_be_sub);
+					
+				}
+			}
+			
+			
+	public ArrayList<Pair> dealing_for_selecting_algorithm_v2(boolean multipleFlag,IndexReader target_IndexReader,IndexSearcher target_IndexSearcher,IndexSearcher db_IndexSearcher) throws IOException
+	{
+		int d_Size=target_IndexReader.numDocs();
+		TermEnum target_TermEnum=target_IndexReader.terms();
+		ArrayList<Pair> term_df=new ArrayList<>();
+		while(target_TermEnum.next())
+		{
+			if(target_TermEnum.term().field().equals(main_Field))
+			{
+				//multipleFlag为true时只存储df，为false时存储在sample中击中的document的docID
+				if(multipleFlag)
+				{
+					term_df.add(new Pair(target_TermEnum.term().text(), target_TermEnum.docFreq()));
+				}
+				else
+				{
+					TermQuery query=new TermQuery(new Term(main_Field, target_TermEnum.term().text()));
+					ScoreDoc[] termHits=target_IndexSearcher.search(query, INFINITY).scoreDocs;
+					Set<Integer> tmp_Set=new HashSet<>();
+					for(ScoreDoc each:termHits)
+					{
+						tmp_Set.add(each.doc);
+					}
+					
+					term_df.add(new Pair(target_TermEnum.term().text(),tmp_Set));
+				}
+			}
+			
+		}
+		
+		//排序并存储对应序号对应的term
+		Collections.sort(term_df);
+		HashMap<Integer, TreeSet<String>> rank_TermSet_Map=new HashMap<>(); 
+		int ranks=0,pre=-1;
+		TreeSet<String> tmp_Set=null;
+		for(Pair each:term_df)
+		{
+			if(each.sample_df!=pre)
+			{
+				if(tmp_Set!=null)
+				{
+					rank_TermSet_Map.put(ranks, tmp_Set);
+				}
+				
+				tmp_Set=new TreeSet<>();
+				ranks++;
+				pre=each.sample_df;
+			}
+			each.rank=ranks;
+			tmp_Set.add(each.term);
+		}
+		rank_TermSet_Map.put(ranks, tmp_Set);
+		
+		double coeffs[]=curve_fitting(1000,rank_TermSet_Map, db_IndexSearcher);
+		
+		//根据拟合出来的曲线计算所有term的total_df
+		MyFunc myFunc=new MyFunc();
+		Set<Pair> sub=new HashSet<>();
+		for(Pair each:term_df)
+		{
+			if(lower_bound*d_Size>=each.sample_df||each.sample_df>=upper_bound*d_Size)
+			{
+				sub.add(each);
+				continue;
+			}
+			double tmps= myFunc.value(each.rank,coeffs);
+			each.total_df=(int) Math.pow(Math.E, tmps);
+		}
+		term_df.removeAll(sub);
+		return term_df;
+	}
+	

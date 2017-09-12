@@ -39,7 +39,7 @@ public class AlgorithmByTable {
 			db_IndexReader=IndexReader.open(db_Directory);
 //			sample_IndexReader=IndexReader.open(sample_Directory);
 			db_IndexSearcher=new IndexSearcher(db_IndexReader);
-			sample_IndexWriter=new IndexWriter(sample_Directory, Algorithm.indexWriterConfig);
+			sample_IndexWriter=new IndexWriter(sample_Directory, new Algorithm().indexWriterConfig);
 			bufferedWriter=new BufferedWriter(new FileWriter(new File(txt_Path)));
 			
 		}
@@ -248,7 +248,7 @@ public class AlgorithmByTable {
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		String txt_Path="D:/experiment/result_all_in.csv";
-		AlgorithmByTable tmp=new AlgorithmByTable(Algorithm.DB_path_Wiki2, Algorithm.sample_D_path, Algorithm.initial_queries, txt_Path);
+		AlgorithmByTable tmp=new AlgorithmByTable(Algorithm.DB_path_Wiki, Algorithm.sample_D_path1, Algorithm.initial_queries, txt_Path);
 		//tmp.experiment_all_in();
 		tmp.one_turn_all_in_by_SET();
 		tmp.destroy();

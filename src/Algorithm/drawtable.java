@@ -100,7 +100,9 @@ public class drawtable {
 			qual1=qual1_unity.quality;
 			int pre_cost=qual1_unity.Coat;
 			System.out.println("cost is "+pre_cost);
-			qual2=algo.getQual2(add_to_sample,k, items,virtual_all_hits, search_in_DB, df_in_search_in_DB, a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher, pre_cost).quality;
+			
+			//此处有错误
+			qual2=algo.getQual2(add_to_sample,k, items,items,virtual_all_hits, search_in_DB, df_in_search_in_DB, a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher, pre_cost).quality;
 			result.add(new point(k,qual1,qual2,pre_cost));
 		}
 		
@@ -133,7 +135,9 @@ public class drawtable {
 		
 			ArrayList<String> items=algo.Algorithm_2(sample_IndexReader, sample_IndexSearcher, null);
 			System.out.println(items.size()+"赂枚query from algorithm2");
-			ArrayList<String> results=algo.Algorithm_3(add_to_sample,a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher, items);
+			
+			//此处有错误
+			ArrayList<String> results=algo.Algorithm_3(add_to_sample,a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher, items,items);
 	
 			
 

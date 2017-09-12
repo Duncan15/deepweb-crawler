@@ -64,7 +64,7 @@ public class RandomAlgorithm {
 		IndexReader db_IndexReader=IndexReader.open(db_Directory);
 		IndexSearcher db_IndexSearcher=new IndexSearcher(db_IndexReader);
 		
-		Directory d_Directory=FSDirectory.open(new File(Algorithm.sample_D_path));
+		Directory d_Directory=FSDirectory.open(new File(Algorithm.sample_D_path1));
 		
 		IndexWriter d_IndexWriter=new IndexWriter(d_Directory,used.indexWriterConfig);
 		IndexReader d_IndexReader;

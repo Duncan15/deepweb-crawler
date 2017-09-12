@@ -18,7 +18,7 @@ public class Extraction {
 		Directory target_Directory=FSDirectory.open(new File(target_path));
 		IndexReader db_IndexReader=IndexReader.open(db_Directory);
 		IndexSearcher db_IndexSearcher=new IndexSearcher(db_IndexReader);
-		IndexWriter target_IndexWriter=new IndexWriter(target_Directory, Algorithm.indexWriterConfig);
+		IndexWriter target_IndexWriter=new IndexWriter(target_Directory, new Algorithm().indexWriterConfig);
 		drawtable temp=new drawtable();
 		temp.createsample(n, db_IndexSearcher, target_IndexWriter);
 		

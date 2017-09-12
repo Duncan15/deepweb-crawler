@@ -1,0 +1,19 @@
+Windows
+String db_wiki="F:/experiment/enwiki-20161220-pages-articles-multistream-index-sample";
+		
+String db_wiki2="F:/experiment/enwiki-20161220-pages-articles-multistream-sample2";
+String wiki2_noredirect="F:/experiment/enwiki-20161220-pages-articles-multistream-sample_2noredirect";
+		
+String wiki_new="F:/experiment/enwiki-20161220-pages-articles-multistream_noredirect-sample";
+		
+String db_reuters="F:/experiment/Algorithm_1_DB";
+String sam="F:/experiment/sample";
+
+Mac
+String wiki_new="/Users/cwc/Documents/experiment/enwiki-20161220-pages-articles-multistream_noredirect-sample";//wiki可用包
+		
+String stored_file_path="/Users/cwc/Desktop/wiki_multipleturn_HR_Cost.csv";
+		
+String db_reuters="/Volumes/cwc/rar/Algorithm_1_DB";//reuters可用包
+String sam="/Users/cwc/Documents/experiment/sample";
+

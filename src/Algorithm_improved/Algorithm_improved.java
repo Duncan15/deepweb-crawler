@@ -16,6 +16,8 @@ import org.apache.commons.math3.fitting.WeightedObservedPoint;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -28,7 +30,10 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
+
+import Algorithm.Algorithm;
 import Algorithm.RandomAlgorithm;
+import nlpir.NlpirAnalyzer;
 
 
 
@@ -36,22 +41,31 @@ class Pair implements Comparable<Pair>
 {
 	protected String term;
 	protected Set<Integer> termSet=new HashSet<>();
-	protected int total_df;
+	protected int sample_df;
 	protected int rank;
+	protected int total_df;
 	public Pair(String a,Set<Integer> b)
 	{
 		this.term=a;
 		this.termSet.addAll(b);
+		this.sample_df=b.size();
 		this.rank=0;
 	}
-	
+	public Pair(String a,int b)
+	{
+		// TODO Auto-generated constructor stub
+		this.term=a;
+		this.termSet=null;
+		this.sample_df=b;
+		this.rank=0;
+	}
 	//根据df进行排序
 	@Override
 	public int compareTo(Pair o) //降序排列
 	{
 		// TODO Auto-generated method stub
-		if(this.termSet.size()>o.termSet.size())return -1;
-		else if(this.termSet.size()<o.termSet.size())return 1;
+		if(this.sample_df>o.sample_df)return -1;
+		else if(this.sample_df<o.sample_df)return 1;
 		return 0;
 	}
 }
@@ -64,8 +78,11 @@ public class Algorithm_improved {
 	private float upper_bound;
 	private float lower_bound;
 	private int INFINITY=1000000;
+	private boolean chineseFlag=false;
+	private Set<Integer> true_Hits;
 	
 	private int algo2_cost;//just for compute
+	private double estimate,estRatio,realRatio,sampleDF;
 	
 	private Directory db_Directory;
 	private IndexReader db_IndexReader;
@@ -76,6 +93,10 @@ public class Algorithm_improved {
 	private IndexReader sample_IndexReader;
 	private IndexWriter sample_IndexWriter;
 	private IndexSearcher sample_IndexSearcher;
+	
+	private Algorithm algorithm;
+	private Directory a3_Directory;
+	private IndexWriter a3_IndexWriter;
 	
 	private Analyzer standardAnalyzer=new StandardAnalyzer(Version.LUCENE_31);
 	private IndexWriterConfig  indexWriterConfig=new IndexWriterConfig(Version.LUCENE_31, standardAnalyzer);
@@ -109,6 +130,16 @@ public class Algorithm_improved {
 	public void initial_Sample_Number_Setter(int tmp)
 	{
 		this.inital_sample_num=tmp;
+	}
+	public void analyzer_Setter(boolean chineseFlag)
+	//当chineseFlag为true时，采用中文分析器，否则，采用标准分析器
+	{
+		if(chineseFlag)
+		{
+			this.chineseFlag=chineseFlag;
+			standardAnalyzer=new NlpirAnalyzer();
+			indexWriterConfig=new IndexWriterConfig(Version.LUCENE_31, standardAnalyzer);
+		}
 	}
 	
 	public HashMap<String, Set<Integer>> initial_setting(IndexReader initial_IndexReader,IndexSearcher initial_IndexSearcher) throws IOException
@@ -389,13 +420,20 @@ public class Algorithm_improved {
 	{
 		TermQuery qi_query=new TermQuery(new Term(main_Field, term));
 		ScoreDoc[] add_to_sample=source_IndexSearcher.search(qi_query, INFINITY).scoreDocs;
-		//System.out.println("��������"+add_to_sample.length+"���ĵ�");
 		for(ScoreDoc hit:add_to_sample)
 		{
 			if(!true_Hits.contains(hit.doc))
 			{
-				Document document=db_IndexSearcher.doc(hit.doc);
-				sample_IndexWriter.addDocument(document);
+				Document document=source_IndexSearcher.doc(hit.doc);
+				try
+				{
+					sample_IndexWriter.addDocument(document);
+				}
+				catch(Error e)
+				{
+					e.printStackTrace();
+					System.out.println(document.get("body"));
+				}
 				true_Hits.add(hit.doc);
 			}
 		}
@@ -429,9 +467,7 @@ public class Algorithm_improved {
 	{
 		//临时代码,用于存储数据
 		BufferedWriter bufferedWriter=new BufferedWriter(new FileWriter(new File(stored_file)));
-		
-		
-		
+
 		db_Directory=FSDirectory.open(new File(db_Path));
 		db_IndexReader=IndexReader.open(db_Directory);
 		db_IndexSearcher=new IndexSearcher(db_IndexReader);
@@ -619,13 +655,35 @@ public class Algorithm_improved {
 	}
 	
 	
+	public String getting_initial_Term(int lower_limit,int upper_limit,IndexSearcher target_IndexSearcher) throws IOException
+	{
+		RandomAlgorithm randomAlgorithm=new RandomAlgorithm();
+		String initial_Term=null;
+		while(true)
+		{
+			initial_Term=randomAlgorithm.randomAccess();
+			TermQuery qi_query=new TermQuery(new Term(main_Field, initial_Term));
+			ScoreDoc[] add_to_sample=target_IndexSearcher.search(qi_query, INFINITY).scoreDocs;
+			if(add_to_sample.length>lower_limit&&add_to_sample.length<upper_limit)break;//确保取词足够
+		}
+		return initial_Term;
+	}
+	
 	//point_num用来设置拟合的点数
 	public double[] curve_fitting(int point_num,HashMap<Integer, TreeSet<String>> sample_Rank_TermSet_Map,IndexSearcher db_IndexSearcher) throws IOException
 	{
 		ArrayList<WeightedObservedPoint> points=new ArrayList<>();
+		int stepLength=0;
+		if(point_num>=sample_Rank_TermSet_Map.size())//异常情况
+		{
+			stepLength=1;
+			point_num=sample_Rank_TermSet_Map.size();
+		}
+		else
+		{
+			stepLength=sample_Rank_TermSet_Map.size()/(point_num+1);//正常情况
+		}
 		
-		//此处小概率出现point_num大于sample_Rank_TermSet_Map.size()的情况，暂未处理
-		int stepLength=sample_Rank_TermSet_Map.size()/(point_num+1);
 		double step=1;
 		for(int i=0;i<point_num;i++)
 		{
@@ -636,18 +694,17 @@ public class Algorithm_improved {
 			ScoreDoc[] termHits=db_IndexSearcher.search(query, INFINITY).scoreDocs;
 			//1.0为权重
 			points.add(new WeightedObservedPoint(1.0, step,Math.log(termHits.length)));
-			
 			step+=stepLength;
 		}
 		
 		MyFuncFitter fitter = new MyFuncFitter();
 		System.out.println("进入拟合");
 		final double coeffs[] = fitter.fit(points);
-		System.out.println("退出拟合");
+		//System.out.println("退出拟合");
 		return coeffs;
 	}
 	
-	public ArrayList<Pair> dealing_for_selecting_algorithm(IndexReader target_IndexReader,IndexSearcher target_IndexSearcher,IndexSearcher db_IndexSearcher) throws IOException
+	public ArrayList<Pair> dealing_for_selecting_algorithm(boolean multipleFlag,IndexReader target_IndexReader,IndexSearcher target_IndexSearcher,IndexSearcher db_IndexSearcher) throws IOException
 	{
 		int d_Size=target_IndexReader.numDocs();
 		TermEnum target_TermEnum=target_IndexReader.terms();
@@ -658,20 +715,26 @@ public class Algorithm_improved {
 			{
 				if(lower_bound*d_Size<=target_TermEnum.docFreq()&&target_TermEnum.docFreq()<=upper_bound*d_Size)
 				{
-					TermQuery query=new TermQuery(new Term(main_Field, target_TermEnum.term().text()));
-					ScoreDoc[] termHits=target_IndexSearcher.search(query, INFINITY).scoreDocs;
-					Set<Integer> tmp_Set=new HashSet<>();
-					for(ScoreDoc each:termHits)
+					
+					//multipleFlag为true时只存储df，为false时存储在sample中击中的document的docID
+					if(!multipleFlag)
 					{
-						tmp_Set.add(each.doc);
+						term_df.add(new Pair(target_TermEnum.term().text(), target_TermEnum.docFreq()));
 					}
-					//System.out.println(termHits.length);
-					term_df.add(new Pair(target_TermEnum.term().text(),tmp_Set));
-			
+					else
+					{
+						TermQuery query=new TermQuery(new Term(main_Field, target_TermEnum.term().text()));
+						ScoreDoc[] termHits=target_IndexSearcher.search(query, INFINITY).scoreDocs;
+						Set<Integer> tmp_Set=new HashSet<>();
+						for(ScoreDoc each:termHits)
+						{
+							tmp_Set.add(each.doc);
+						}
+						term_df.add(new Pair(target_TermEnum.term().text(),tmp_Set));
+					}
 				}
 			}
 		}
-		
 		//排序并存储对应序号对应的term
 		Collections.sort(term_df);
 		HashMap<Integer, TreeSet<String>> rank_TermSet_Map=new HashMap<>(); 
@@ -679,7 +742,7 @@ public class Algorithm_improved {
 		TreeSet<String> tmp_Set=null;
 		for(Pair each:term_df)
 		{
-			if(each.termSet.size()!=pre)
+			if(each.sample_df!=pre)
 			{
 				if(tmp_Set!=null)
 				{
@@ -688,14 +751,14 @@ public class Algorithm_improved {
 				
 				tmp_Set=new TreeSet<>();
 				ranks++;
-				pre=each.termSet.size();
+				pre=each.sample_df;
 			}
 			each.rank=ranks;
 			tmp_Set.add(each.term);
 		}
 		rank_TermSet_Map.put(ranks, tmp_Set);
 		
-		double coeffs[]=curve_fitting(100,rank_TermSet_Map, db_IndexSearcher);
+		double coeffs[]=curve_fitting(1000,rank_TermSet_Map, db_IndexSearcher);
 		
 		//根据拟合出来的曲线计算所有term的total_df
 		MyFunc myFunc=new MyFunc();
@@ -704,52 +767,159 @@ public class Algorithm_improved {
 			double tmps= myFunc.value(each.rank,coeffs);
 			each.total_df=(int) Math.pow(Math.E, tmps);
 		}
-		
 		return term_df;
 	}
-	public ArrayList<String> selecting_algorithm(ArrayList<Pair> info,ArrayList<String> set_be_checked,boolean select_Flag) throws IOException
+	
+	public ArrayList<String> selecting_algorithm(IndexReader target_IndexReader,IndexSearcher target_IndexSearcher,ArrayList<Pair> info,ArrayList<String> set_be_checked,boolean select_Flag,Algorithm algorithm) throws IOException//select_Flag为true时选一个词，select_Flag为false时选多个词
 	{
 		ArrayList<String> res=new ArrayList<>();
 		double biggest_New_Cost_Rate=0,New=0,Cost=0;
-		String qi_final=null;
+		int d_Size=target_IndexReader.numDocs();
 		
-		//BufferedWriter bufferedWriter=new BufferedWriter(new FileWriter(new File(stored_file)));
+		//select_Flag==true时，一轮只选一个term
+		ArrayList<Pair> T=new ArrayList<>();
+		for(Pair each:info)
+		{
+			//bufferedWriter.write(each.rank+","+each.total_df);
+			//bufferedWriter.newLine();
+				
+			if(set_be_checked.contains(each.term))continue;//已选中的词跳过
+			float tmp=(float)(each.total_df-each.sample_df)/each.total_df;
+			
+			if(tmp>biggest_New_Cost_Rate)
+			{
+				T.clear();
+				biggest_New_Cost_Rate=tmp;
+				New=each.total_df-each.sample_df;
+				Cost=each.total_df;
+				T.add(each);
+			}
+			else if(tmp==biggest_New_Cost_Rate)
+			{
+				T.add(each);
+			}
+		}
+		Pair qi_info=T.get(global_Random.nextInt(T.size()));
+		String qi_final=qi_info.term;
+		res.add(qi_final);
+		System.out.println(qi_final);
+		System.out.println("new="+New+"\tcost="+Cost);
+		System.out.println("New/Cost="+biggest_New_Cost_Rate);
 		
+		estimate=qi_info.total_df;
+		sampleDF=qi_info.sample_df;
+		estRatio=(double)(qi_info.total_df-qi_info.sample_df)/qi_info.total_df;
+		
+		if(select_Flag)//多选模式
+		{
+			int s_in_selecting_algo=qi_info.sample_df;
+			Set<Integer> to_be_sub=new HashSet<>();
+			to_be_sub.addAll(qi_info.termSet);
+			for(Pair each:info)
+			{
+				each.termSet.removeAll(to_be_sub);
+			}//从new中去除已选词的df
+			to_be_sub.clear();
+			while(s_in_selecting_algo<0.99*d_Size)
+			{
+				biggest_New_Cost_Rate=0;
+				New=0;
+				Cost=0;
+				
+				for(Pair each:info)
+				{
+					if(set_be_checked.contains(each.term))continue;//已选中的词跳过
+					float tmp=(float)each.termSet.size()/each.sample_df;
+					if(tmp>biggest_New_Cost_Rate)
+					{
+						T.clear();
+						biggest_New_Cost_Rate=tmp;
+						New=each.termSet.size();
+						Cost=each.sample_df;
+						T.add(each);
+					}
+					else if(tmp==biggest_New_Cost_Rate)
+					{
+						T.add(each);
+					}
+				}
+				
+				if(T.isEmpty())
+				{
+					System.out.println("异常退出");
+					break;
+				}
+				qi_info=T.get(global_Random.nextInt(T.size()));
+				s_in_selecting_algo+=qi_info.termSet.size();//important part
+				qi_final=qi_info.term;
+				res.add(qi_final);
+				System.out.println(qi_final);
+				System.out.println("new="+New+"\tcost="+Cost);
+				System.out.println("New/Cost="+biggest_New_Cost_Rate);
+				//以上为选词部分
+				
+				
+				to_be_sub.addAll(qi_info.termSet);
+				for(Pair each:info)
+				{
+					each.termSet.removeAll(to_be_sub);
+				}//从new中去除已选词的df
+				to_be_sub.clear();
+				//以上为处理部分
+			}
+			
+			res=algorithm.Algorithm_3(true_Hits, a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher, res,set_be_checked);
+		}
+		
+		for(String each:res)
+		{
+			set_be_checked.add(each);
+		}
+		return res;
+	}
+	public ArrayList<String> selecting_algorithm_only_new(ArrayList<Pair> info,ArrayList<String> set_be_checked,boolean select_Flag) throws IOException
+	{
+		ArrayList<String> res=new ArrayList<>();
+		int New=0,Cost=0;
+		ArrayList<String> T=new ArrayList<>();
 		//select_Flag==true时，一轮只选一个term
 		if(select_Flag)
 		{
 			for(Pair each:info)
 			{
-				//bufferedWriter.write(each.rank+","+each.total_df);
-				//bufferedWriter.newLine();
-				
 				if(set_be_checked.contains(each.term))continue;//已选中的词跳过
-				double tmp=(double)(each.total_df-each.termSet.size())/each.total_df;
-				if(tmp>biggest_New_Cost_Rate)
+				int tmp=each.total_df-each.sample_df;
+				//if(tmp>biggest_New_Cost_Rate)
+				if(tmp>New)
 				{
-					biggest_New_Cost_Rate=tmp;
-					New=each.total_df-each.termSet.size();
+					T.clear();
+					New=tmp;
 					Cost=each.total_df;
-					qi_final=each.term;
+					T.add(each.term);
+				}
+				else if(tmp==New)
+				{
+					T.add(each.term);
 				}
 			}
+			String qi_final=T.get(global_Random.nextInt(T.size()));//New相同时，随机获取一个
 			res.add(qi_final);
 			set_be_checked.add(qi_final);
 			System.out.println(qi_final);
 			System.out.println("new="+New+"\tcost="+Cost);
-			System.out.println("biggest New/Cost="+biggest_New_Cost_Rate);
+			//System.out.println("New/Cost="+biggest_New_Cost_Rate);
+			System.out.println((double)New/Cost);
 		}
 		else
 		{
 			
 		}
-		//bufferedWriter.close();
 		return res;
 	}
-	public void simple_crawling_algorithm(float lower_Limit,boolean select_Flag) throws IOException
+	public void simple_crawling_algorithm(float lower_Limit,boolean multipleFlag,boolean newFlag) throws IOException
 	{
-		Set<Integer> true_Hits=new HashSet<>();//the all hit set
-		ArrayList<String> Q=new ArrayList<>();
+		true_Hits=new HashSet<>();//the all hit set
+		ArrayList<String> Q=new ArrayList<>();//all the term this algorithm has selected
 		db_Directory=FSDirectory.open(new File(db_Path));
 		db_IndexReader=IndexReader.open(db_Directory);
 		db_IndexSearcher=new IndexSearcher(db_IndexReader);
@@ -757,48 +927,87 @@ public class Algorithm_improved {
 		
 		sample_Directory=FSDirectory.open(new File(sample_Path));
 		sample_IndexWriter=new IndexWriter(sample_Directory, indexWriterConfig);
-		RandomAlgorithm randomAlgorithm=new RandomAlgorithm();
-		String initial_Term=null;
-		while(true)
+		
+		if(multipleFlag)
 		{
-			initial_Term=randomAlgorithm.randomAccess();
-			TermQuery qi_query=new TermQuery(new Term(main_Field, initial_Term));
-			ScoreDoc[] add_to_sample=db_IndexSearcher.search(qi_query, INFINITY).scoreDocs;
-			if(add_to_sample.length>10000)break;//确保取词足够
+			algorithm=new Algorithm();//Algorithm initiate and set
+			algorithm.bound_Setter(lower_bound, upper_bound);
+			algorithm.main_Field_Setter(main_Field);
+			algorithm.analyzer_Setter(chineseFlag);//当采用中文数据源时应进行此设置
+			a3_Directory=FSDirectory.open(new File(Algorithm.path_for_algorithm33));
+			a3_IndexWriter=new IndexWriter(a3_Directory, Algorithm.indexWriterConfig2);
 		}
 		
+		
+		double total_hits=0;
+		BufferedWriter bufferedWriter=new BufferedWriter(new FileWriter(new File(stored_file)));//存储HR_OR
+		
+		String initial_Term=getting_initial_Term(10000, 30000,db_IndexSearcher);
+		
+		
 		System.out.println("initial term is "+initial_Term);
-		add_sample_by_term(initial_Term, true_Hits, sample_IndexWriter, db_IndexSearcher);
+		total_hits+=add_sample_by_term(initial_Term, true_Hits, sample_IndexWriter, db_IndexSearcher);
 		sample_IndexReader=IndexReader.open(sample_Directory);
 		sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
 		//以上为算法初始化
 		
-		
 		int d_Size=sample_IndexReader.numDocs();
 		System.out.println("initial sample size is "+d_Size);
+		
+		double HR=(double)d_Size/db_Size,OR=total_hits/d_Size;//for store info
+		bufferedWriter.write(HR+","+OR+","+initial_Term+","+total_hits+",0,1,1");//存储列
+		bufferedWriter.newLine();
+	
+		int i=0;
 		while(d_Size<lower_Limit*db_Size)
 		{
-			ArrayList<Pair> term_info=dealing_for_selecting_algorithm(sample_IndexReader, sample_IndexSearcher, db_IndexSearcher);
-			ArrayList<String> res=selecting_algorithm(term_info, Q, true);
-			for(String each:res)
+			//select_flag可以控制deal_pattern
+			ArrayList<Pair> term_info=dealing_for_selecting_algorithm(multipleFlag,sample_IndexReader, sample_IndexSearcher, db_IndexSearcher);
+			ArrayList<String> res=null;
+			if(!newFlag)
 			{
-				add_sample_by_term(each, true_Hits, sample_IndexWriter, db_IndexSearcher);
+				//mutipleFlag用于决定是简单单选还是多选
+				res=selecting_algorithm(sample_IndexReader,sample_IndexSearcher,term_info, Q,multipleFlag,algorithm);
+			
+			}
+			else
+			{
+				res=selecting_algorithm_only_new(term_info, Q, true);//暂时未处理
 			}
 			
-			try
+			for(String each:res)
 			{
-				sample_IndexReader=IndexReader.openIfChanged(sample_IndexReader);
-				sample_IndexSearcher.close();
-				sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
+				double df=add_sample_by_term(each, true_Hits, sample_IndexWriter, db_IndexSearcher);
+				total_hits+=df;
+				try
+				{
+					sample_IndexReader=IndexReader.openIfChanged(sample_IndexReader);
+					sample_IndexSearcher.close();
+					sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
+				}
+				catch(Exception e)
+				{
+					e.printStackTrace();
+					sample_IndexReader=IndexReader.open(sample_Directory);
+					sample_IndexSearcher.close();
+					sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
+				}
+				d_Size=true_Hits.size();
+				System.out.println("当前sample大小为"+d_Size);
+				System.out.println(++i+"\n");
+			
+				HR=(double)d_Size/db_Size;
+				OR=total_hits/d_Size;//for store info
+				
+				realRatio=(df-sampleDF)/df;
+			
+				bufferedWriter.write(HR+","+OR+","+each+","+df+","+estimate+","+estRatio+","+realRatio);
+				bufferedWriter.newLine();
 			}
-			catch(Exception e)
-			{
-				e.printStackTrace();
-			}
-			d_Size=sample_IndexReader.numDocs();
-			System.out.println("当前sample大小为"+d_Size);
+
 		}
 		
+		bufferedWriter.close();
 		db_IndexSearcher.close();
 		db_IndexReader.close();
 		db_Directory.close();
@@ -807,6 +1016,12 @@ public class Algorithm_improved {
 		sample_IndexReader.close();
 		sample_IndexWriter.close();
 		sample_Directory.close();
+		
+		if(multipleFlag)
+		{
+			a3_IndexWriter.close();
+			a3_Directory.close();
+		}
 		
 	}
 	
@@ -817,24 +1032,32 @@ public class Algorithm_improved {
 		//String db_wiki2="F:/experiment/enwiki-20161220-pages-articles-multistream-sample2";
 		//String wiki2_noredirect="F:/experiment/enwiki-20161220-pages-articles-multistream-sample_2noredirect";
 		
-		String wiki_new="D:/experiment/enwiki-20161220-pages-articles-multistream_noredirect-sample";
+		String wiki_new="F:/experiment/enwiki-20161220-pages-articles-multistream_noredirect-sample";
 		
-		String db_reuters="D:/experiment/Algorithm_1_DB";
-		String sam="D:/experiment/sample";
-		String stored_file_path="D:/experiment/info.csv";
+		//String db_reuters="F:/experiment/Algorithm_1_DB";
+		
+		//String citeSeer_v2="F:/experiment/index_network_dblp_citeseer_fulltext_url_v2";
+		String sam="F:/experiment/sample5";
+		String stored_file_path="F:/experiment/chineseinfo3.csv";
 		Algorithm_improved al=new Algorithm_improved();
 		al.stored_File_Setter(stored_file_path);
-		
-		al.bound_Setter(0.20f, 0.001f);
-		//al.bound_Setter(0.15f, 0.02f);
-		al.db_Path_Setter(wiki_new);
-		//al.db_Path_Setter(db_reuters);
 		al.sample_Path_Setter(sam);
-		al.main_Field_Setter("text");
-		al.initial_Sample_Number_Setter(3000);
+		//al.bound_Setter(0.20f, 0.001f);
+		al.bound_Setter(0.15f, 0.02f);
+		//al.db_Path_Setter(wiki_new);
+		//al.db_Path_Setter(db_reuters);
+		//al.db_Path_Setter(citeSeer_v2);
+		al.db_Path_Setter("F:/experiment/chinese");
+		al.main_Field_Setter("body");
+		al.analyzer_Setter(true);
 		
+		//al.initial_Sample_Number_Setter(3000);
 		//al.Round_Turn_Algorithm(false,true);
-		al.simple_crawling_algorithm(0.9f, true);
+		
+		
+		//boolean select_Flag,boolean dealing_pattern,boolean selecting_algorithm_flag
+		al.simple_crawling_algorithm(0.9f,false,false);//new_cost selecting algorithm
+		//al.simple_crawling_algorithm(0.9f, true,false);//new selecting algorithm
 		//al.verified_algorithm();
 		
 	}
