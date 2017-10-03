@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,6 +15,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -54,7 +56,7 @@ public class drawtable {
 	public void createsample(int sample_size,IndexSearcher db_IndexSearcher,IndexWriter sample_IndexWriter) throws IOException
 	{
 		
-		int max=db_IndexSearcher.maxDoc();
+		int max=db_IndexSearcher.getIndexReader().numDocs();
 		Random rand=new Random();
 		while(add_to_sample.size()<sample_size)
 		{
@@ -112,15 +114,15 @@ public class drawtable {
 	{
 		//BufferedWriter bufferedWriter=new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("D:/experiment/result5.txt"))));
 		
-		Directory db_Directory=FSDirectory.open(new File(Algorithm.DB_path_Wiki));
-		IndexReader db_IndexReader=IndexReader.open(db_Directory);
+		Directory db_Directory=FSDirectory.open(Paths.get(Algorithm.DB_path_Wiki));
+		IndexReader db_IndexReader=DirectoryReader.open(db_Directory);
 		IndexSearcher db_IndexSearcher=new IndexSearcher(db_IndexReader);
 		
-		Directory sample_Directory=FSDirectory.open(new File(sample_path2));
-		IndexWriter sample_IndexWriter=new IndexWriter(sample_Directory, new IndexWriterConfig(Version.LUCENE_31, new StandardAnalyzer(Version.LUCENE_31)));
+		Directory sample_Directory=FSDirectory.open(Paths.get(sample_path2));
+		IndexWriter sample_IndexWriter=new IndexWriter(sample_Directory, new IndexWriterConfig(new StandardAnalyzer()));
 		
-		Directory a3_Directory=FSDirectory.open(new File(Algorithm.path_for_algorithm32));
-		IndexWriter a3_IndexWriter=new IndexWriter(a3_Directory,new IndexWriterConfig(Version.LUCENE_31, new StandardAnalyzer(Version.LUCENE_31)));
+		Directory a3_Directory=FSDirectory.open(Paths.get(Algorithm.path_for_algorithm32));
+		IndexWriter a3_IndexWriter=new IndexWriter(a3_Directory,new IndexWriterConfig( new StandardAnalyzer()));
 		
 		drawtable draw=new drawtable();
 		Algorithm algo=new Algorithm();
@@ -130,7 +132,7 @@ public class drawtable {
 			System.out.println("µÚ"+turns+"ÂÖ");
 			draw.createsample(100,db_IndexSearcher,sample_IndexWriter);
 		
-			IndexReader sample_IndexReader=IndexReader.open(sample_Directory);
+			IndexReader sample_IndexReader=DirectoryReader.open(sample_Directory);
 			IndexSearcher sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
 		
 			ArrayList<String> items=algo.Algorithm_2(sample_IndexReader, sample_IndexSearcher, null);
@@ -149,7 +151,6 @@ public class drawtable {
 			sample_IndexWriter.commit();
 			a3_IndexWriter.commit();
 			
-			sample_IndexSearcher.close();
 			sample_IndexReader.close();
 		}
 		a3_IndexWriter.close();
@@ -158,7 +159,6 @@ public class drawtable {
 		sample_IndexWriter.close();
 		sample_Directory.close();
 		
-		db_IndexSearcher.close();
 		db_IndexReader.close();
 		db_Directory.close();
 

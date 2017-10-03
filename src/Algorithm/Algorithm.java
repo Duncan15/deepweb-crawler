@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import java.util.HashMap;
@@ -16,21 +17,22 @@ import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
-
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermEnum;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.util.Version;
 
-import Algorithm_improved.Algorithm_improved;
-import nlpir.NlpirAnalyzer;
+import com.cwc.lucene.analyzer.chinese.JieBaChineseAnalyzer;
 public class Algorithm {
 	public class Quality
 	{
@@ -51,7 +53,8 @@ public class Algorithm {
 	public final static String DB_path_Wiki="F:/experiment/enwiki-20161220-pages-articles-multistream-index-sample";
 	public final static String wiki2_noredirect="F:/experiment/enwiki-20161220-pages-articles-multistream-sample_2noredirect";
 	
-	public final static String chinese_DB="F:/experiment/Index034";
+	//public final static String chinese_DB="F:/experiment/Index034jieba";
+	public final static String chinese_DB="F:/experiment/Indexjieba";
 	public final static String citeSeer_v2="F:/experiment/index_network_dblp_citeseer_fulltext_url_v2";
 	public final static String wiki_new="F:/experiment/enwiki-20161220-pages-articles-multistream_noredirect-sample";
 	public final static String path_for_algorithm31="F:/experiment/1path_in_algorithm3";
@@ -63,6 +66,7 @@ public class Algorithm {
 	static String initial_queries="caucus";
 
 	static Float lambda=null;
+	private int IFINITY=100000000;
 	
 	//q is a set of the queries
 	static ArrayList<String> q=new ArrayList<>();
@@ -86,18 +90,22 @@ public class Algorithm {
 	static ArrayList<String> virtual_q=new ArrayList<>();
 	static Set<Integer> virtual_all_hits=new HashSet<>();
 
-	static Analyzer analyzer=new StandardAnalyzer(Version.LUCENE_31);
-	public static IndexWriterConfig  indexWriterConfig=new IndexWriterConfig(Version.LUCENE_31, analyzer);
-	public static IndexWriterConfig indexWriterConfig2=new IndexWriterConfig(Version.LUCENE_31, analyzer);
+	static Analyzer analyzer=new StandardAnalyzer();
+	public static IndexWriterConfig  indexWriterConfig=new IndexWriterConfig(analyzer);
+	public static IndexWriterConfig indexWriterConfig2=new IndexWriterConfig(analyzer);
 	
-	public void analyzer_Setter(boolean chineseFlag)
+	public void analyzer_Setter(boolean chineseFlag) throws IOException
 	{
 		if(chineseFlag)
 		{
-			analyzer=new NlpirAnalyzer();
-			indexWriterConfig=new IndexWriterConfig(Version.LUCENE_31, analyzer);
-			indexWriterConfig2=new IndexWriterConfig(Version.LUCENE_31, analyzer);
+			//analyzer= new NLPIRTokenizerAnalyzer("F:/Java-external-library/NPLIR20140928", 1, "", "", false);
+			analyzer=new JieBaChineseAnalyzer(false);
+			indexWriterConfig=new IndexWriterConfig(analyzer);
+			indexWriterConfig2=new IndexWriterConfig(analyzer);
+			
 		}
+		indexWriterConfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+		indexWriterConfig2.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
 	}
 	public void main_Field_Setter(String text)
 	{
@@ -149,7 +157,7 @@ public class Algorithm {
 			{
 				virtual_q.add(q_be_checked.get(i));
 			}//将之前挑选的词加入virtual_q
-			IndexReader a3_IndexReader=IndexReader.open(a3_Directory);
+			IndexReader a3_IndexReader=DirectoryReader.open(a3_Directory);
 			IndexSearcher a3_IndexSearcher=new IndexSearcher(a3_IndexReader);
 			ArrayList<String> virtual_Term=Algorithm_2(a3_IndexReader, a3_IndexSearcher,virtual_q);
 			float improve_cost=(float) (0.0001*virtual_all_hits.size()*update_df_D.size());
@@ -174,7 +182,6 @@ public class Algorithm {
 			inner.removeAll(virtual_all_hits);
 			New=inner.size();
 			New=New+preQual.New;
-			a3_IndexSearcher.close();
 			a3_IndexReader.close();
 			return new Quality(New, pre_cost, (float)New/pre_cost);
 	}
@@ -214,7 +221,7 @@ public class Algorithm {
 			add_from_original_to_sample(virtual_all_hits,a3_IndexWriter, db_IndexReader, db_IndexSearcher, virtual_q);
 			//the first half
 			
-			IndexReader a3_IndexReader=IndexReader.open(a3_Directory);
+			IndexReader a3_IndexReader=DirectoryReader.open(a3_Directory);
 			IndexSearcher a3_IndexSearcher=new IndexSearcher(a3_IndexReader);
 			ArrayList<String> virtual_Term=Algorithm_2_for_improved1(a3_IndexReader, a3_IndexSearcher,initial_pool,tmp_df_D);
 			if(virtual_Term.size()==0)
@@ -256,7 +263,6 @@ public class Algorithm {
 			
 			
 			New=New+preQual.New;
-			a3_IndexSearcher.close();
 			a3_IndexReader.close();
 			System.out.println("quality2="+(float)New/pre_cost); 
 			
@@ -268,27 +274,23 @@ public class Algorithm {
 	{
 		
 		HashMap<String, HashSet<Integer>> tmp=new HashMap<>();
-		TermEnum d_Enum=initial_IndexReader.terms();
-		while (d_Enum.next())
+		Fields fields=MultiFields.getFields(initial_IndexReader);
+		Terms terms=fields.terms(main_Field);
+		TermsEnum d_Enum=terms.iterator();
+		while (d_Enum.next() != null)
 		{
-			if(d_Enum.term().field().equals(main_Field))
+			String termString=d_Enum.term().utf8ToString();
+			TermQuery termQuery=new TermQuery(new Term(main_Field, termString));
+			ScoreDoc[] hits=initial_IndexSearcher.search(termQuery,inital_sample_num ).scoreDocs;
+			HashSet<Integer> inner_Set=new HashSet<>();
+			for(ScoreDoc hit:hits)
 			{
-				
-				TermQuery termQuery=new TermQuery(new Term(main_Field, d_Enum.term().text()));
-				ScoreDoc[] hits=initial_IndexSearcher.search(termQuery,inital_sample_num ).scoreDocs;
-				HashSet<Integer> inner_Set=new HashSet<>();
-				for(ScoreDoc hit:hits)
-				{
-					inner_Set.add(hit.doc);
-				
-				}
-				tmp.put(d_Enum.term().text(),inner_Set);
+				inner_Set.add(hit.doc);
 			
 			}
-			
+			tmp.put(termString,inner_Set);
 		}
 		System.out.println("dynamic_DF中键值对数量为"+tmp.size());
-		
 		return tmp;
 	}
 	
@@ -331,24 +333,26 @@ public class Algorithm {
 		df_D.clear();
 		update_df_D.clear();
 		int d_Size=d_IndexReader.numDocs();
-		TermEnum d_Enum=d_IndexReader.terms();
-		while (d_Enum.next())
+		Fields fields=MultiFields.getFields(d_IndexReader);
+		Terms terms=fields.terms(main_Field);
+		
+		TermsEnum d_Enum=terms.iterator();
+		while (d_Enum.next()!=null)
 		{
-			if(d_Enum.term().field().equals(main_Field))
+			String termString=d_Enum.term().utf8ToString();
+			if((lower_bound*d_Size)<d_Enum.docFreq()&&d_Enum.docFreq()<=(upper_bound*d_Size))
 			{
-				if((lower_bound*d_Size)<d_Enum.docFreq()&&d_Enum.docFreq()<=(upper_bound*d_Size))
+				df_D.put(termString, d_Enum.docFreq());
+				TermQuery termQuery=new TermQuery(new Term(main_Field, termString));
+				ScoreDoc[] hits=d_IndexSearcher.search(termQuery, 1000000).scoreDocs;
+				HashSet<Integer> inner_Set=new HashSet<>();
+				for(ScoreDoc hit:hits)
 				{
-					df_D.put(d_Enum.term().text(), d_Enum.docFreq());
-					TermQuery termQuery=new TermQuery(new Term(main_Field, d_Enum.term().text()));
-					ScoreDoc[] hits=d_IndexSearcher.search(termQuery, 1000000).scoreDocs;
-					HashSet<Integer> inner_Set=new HashSet<>();
-					for(ScoreDoc hit:hits)
-					{
-						inner_Set.add(hit.doc);
-					}
-					update_df_D.put(d_Enum.term().text(),inner_Set);
+					inner_Set.add(hit.doc);
 				}
+				update_df_D.put(termString,inner_Set);
 			}
+			
 		}
 		if(q_be_checked!=null)
 		{
@@ -441,15 +445,19 @@ public class Algorithm {
 		
 		
 		int d_Size=d_IndexReader.numDocs();
-		TermEnum d_Enum=d_IndexReader.terms();
-		while (d_Enum.next())
+		Fields fields=MultiFields.getFields(d_IndexReader);
+		Terms terms=fields.terms(main_Field);
+		
+		TermsEnum d_Enum=terms.iterator();
+		while (d_Enum.next()!=null)
 		{
+			String termString=d_Enum.term().utf8ToString();
 			algo2_Cost++;//for compute
-			if(d_Enum.term().field().equals(main_Field)&&inner_update_df_D.containsKey(d_Enum.term().text()))
+			if(inner_update_df_D.containsKey(termString))
 			{
 				if((lower_bound*d_Size)<d_Enum.docFreq()&&d_Enum.docFreq()<=(upper_bound*d_Size))
 				{
-					df_D.put(d_Enum.term().text(), d_Enum.docFreq());
+					df_D.put(termString, d_Enum.docFreq());
 				}
 			}
 		}
@@ -814,23 +822,34 @@ public class Algorithm {
 		}
 	}
 
+	public String getting_initial_Term(int lower_limit,int upper_limit,IndexSearcher target_IndexSearcher) throws IOException
+	{
+		RandomAlgorithm randomAlgorithm=new RandomAlgorithm();
+		String initial_Term=null;
+		while(true)
+		{
+			initial_Term=randomAlgorithm.randomAccess();
+			TermQuery qi_query=new TermQuery(new Term(main_Field, initial_Term));
+			ScoreDoc[] add_to_sample=target_IndexSearcher.search(qi_query,this.IFINITY).scoreDocs;
+			if(add_to_sample.length>lower_limit&&add_to_sample.length<upper_limit)break;//确保取词足够
+		}
+		return initial_Term;
+	}
 	public void Algorithm_1(String path_in_algorithm3,String db_Path,String d_Path,Float lambda) throws IOException
 	{
 		BufferedWriter hrorWriter=new BufferedWriter(new FileWriter(new File(stored_file)));
-		BufferedWriter bufferedWriter=new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("F://experiment/result_chinese.txt"))));
+		BufferedWriter bufferedWriter=new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("F:/experiment/result_chinese.txt"))));
 	
-		Directory db_Directory=FSDirectory.open(new File(db_Path));
-		IndexReader db_IndexReader=IndexReader.open(db_Directory);
+		Directory db_Directory=FSDirectory.open(Paths.get(db_Path));
+		IndexReader db_IndexReader=DirectoryReader.open(db_Directory);
 		IndexSearcher db_IndexSearcher=new IndexSearcher(db_IndexReader);
 		int db_Size=db_IndexReader.numDocs();
 		
-		Algorithm_improved algo_improved=new Algorithm_improved();
-		algo_improved.main_Field_Setter(this.main_Field);
-		initial_queries=algo_improved.getting_initial_Term(10000, 30000, db_IndexSearcher);
+		initial_queries=getting_initial_Term(10000, 30000, db_IndexSearcher);
 		bufferedWriter.write(initial_queries);
 		bufferedWriter.newLine();
 		
-		Directory d_Directory=FSDirectory.open(new File(d_Path));
+		Directory d_Directory=FSDirectory.open(Paths.get(d_Path));
 		IndexWriter d_IndexWriter=new IndexWriter(d_Directory,indexWriterConfig);
 		ArrayList<String> tmp=new ArrayList<>();
 		tmp.add(initial_queries);
@@ -838,10 +857,10 @@ public class Algorithm {
 		
 		System.out.println("inital sample size is"+all_hits.size());
 		
-		IndexReader d_IndexReader=IndexReader.open(d_Directory);
+		IndexReader d_IndexReader=DirectoryReader.open(d_Directory);
 		IndexSearcher d_IndexSearcher=new IndexSearcher(d_IndexReader);
 		int d_Size=d_IndexReader.numDocs();
-		Directory a3_Directory=FSDirectory.open(new File(path_in_algorithm3));
+		Directory a3_Directory=FSDirectory.open(Paths.get(path_in_algorithm3));
 		IndexWriter a3_IndexWriter=new IndexWriter(a3_Directory,indexWriterConfig2);
 		
 		double all_num=d_Size;
@@ -886,15 +905,13 @@ public class Algorithm {
 			
 			try
 			{
-				d_IndexReader=IndexReader.openIfChanged(d_IndexReader);
-				d_IndexSearcher.close();
+				d_IndexReader=DirectoryReader.openIfChanged((DirectoryReader)d_IndexReader);
 				d_IndexSearcher=new IndexSearcher(d_IndexReader);
 			}
 			catch(Exception e)
 			{
 				e.printStackTrace();
-				d_IndexReader=IndexReader.open(d_Directory);
-				d_IndexSearcher.close();
+				d_IndexReader=DirectoryReader.open(d_Directory);
 				d_IndexSearcher=new IndexSearcher(d_IndexReader);
 			}
 			d_Size=d_IndexReader.numDocs();
@@ -903,8 +920,6 @@ public class Algorithm {
 		hrorWriter.close();
 		d_IndexWriter.close();
 		a3_IndexWriter.close();
-		db_IndexSearcher.close();
-		d_IndexSearcher.close();
 		db_IndexReader.close();
 		d_IndexReader.close();
 		db_Directory.close();
@@ -918,13 +933,13 @@ public class Algorithm {
 	{
 		BufferedWriter bufferedWriter=new BufferedWriter(new FileWriter(new File(stored_file)));
 		
-		Directory db_Directory=FSDirectory.open(new File(db_Path));
-		IndexReader db_IndexReader=IndexReader.open(db_Directory);
+		Directory db_Directory=FSDirectory.open(Paths.get(db_Path));
+		IndexReader db_IndexReader=DirectoryReader.open(db_Directory);
 		IndexSearcher db_IndexSearcher=new IndexSearcher(db_IndexReader);
 		
 		int db_size=db_IndexReader.numDocs();
 		
-		Directory d_Directory=FSDirectory.open(new File(d_Path));
+		Directory d_Directory=FSDirectory.open(Paths.get(d_Path));
 		IndexWriter d_IndexWriter=new IndexWriter(d_Directory,indexWriterConfig);
 		
 		
@@ -935,11 +950,11 @@ public class Algorithm {
 		initial_pool=all_hits.size();
 		System.out.println("初始样本个数"+initial_pool);
 		
-		IndexReader d_IndexReader=IndexReader.open(d_Directory);
+		IndexReader d_IndexReader=DirectoryReader.open(d_Directory);
 		IndexSearcher d_IndexSearcher=new IndexSearcher(d_IndexReader);
 		int d_Size=d_IndexReader.numDocs();
 		
-		Directory a3_Directory=FSDirectory.open(new File(path_in_algorithm3));
+		Directory a3_Directory=FSDirectory.open(Paths.get(path_in_algorithm3));
 		IndexWriter a3_IndexWriter=new IndexWriter(a3_Directory,indexWriterConfig2);
 		
 		update_df_D=initial_setting(initial_num, d_IndexReader, d_IndexSearcher);
@@ -1007,8 +1022,7 @@ public class Algorithm {
 				
 			}
 			
-			d_IndexReader=IndexReader.openIfChanged(d_IndexReader);
-			d_IndexSearcher.close();
+			d_IndexReader=DirectoryReader.openIfChanged((DirectoryReader)d_IndexReader);
 			d_IndexSearcher=new IndexSearcher(d_IndexReader);
 			d_Size=d_IndexReader.numDocs();
 			
@@ -1019,15 +1033,10 @@ public class Algorithm {
 			}
 			
 		}
-		
-	
-		
 		bufferedWriter.close();
 		
 		d_IndexWriter.close();
 		a3_IndexWriter.close();
-		db_IndexSearcher.close();
-		d_IndexSearcher.close();
 		db_IndexReader.close();
 		d_IndexReader.close();
 		db_Directory.close();

@@ -15,7 +15,6 @@ import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.util.AttributeFactory;
 
 
-
 /**
  * 
  * @author panhongyan
@@ -59,7 +58,7 @@ public class NLPIRTokenizer extends Tokenizer {
 			e.printStackTrace();
 		}
 	}
-	//姒涙顓婚崚婵嗩潗閸栨牗鏌熷▔锟�?
+	//榛樿鍒濆鍖栨柟娉�?
 	public NLPIRTokenizer(AttributeFactory factory) {
 		super(factory);
 		this.defaultInit();
@@ -67,36 +66,36 @@ public class NLPIRTokenizer extends Tokenizer {
 	}
 	
 	/**
-	 * 閸掑棜鐦濋崚婵嗩潗閸栵拷
+	 * 鍒嗚瘝鍒濆鍖�
 	 * 
 	 * @param data
-	 *            鐠囧秴锟�?鐠侯垰锟�?
+	 *            璇嶅�?璺�?
 	 * @param encoding
-	 *            缂傛牜锟�? 0閿涙BK閿涳拷1閿涙瓗TF-8
+	 *            缂栫�? 0锛欸BK锛�1锛歎TF-8
 	 * @param sLicenceCode
-	 *            閹哄牊娼堥惍渚婄礉姒涙顓绘稉锟�?""
+	 *            鎺堟潈鐮侊紝榛樿涓�?""
 	 * @param userDict
-	 *            閻€劍鍩涚拠宥呭悁閺傚洣锟�?
+	 *            鐢ㄦ埛璇嶅吀鏂囦�?
 	 * @param nOverwrite
-	 *            閻€劍鍩涚拠宥呭悁瀵洖鍙嗛弬鐟扮础
+	 *            鐢ㄦ埛璇嶅吀寮曞叆鏂瑰紡
 	 */
 	public NLPIRTokenizer(String data, int encoding, String sLicenceCode, String userDict, boolean bOverwrite) {
 		this.init(data, encoding, sLicenceCode, userDict, bOverwrite);
 	}
 
 	/**
-	 * 閸掑棜鐦濋崚婵嗩潗閸栵拷
+	 * 鍒嗚瘝鍒濆鍖�
 	 * 
 	 * @param data
-	 *            鐠囧秴锟�?鐠侯垰锟�?
+	 *            璇嶅�?璺�?
 	 * @param encoding
-	 *            缂傛牜锟�? 0閿涙BK閿涳拷1閿涙瓗TF-8
+	 *            缂栫�? 0锛欸BK锛�1锛歎TF-8
 	 * @param sLicenceCode
-	 *            閹哄牊娼堥惍渚婄礉姒涙顓绘稉锟�?""
+	 *            鎺堟潈鐮侊紝榛樿涓�?""
 	 * @param userDict
-	 *            閻€劍鍩涚拠宥呭悁閺傚洣锟�?
+	 *            鐢ㄦ埛璇嶅吀鏂囦�?
 	 * @param nOverwrite
-	 *            閻€劍鍩涚拠宥呭悁瀵洖鍙嗛弬鐟扮础
+	 *            鐢ㄦ埛璇嶅吀寮曞叆鏂瑰紡
 	 */
 	public NLPIRTokenizer(AttributeFactory factory, String data, int encoding, String sLicenceCode, String userDict,
 			boolean bOverwrite) {
@@ -105,18 +104,18 @@ public class NLPIRTokenizer extends Tokenizer {
 	}
 
 	/**
-	 * 閸掑棜鐦濋崚婵嗩潗閸栵拷
+	 * 鍒嗚瘝鍒濆鍖�
 	 * 
 	 * @param data
-	 *            鐠囧秴锟�?鐠侯垰锟�?
+	 *            璇嶅�?璺�?
 	 * @param encoding
-	 *            缂傛牜锟�? 0閿涙BK閿涳拷1閿涙瓗TF-8
+	 *            缂栫�? 0锛欸BK锛�1锛歎TF-8
 	 * @param sLicenceCode
-	 *            閹哄牊娼堥惍渚婄礉姒涙顓绘稉锟�?""
+	 *            鎺堟潈鐮侊紝榛樿涓�?""
 	 * @param userDict
-	 *            閻€劍鍩涚拠宥呭悁閺傚洣锟�?
+	 *            鐢ㄦ埛璇嶅吀鏂囦�?
 	 * @param nOverwrite
-	 *            閻€劍鍩涚拠宥呭悁瀵洖鍙嗛弬鐟扮础
+	 *            鐢ㄦ埛璇嶅吀寮曞叆鏂瑰紡
 	 */
 	private void init(String data, int encoding, String sLicenceCode, String userDict, boolean bOverwrite) {
 		boolean flag = CNLPIRLibrary.Instance.NLPIR_Init(data, encoding, sLicenceCode);
@@ -135,6 +134,10 @@ public class NLPIRTokenizer extends Tokenizer {
 					e.printStackTrace();
 				}
 		}
+	}
+	
+	public void exit() {
+		CNLPIRLibrary.Instance.NLPIR_Exit();
 	}
 
 	@Override
@@ -163,6 +166,7 @@ public class NLPIRTokenizer extends Tokenizer {
 		typeAtt.setType("word");
 		start = end;
 		current += 1;
+		
 		return true;
 	}
 

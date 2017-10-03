@@ -1,7 +1,9 @@
 package Algorithm;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.IndexSearcher;
@@ -14,9 +16,9 @@ public class Extraction {
 	
 	public void random_Extract_by_number(int n,String source_path,String target_path) throws IOException
 	{
-		Directory db_Directory=FSDirectory.open(new File(source_path));
-		Directory target_Directory=FSDirectory.open(new File(target_path));
-		IndexReader db_IndexReader=IndexReader.open(db_Directory);
+		Directory db_Directory=FSDirectory.open(Paths.get(source_path));
+		Directory target_Directory=FSDirectory.open(Paths.get(target_path));
+		IndexReader db_IndexReader=DirectoryReader.open(db_Directory);
 		IndexSearcher db_IndexSearcher=new IndexSearcher(db_IndexReader);
 		IndexWriter target_IndexWriter=new IndexWriter(target_Directory, new Algorithm().indexWriterConfig);
 		drawtable temp=new drawtable();

@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="F:/Java-external-library/lucene-analyzers-common-6.6.1.jar"/>
 	<classpathentry kind="lib" path="F:/Java-external-library/lucene-core-6.6.1.jar"/>
 	<classpathentry kind="lib" path="F:/Java-external-library/lucene-queryparser-6.6.1.jar"/>
+	<classpathentry kind="lib" path="F:/Java-external-library/JieBaChineseAnalyzer.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

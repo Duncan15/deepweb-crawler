@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -12,6 +13,7 @@ import java.util.Set;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.IndexSearcher;
@@ -34,9 +36,9 @@ public class AlgorithmByTable {
 	{
 		try
 		{
-			db_Directory=FSDirectory.open(new File(db_Path));
-			sample_Directory=FSDirectory.open(new File(sample_Path));
-			db_IndexReader=IndexReader.open(db_Directory);
+			db_Directory=FSDirectory.open(Paths.get(db_Path));
+			sample_Directory=FSDirectory.open(Paths.get(sample_Path));
+			db_IndexReader=DirectoryReader.open(db_Directory);
 //			sample_IndexReader=IndexReader.open(sample_Directory);
 			db_IndexSearcher=new IndexSearcher(db_IndexReader);
 			sample_IndexWriter=new IndexWriter(sample_Directory, new Algorithm().indexWriterConfig);
@@ -81,7 +83,7 @@ public class AlgorithmByTable {
 	public static void initial_create_sample(int num,HashSet<Integer> target_pool,IndexWriter target_IndexWriter,IndexSearcher source_IndexSearcher) throws CorruptIndexException, IOException
 	{
 		int counter=0;
-		int source_num=source_IndexSearcher.maxDoc();
+		int source_num=source_IndexSearcher.getIndexReader().numDocs();
 		Random rand=new Random(new Date().getTime());
 		while(counter<num)
 		{
@@ -113,7 +115,7 @@ public class AlgorithmByTable {
 		
 		//
 		initial_create_sample(3000, (HashSet<Integer>) used.all_hits, sample_IndexWriter, db_IndexSearcher);
-		sample_IndexReader=IndexReader.open(sample_Directory);
+		sample_IndexReader=DirectoryReader.open(sample_Directory);
 		sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
 		System.out.println("阶段1");
 		System.out.println("样本大小"+sample_IndexReader.numDocs());
@@ -127,8 +129,7 @@ public class AlgorithmByTable {
 		total_hit+=used.add_from_original_to_sample(used.all_hits, sample_IndexWriter, db_IndexReader, db_IndexSearcher,container);
 		System.out.println("阶段3");
 		
-		sample_IndexReader=IndexReader.openIfChanged(sample_IndexReader);
-		sample_IndexSearcher.close();
+		sample_IndexReader=DirectoryReader.openIfChanged((DirectoryReader)sample_IndexReader);
 		sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
 		sample_size=sample_IndexReader.numDocs();
 		HR=sample_size/db_size;
@@ -148,7 +149,7 @@ public class AlgorithmByTable {
 		container.add(initail_Query);
 		used.q.add(initail_Query);
 		total_hit+=used.add_from_original_to_sample(used.all_hits, sample_IndexWriter, db_IndexReader, db_IndexSearcher,container);
-		sample_IndexReader=IndexReader.open(sample_Directory);
+		sample_IndexReader=DirectoryReader.open(sample_Directory);
 		sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
 		sample_size=sample_IndexReader.numDocs();
 		HR=sample_size/db_size;
@@ -169,8 +170,7 @@ public class AlgorithmByTable {
 				container.add(array.get(i));
 			}
 			total_hit+=used.add_from_original_to_sample(used.all_hits, sample_IndexWriter, db_IndexReader, db_IndexSearcher,container);
-			sample_IndexReader=IndexReader.openIfChanged(sample_IndexReader);
-			sample_IndexSearcher.close();
+			sample_IndexReader=DirectoryReader.openIfChanged((DirectoryReader)sample_IndexReader);
 			sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
 			sample_size=sample_IndexReader.numDocs();
 			HR=sample_size/db_size;
@@ -191,7 +191,7 @@ public class AlgorithmByTable {
 		container.add(initail_Query);
 		used.q.add(initail_Query);
 		total_hit+=used.add_from_original_to_sample(used.all_hits, sample_IndexWriter, db_IndexReader, db_IndexSearcher,container);
-		sample_IndexReader=IndexReader.open(sample_Directory);
+		sample_IndexReader=DirectoryReader.open(sample_Directory);
 		sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
 		sample_size=sample_IndexReader.numDocs();
 		HR=sample_size/db_size;
@@ -224,8 +224,7 @@ public class AlgorithmByTable {
 			}
 
 			total_hit+=used.add_from_original_to_sample(used.all_hits, sample_IndexWriter, sample_IndexReader, db_IndexSearcher,container);
-			sample_IndexReader=IndexReader.openIfChanged(sample_IndexReader);
-			sample_IndexSearcher.close();
+			sample_IndexReader=DirectoryReader.openIfChanged((DirectoryReader)sample_IndexReader);
 			sample_IndexSearcher=new IndexSearcher(sample_IndexReader);
 			sample_size=sample_IndexReader.numDocs();
 			HR=sample_size/db_size;
@@ -238,8 +237,6 @@ public class AlgorithmByTable {
 	public void destroy() throws IOException
 	{
 		bufferedWriter.close();
-		db_IndexSearcher.close();
-		sample_IndexSearcher.close();
 		sample_IndexWriter.close();
 		db_IndexReader.close();
 		db_Directory.close();

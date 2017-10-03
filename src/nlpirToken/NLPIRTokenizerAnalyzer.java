@@ -18,18 +18,18 @@ public class NLPIRTokenizerAnalyzer extends Analyzer{
 	String sLicenceCode=null;
 	String userDict=null;
 	boolean bOverwrite=false;
-	
+	NLPIRTokenizer tokenizer = null;
 	/**
 	 * 鍒嗚瘝鍒濆鍖�
 	 * 
 	 * @param data
-	 *            璇嶅�?璺�?
+	 *            璇嶅�?璺�?
 	 * @param encoding
-	 *            缂栫�? 0锛欸BK锛�1锛歎TF-8
+	 *            缂栫�? 0锛欸BK锛�1锛歎TF-8
 	 * @param sLicenceCode
-	 *            鎺堟潈鐮侊紝榛樿涓�?""
+	 *            鎺堟潈鐮侊紝榛樿涓�?""
 	 * @param userDict
-	 *            鐢ㄦ埛璇嶅吀鏂囦�?
+	 *            鐢ㄦ埛璇嶅吀鏂囦�?
 	 * @param nOverwrite
 	 *            鐢ㄦ埛璇嶅吀寮曞叆鏂瑰紡
 	 */
@@ -43,8 +43,13 @@ public class NLPIRTokenizerAnalyzer extends Analyzer{
 	
 	@Override
 	protected TokenStreamComponents createComponents(String fieldName) {
-		final Tokenizer tokenizer = new NLPIRTokenizer(this.data,this.encoding,this.sLicenceCode,this.userDict,this.bOverwrite);
+		tokenizer = new NLPIRTokenizer(this.data,this.encoding,this.sLicenceCode,this.userDict,this.bOverwrite);
+		//tokenizer.exit();
 		return new TokenStreamComponents(tokenizer);
+	}
+	
+	public void exit() {
+		tokenizer.exit();
 	}
 
 }

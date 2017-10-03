@@ -5,11 +5,13 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Random;
 
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.IndexSearcher;
@@ -60,11 +62,11 @@ public class RandomAlgorithm {
 
 		Algorithm used=new Algorithm();
 		container=new ArrayList<>();
-		Directory db_Directory=FSDirectory.open(new File(Algorithm.DB_path_Wiki));
-		IndexReader db_IndexReader=IndexReader.open(db_Directory);
+		Directory db_Directory=FSDirectory.open(Paths.get(Algorithm.DB_path_Wiki));
+		IndexReader db_IndexReader=DirectoryReader.open(db_Directory);
 		IndexSearcher db_IndexSearcher=new IndexSearcher(db_IndexReader);
 		
-		Directory d_Directory=FSDirectory.open(new File(Algorithm.sample_D_path1));
+		Directory d_Directory=FSDirectory.open(Paths.get(Algorithm.sample_D_path1));
 		
 		IndexWriter d_IndexWriter=new IndexWriter(d_Directory,used.indexWriterConfig);
 		IndexReader d_IndexReader;
@@ -82,7 +84,7 @@ public class RandomAlgorithm {
 //			bufferedWriter.write("the "+pool.size()+"turn \n");
 			total_hit+=used.add_from_original_to_sample(used.all_hits, d_IndexWriter, db_IndexReader, db_IndexSearcher,container);
 			
-			d_IndexReader=IndexReader.open(d_Directory);
+			d_IndexReader=DirectoryReader.open(d_Directory);
 			//d_IndexReader=IndexReader.openIfChanged(d_IndexReader);
 			d_size=d_IndexReader.numDocs();
 //			float New=d_size-pre_d_size;
@@ -100,7 +102,6 @@ public class RandomAlgorithm {
 
 		bufferedWriter.close();
 		d_IndexWriter.close();
-		db_IndexSearcher.close();
 		//d_IndexReader.close();
 		db_IndexReader.close();
 		d_Directory.close();
