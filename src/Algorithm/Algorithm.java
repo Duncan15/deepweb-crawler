@@ -2,17 +2,13 @@ package Algorithm;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-
 import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -31,70 +27,54 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-
 import com.cwc.lucene.analyzer.chinese.JieBaChineseAnalyzer;
+
+import RandomTermGetter.RandomAlgorithm;
 public class Algorithm {
-	public class Quality
-	{
-		int New;
-		int Coat;
-		float quality;
-		public Quality(int New,int Coat,float quality)
-		{
-			this.New=New;
-			this.Coat=Coat;
-			this.quality=quality;
-		}
-	}
-	public final static String reuters="F:/experiment/Algorithm_1_DB";
-	public final static String sample_D_path1="F:/experiment/sample1";
-	public final static String sample_D_path2="F:/experiment/sample2";
-	public final static String sample_D_path3="F:/experiment/sample3";
-	public final static String DB_path_Wiki="F:/experiment/enwiki-20161220-pages-articles-multistream-index-sample";
-	public final static String wiki2_noredirect="F:/experiment/enwiki-20161220-pages-articles-multistream-sample_2noredirect";
+	public final static String sample_D_path1="F:/experiment/tmp/sample1";
+	public final static String sample_D_path2="F:/experiment/tmp/sample2";
+	public final static String sample_D_path3="F:/experiment/tmp/sample3";
+	public final static String sample_D_path4="F:/experiment/tmp/sample4";
+	public final static String reuters="F:/experiment/Index6.6.1/reuters_new";
+	public final static String chinese_DB="F:/experiment/Index6.6.1/Index034jieba";
+	public final static String citeSeer_v2="F:/experiment/Index6.6.1/citeSeer_new";
+	public final static String wiki_new="F:/experiment/Index6.6.1/wiki_new";
 	
-	//public final static String chinese_DB="F:/experiment/Index034jieba";
-	public final static String chinese_DB="F:/experiment/Indexjieba";
-	public final static String citeSeer_v2="F:/experiment/index_network_dblp_citeseer_fulltext_url_v2";
-	public final static String wiki_new="F:/experiment/enwiki-20161220-pages-articles-multistream_noredirect-sample";
-	public final static String path_for_algorithm31="F:/experiment/1path_in_algorithm3";
-	public final static String path_for_algorithm32="F:/experiment/2path_in_algorithm3";
-	public final static String path_for_algorithm33="F:/experiment/3path_in_algorithm3";
-	public final static String path_for_algorithm34="F:/experiment/4path_in_algorithm3";
-	public final static String path_for_algorithm35="F:/experiment/5path_in_algorithm3";
+	private Analyzer analyzer=new StandardAnalyzer();
+	private float lowerBound;
+	private float upperBound;
+	private String mainField;
+	private String storedFile;
+	private String termStoredFile;
+	private int recordK=2;
+	private BufferedWriter hrorWriter;
+	private BufferedWriter termWriter;
 	
-	static String initial_queries="caucus";
-
-	static Float lambda=null;
-	private int IFINITY=100000000;
-	
+	static String initialQuery;
+	static int IFINITY=100000000;
 	//q is a set of the queries
-	static ArrayList<String> q=new ArrayList<>();
+	public ArrayList<String> q=new ArrayList<>();
 	//new_q is a set of the new queries
-	static ArrayList<String> new_q=new ArrayList<>();
-
-	private String main_Field;
-	private float lower_bound;
-	private float upper_bound;
-	private int algo2_Cost;
-	
-	private String stored_file;
+	public ArrayList<String> new_q=new ArrayList<>();
+	public IndexWriterConfig  indexWriterConfig=new IndexWriterConfig(analyzer);
+	public IndexWriterConfig indexWriterConfig2=new IndexWriterConfig(analyzer);
+	public Directory db_Directory;
+	public IndexReader db_IndexReader;
+	public IndexSearcher db_IndexSearcher;
+	public Directory d_Directory;
+	public IndexWriter d_IndexWriter;
+	public IndexReader d_IndexReader;
+	public IndexSearcher d_IndexSearcher;
+	public int dbSize;
+	public int allDownloadNumber;
 
 	//used for algorithm2
-	static Set<Integer> all_hits=new HashSet<>();
-	Set<Integer> s_in_Algorithm_2=new HashSet<>();
-	Map<String, Integer> df_D=new HashMap<>();//all the items from D
-	Map<String, HashSet<Integer>> update_df_D=new HashMap<>();//the dynamic update df_D
-
-	//used for algorithm3
-	static ArrayList<String> virtual_q=new ArrayList<>();
-	static Set<Integer> virtual_all_hits=new HashSet<>();
-
-	static Analyzer analyzer=new StandardAnalyzer();
-	public static IndexWriterConfig  indexWriterConfig=new IndexWriterConfig(analyzer);
-	public static IndexWriterConfig indexWriterConfig2=new IndexWriterConfig(analyzer);
+	protected Set<Integer> allHits=new HashSet<>();
+	protected Set<Integer> backup=new HashSet<>();
+	protected Map<String, Integer> df_D=new HashMap<>();//all the items from D
+	protected Map<String, HashSet<Integer>> update_df_D=new HashMap<>();//the dynamic update df_D
 	
-	public void analyzer_Setter(boolean chineseFlag) throws IOException
+	public void analyzerSetter(boolean chineseFlag) throws IOException
 	{
 		if(chineseFlag)
 		{
@@ -107,21 +87,61 @@ public class Algorithm {
 		indexWriterConfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
 		indexWriterConfig2.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
 	}
-	public void main_Field_Setter(String text)
+	public void mainFieldSetter(String text)
 	{
-		this.main_Field=text;
+		this.mainField=text;
 	}
-	public void bound_Setter(float lower,float upper)
+	public void boundSetter(float lower,float upper)
 	{
-		this.upper_bound=upper;
-		this.lower_bound=lower;
+		this.upperBound=upper;
+		this.lowerBound=lower;
 	}
-	public void stored_file_Setter(String tmp)
+	public void storedFileSetter(String tmp)
 	{
-		this.stored_file=tmp;
+		this.storedFile=tmp;
 	}
-	
-	public Quality getQual1(int k,ArrayList<String> Terms,Map<String, HashSet<Integer>> search_in_DB,Map<String, Integer> df_in_search_in_DB)
+	public void termStoredFileSetter(String tmp)
+	{
+		this.termStoredFile=tmp;
+	}
+	public boolean qualityProcessing(int k,int preK,ArrayList<String> terms,Map<String, HashSet<Integer>> searchInDB,Map<String, Integer> dfInSearchInDB) throws IOException
+	{
+		Set<Integer> midState=new HashSet<>();
+		midState.addAll(allHits);
+		Quality pre_unity=getQual1(preK, terms, searchInDB, dfInSearchInDB,backup);
+		ArrayList<String> virtual_Term=Algorithm2(d_IndexSearcher,q);
+		for(int i=preK;i<k;i++)
+		{
+			queryInDB(terms.get(i), searchInDB, dfInSearchInDB,true);//预处理
+		}
+		Quality qual1_unity=getQual1(k, terms, searchInDB, dfInSearchInDB,backup);
+		float improve_cost=(float) (0.0001*allHits.size()*update_df_D.size());
+		int left_cost=qual1_unity.Cost-pre_unity.Cost-(int)improve_cost;
+		
+		int New=0;
+		HashSet<Integer> inner=new HashSet<>();
+		for(int local_cost=0,i=0;;i++)
+		{
+			String term=virtual_Term.get(i);
+			queryInDB(term, searchInDB, dfInSearchInDB,false);
+			local_cost=local_cost+100+dfInSearchInDB.get(term);
+			if(local_cost<left_cost)
+			{
+				inner.addAll(searchInDB.get(term));
+			}
+			else
+				break;
+		}
+		inner.removeAll(midState);
+		New=inner.size();
+		New=New+pre_unity.New;
+		
+		float qual1=qual1_unity.quality;
+		float qual2=(float)New/qual1_unity.Cost;
+		if(qual2>=qual1)return true;
+		return false;
+	}
+	public Quality getQual1(int k,ArrayList<String> Terms,Map<String, HashSet<Integer>> search_in_DB,Map<String, Integer> df_in_search_in_DB,Set<Integer> all_hits)
 	{
 		int New=0;
 		int Cost=0;
@@ -129,158 +149,24 @@ public class Algorithm {
 		Set<Integer> tmp_All=new HashSet<>();
 		for(int i=0;i<k;i++)
 		{
-			
 			tmp_All.addAll(search_in_DB.get(Terms.get(i)));
 			Cost+=df_in_search_in_DB.get(Terms.get(i));
-			
-			
 		}
+		tmp_All.removeAll(all_hits);
 		New=tmp_All.size();
-		return new Quality(New, Cost, (float)New/Cost);
+		return new Quality(New, Cost);
 	}
-	
-	public Quality getQual2(Set<Integer> all_hits_set,int k,ArrayList<String> Terms,ArrayList<String> q_be_checked,Set<Integer> virtual_all_hits,Map<String, HashSet<Integer>> search_in_DB,Map<String, Integer> df_in_search_in_DB,Directory a3_Directory,IndexWriter a3_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,int pre_cost) throws IOException
-	{
-			k=k/2;
-			Quality preQual=getQual1(k, Terms, search_in_DB, df_in_search_in_DB);
-			int qual1_cost=preQual.Coat;
-			virtual_q.clear();
-			
-			for(int i=0;i<k;i++)
-			{
-				virtual_q.add(Terms.get(i));
-			}
-			add_from_original_to_sample(virtual_all_hits,a3_IndexWriter, db_IndexReader, db_IndexSearcher, virtual_q);
-			//the first half
-			
-			for(int i=0;i<q_be_checked.size();i++)
-			{
-				virtual_q.add(q_be_checked.get(i));
-			}//将之前挑选的词加入virtual_q
-			IndexReader a3_IndexReader=DirectoryReader.open(a3_Directory);
-			IndexSearcher a3_IndexSearcher=new IndexSearcher(a3_IndexReader);
-			ArrayList<String> virtual_Term=Algorithm_2(a3_IndexReader, a3_IndexSearcher,virtual_q);
-			float improve_cost=(float) (0.0001*virtual_all_hits.size()*update_df_D.size());
-			int left_cost=pre_cost-qual1_cost-(int)improve_cost;
-			int New=0;
-			HashSet<Integer> inner=new HashSet<>();
-			for(int local_cost=0,i=0;;i++)
-			{
-				TermQuery termQuery=new TermQuery(new Term(main_Field,virtual_Term.get(i)));
-				ScoreDoc[] hits=db_IndexSearcher.search(termQuery, 1000000).scoreDocs;
-				local_cost=local_cost+100+hits.length;
-				if(local_cost<left_cost)
-				{
-					for(ScoreDoc every_hit:hits)
-					{
-						inner.add(every_hit.doc);
-					}
-				}
-				else
-					break;
-			}
-			inner.removeAll(virtual_all_hits);
-			New=inner.size();
-			New=New+preQual.New;
-			a3_IndexReader.close();
-			return new Quality(New, pre_cost, (float)New/pre_cost);
-	}
-	public Quality getQual2_for_improved1(Set<Integer> all_hits_set,int k,ArrayList<String> Terms,Set<Integer> virtual_all_hits,Map<String, HashSet<Integer>> search_in_DB,Map<String, Integer> df_in_search_in_DB,Directory a3_Directory,IndexWriter a3_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,int pre_cost,int initial_pool,Map<String, HashSet<Integer>> update_df_D) throws IOException
-	{
-			k=k/2;
-			Quality preQual=getQual1(k, Terms, search_in_DB, df_in_search_in_DB);
-			int qual1_cost=preQual.Coat;
-			virtual_q.clear();
-
-			for(int i=0;i<k;i++)
-			{
-				virtual_q.add(Terms.get(i));
-			}
-			
-			//制作update_df_D的本地副本,同时处理该副本，删去本地已更新的前半部分
-			Map<String, HashSet<Integer>> tmp_df_D=new HashMap<>();
-			tmp_df_D.putAll(update_df_D);
-			
-			Set<Integer> tmp_set=new HashSet<>();
-			for(String each:virtual_q)
-			{
-				
-				tmp_set.addAll(tmp_df_D.get(each));
-				tmp_df_D.remove(each);
-			}
-			
-			//处理临时initial_pool,去除前半部分
-			initial_pool-=tmp_set.size();
-			
-			for(String each:tmp_df_D.keySet())
-			{
-				tmp_df_D.get(each).removeAll(tmp_set);
-			}
-			
-			
-			add_from_original_to_sample(virtual_all_hits,a3_IndexWriter, db_IndexReader, db_IndexSearcher, virtual_q);
-			//the first half
-			
-			IndexReader a3_IndexReader=DirectoryReader.open(a3_Directory);
-			IndexSearcher a3_IndexSearcher=new IndexSearcher(a3_IndexReader);
-			ArrayList<String> virtual_Term=Algorithm_2_for_improved1(a3_IndexReader, a3_IndexSearcher,initial_pool,tmp_df_D);
-			if(virtual_Term.size()==0)
-			{
-				return null;
-			}
-			float improve_cost=(float) (0.0001*virtual_all_hits.size()*df_D.size());
-
-			int left_cost=pre_cost-qual1_cost-(int)improve_cost;
-			int New=0;
-			HashSet<Integer> inner=new HashSet<>();
-			
-			for(int local_cost=0,i=0;;i++)
-			{
-				TermQuery termQuery=new TermQuery(new Term(main_Field,virtual_Term.get(i)));
-				ScoreDoc[] hits=db_IndexSearcher.search(termQuery, 1000000).scoreDocs;
-				local_cost=local_cost+100+hits.length;
-				if(local_cost<left_cost)
-				{
-					
-					
-					for(ScoreDoc every_hit:hits)
-					{
-						inner.add(every_hit.doc);
-					}
-					
-					//System.out.println("quality2:query:\t"+virtual_Term.get(i));//text
-					//System.out.println("quality2:new\t"+inner.size());//text
-					//System.out.println("quality2:cost\t"+hits.length);//text
-					
-				}
-				else
-					break;
-			}
-			inner.removeAll(virtual_all_hits);
-			
-			
-			New=inner.size();
-			
-			
-			New=New+preQual.New;
-			a3_IndexReader.close();
-			System.out.println("quality2="+(float)New/pre_cost); 
-			
-			
-			return new Quality(New, pre_cost, (float)New/pre_cost);
-	}
-
-	public HashMap<String, HashSet<Integer>> initial_setting(int inital_sample_num,IndexReader initial_IndexReader,IndexSearcher initial_IndexSearcher) throws IOException
+	public HashMap<String, HashSet<Integer>> initialSetting(int inital_sample_num,IndexReader initial_IndexReader,IndexSearcher initial_IndexSearcher) throws IOException
 	{
 		
 		HashMap<String, HashSet<Integer>> tmp=new HashMap<>();
 		Fields fields=MultiFields.getFields(initial_IndexReader);
-		Terms terms=fields.terms(main_Field);
+		Terms terms=fields.terms(mainField);
 		TermsEnum d_Enum=terms.iterator();
 		while (d_Enum.next() != null)
 		{
 			String termString=d_Enum.term().utf8ToString();
-			TermQuery termQuery=new TermQuery(new Term(main_Field, termString));
+			TermQuery termQuery=new TermQuery(new Term(mainField, termString));
 			ScoreDoc[] hits=initial_IndexSearcher.search(termQuery,inital_sample_num ).scoreDocs;
 			HashSet<Integer> inner_Set=new HashSet<>();
 			for(ScoreDoc hit:hits)
@@ -293,8 +179,7 @@ public class Algorithm {
 		System.out.println("dynamic_DF中键值对数量为"+tmp.size());
 		return tmp;
 	}
-	
-	public void initial_add_from_original_to_sample_by_SET(Set<Integer> allhit,IndexWriter d_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher) throws IOException, IOException
+	public void initialAddFromOriginalToSampleBySet(Set<Integer> allhit,IndexWriter d_IndexWriter) throws IOException, IOException
 	{
 		for(int i :allhit)
 		{
@@ -303,48 +188,46 @@ public class Algorithm {
 		}
 		d_IndexWriter.commit();
 	}
-	public float add_from_original_to_sample(Set<Integer> allhit,IndexWriter d_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,ArrayList<String> new_q) throws IOException
+	public float addFromOriginalToSample(ArrayList<String> new_q) throws IOException
 	{
 		float result=0;
 		for (String query:new_q)
 		{
-			TermQuery termQuery=new TermQuery(new Term(main_Field, query));
+			TermQuery termQuery=new TermQuery(new Term(mainField, query));
 			ScoreDoc[] hits=db_IndexSearcher.search(termQuery, 1000000).scoreDocs;
 			result+=hits.length;
 			for(ScoreDoc hit:hits)
 			{
-				if(!allhit.contains(hit.doc))
+				if(!allHits.contains(hit.doc))
 				{
 					Document document=db_IndexSearcher.doc(hit.doc);
 					d_IndexWriter.addDocument(document);
-					allhit.add(hit.doc);
+					allHits.add(hit.doc);
 				}
 			}
 			d_IndexWriter.commit();
 		}
-
 		return result;
 	}
-
-	public ArrayList<String> Algorithm_2(IndexReader d_IndexReader,IndexSearcher d_IndexSearcher,ArrayList<String> q_be_checked) throws IOException
+	public ArrayList<String> Algorithm2(IndexSearcher indexSearcher,ArrayList<String> q_be_checked) throws IOException
 	{
+		IndexReader indexReader=indexSearcher.getIndexReader();
 		ArrayList<String> Terms=new ArrayList<>();
-		s_in_Algorithm_2.clear();
+		Set<Integer> sInAlgorithm2=new HashSet<>();
 		df_D.clear();
 		update_df_D.clear();
-		int d_Size=d_IndexReader.numDocs();
-		Fields fields=MultiFields.getFields(d_IndexReader);
-		Terms terms=fields.terms(main_Field);
-		
+		int d_Size=indexReader.numDocs();
+		Fields fields=MultiFields.getFields(indexReader);
+		Terms terms=fields.terms(mainField);
 		TermsEnum d_Enum=terms.iterator();
 		while (d_Enum.next()!=null)
 		{
 			String termString=d_Enum.term().utf8ToString();
-			if((lower_bound*d_Size)<d_Enum.docFreq()&&d_Enum.docFreq()<=(upper_bound*d_Size))
+			if((lowerBound*d_Size)<d_Enum.docFreq()&&d_Enum.docFreq()<=(upperBound*d_Size))
 			{
 				df_D.put(termString, d_Enum.docFreq());
-				TermQuery termQuery=new TermQuery(new Term(main_Field, termString));
-				ScoreDoc[] hits=d_IndexSearcher.search(termQuery, 1000000).scoreDocs;
+				TermQuery termQuery=new TermQuery(new Term(mainField, termString));
+				ScoreDoc[] hits=indexSearcher.search(termQuery, 1000000).scoreDocs;
 				HashSet<Integer> inner_Set=new HashSet<>();
 				for(ScoreDoc hit:hits)
 				{
@@ -352,7 +235,6 @@ public class Algorithm {
 				}
 				update_df_D.put(termString,inner_Set);
 			}
-			
 		}
 		if(q_be_checked!=null)
 		{
@@ -366,7 +248,7 @@ public class Algorithm {
 			}
 		}
 		//the above is initial
-		while(s_in_Algorithm_2.size()<0.999*d_Size)
+		while(sInAlgorithm2.size()<0.999*d_Size)
 		{
 			Set<String> T=new HashSet<>();
 			String qi_final=null;
@@ -422,7 +304,7 @@ public class Algorithm {
 			Terms.add(qi_final);
 			Set<Integer> to_be_sub=new HashSet<>();
 			to_be_sub.addAll(update_df_D.get(qi_final));
-			s_in_Algorithm_2.addAll(to_be_sub);
+			sInAlgorithm2.addAll(to_be_sub);
 			for(String iterator:update_df_D.keySet())
 			{
 				update_df_D.get(iterator).removeAll(to_be_sub);
@@ -430,633 +312,163 @@ public class Algorithm {
 		}
 		return Terms;
 	}
-	public ArrayList<String> Algorithm_2_for_improved1(IndexReader d_IndexReader,IndexSearcher d_IndexSearcher,int initial_pool,Map<String , HashSet<Integer>> update_df_D) throws IOException
+	public void queryInDB(String term,Map<String, HashSet<Integer>> searchInDB,Map<String, Integer> dfInSearchInDB,boolean downloadFlag) throws IOException
 	{
-		s_in_Algorithm_2.clear();
-		df_D.clear();
-		algo2_Cost=0;//for compute
-		
-		//Terms存放返回值
-		ArrayList<String> Terms=new ArrayList<>();
-		
-		//创建algorithm2内部使用的df
-		Map<String, HashSet<Integer>> inner_update_df_D=new HashMap<>();
-		inner_update_df_D.putAll(update_df_D);
-		
-		
-		int d_Size=d_IndexReader.numDocs();
-		Fields fields=MultiFields.getFields(d_IndexReader);
-		Terms terms=fields.terms(main_Field);
-		
-		TermsEnum d_Enum=terms.iterator();
-		while (d_Enum.next()!=null)
+		if(!searchInDB.containsKey(term))
 		{
-			String termString=d_Enum.term().utf8ToString();
-			algo2_Cost++;//for compute
-			if(inner_update_df_D.containsKey(termString))
-			{
-				if((lower_bound*d_Size)<d_Enum.docFreq()&&d_Enum.docFreq()<=(upper_bound*d_Size))
-				{
-					df_D.put(termString, d_Enum.docFreq());
-				}
-			}
-		}
-		while(s_in_Algorithm_2.size()<initial_pool)
-		{
-			Set<String> T=new HashSet<>();
-			String qi_final=null;
-			float max_Fre=0.0f;//the bigst new/cost value which has been known.
-			int maximize=0;//the bigest df value which has been known.
-			float maximum=0.0f;//tmp
-
-
-			//select the queries which have the bigest new/cost value
-			for(String each_In_Map:df_D.keySet())
-			{
-				if(inner_update_df_D.get(each_In_Map).size()!=0)
-				{
-					maximum=(float)inner_update_df_D.get(each_In_Map).size()/(float)df_D.get(each_In_Map);//select the queries which have the bigest new/cost value
-					if(maximum>max_Fre)
-					{
-						max_Fre=maximum;
-						T.clear();
-						T.add(each_In_Map);
-					}
-					else if(maximum==max_Fre)
-					{
-						T.add(each_In_Map);
-					}
-				}
-				
-			}
-			algo2_Cost+=df_D.size();//for compute
-			
-			
-			//select the query which has the bigest df value
-			if(T.size()>1)
-			{
-				maximize=0;
-				for(String qi:T)
-				{
-					if(maximize<df_D.get(qi))
-					{
-						maximize=df_D.get(qi);
-						qi_final=qi;
-					}
-				}
-			}
-			else if(T.size()==1)
-			{
-				for(String qi:T)
-				{
-					qi_final=qi;
-					maximize=df_D.get(qi);
-				}
-			}
-			else if(T.size()==0)
-				{
-					System.out.println("无词可选，异常退出");;
-					break;//stop if can't achieve the 0.999 and can't get another query
-				}
-			Set<Integer> to_be_sub=new HashSet<>();
-			to_be_sub.addAll(inner_update_df_D.get(qi_final));
-			//System.out.println(to_be_sub.size());
-			
-			s_in_Algorithm_2.addAll(to_be_sub);
-			inner_update_df_D.remove(qi_final);
-			df_D.remove(qi_final);
-			
-			for(String iterator:inner_update_df_D.keySet())
-			{
-				inner_update_df_D.get(iterator).removeAll(to_be_sub);
-			}
-			
-			algo2_Cost+=inner_update_df_D.size();//for compute
-			
-			//System.out.println(s_in_Algorithm_2.size());
-			Terms.add(qi_final);
-		}
-		
-		return Terms;
-	}
-
-	public ArrayList<String> Algorithm_3_for_improved1(Set<Integer> asset,Directory a3_Directory,IndexWriter a3_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,ArrayList<String> Terms,int initial_pool,Map<String, HashSet<Integer>> update_df_D) throws IOException
-	{
-		
-		new_q.clear();
-		//calculate the new and cost for every query
-		Map<String, HashSet<Integer>> search_in_DB=new HashMap<>();
-		Map<String, Integer> df_in_search_in_DB=new HashMap<>();
-		
-		for(String eachTerm:Terms)
-		{
-			TermQuery termQuery=new TermQuery(new Term(main_Field,eachTerm));
-			ScoreDoc[] hits=db_IndexSearcher.search(termQuery, 100000).scoreDocs;
+			TermQuery termQuery=new TermQuery(new Term(mainField,term));
+			ScoreDoc[] hits=db_IndexSearcher.search(termQuery, IFINITY).scoreDocs;
 			HashSet<Integer> inner=new HashSet<>();
 			for(ScoreDoc every_hit:hits)
 			{
 				inner.add(every_hit.doc);
-			}
-			inner.removeAll(asset);
-			search_in_DB.put(eachTerm, inner);//as new
-			df_in_search_in_DB.put(eachTerm, hits.length);//as cost
-		}
-		
-		virtual_all_hits.clear();
-		a3_IndexWriter.deleteAll();
-		a3_IndexWriter.commit();
-		virtual_all_hits.addAll(asset);
-		initial_add_from_original_to_sample_by_SET(asset, a3_IndexWriter, db_IndexReader, db_IndexSearcher);
-
-		
-		
-		int k=1;
-		float qual1=0,qual2=-1,u=0.05f;
-		while(qual1>qual2)
-		{
-			k=2*k;
-			if(k<=Terms.size())
-			{
-				Quality qual1_unity=getQual1(k, Terms, search_in_DB, df_in_search_in_DB);
-				qual1=qual1_unity.quality;
-				int pre_cost=qual1_unity.Coat;
- 				Quality qual2_unity=getQual2_for_improved1(asset,k, Terms, virtual_all_hits,search_in_DB, df_in_search_in_DB, a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher, pre_cost,initial_pool,update_df_D);
- 				if(qual2_unity==null)return null;
- 				qual2=qual2_unity.quality;
- 				System.out.println("k="+k);
- 				System.out.println("\n\n\n");
-			}
-			else
-				break;
-		}
-		
-		if(Math.abs((double)(qual2-qual1)/(qual1+qual2))<u&&k<=Terms.size())
-		{
-			for(int i=0;i<k;i++)
-			{
-				new_q.add(Terms.get(i));
-			}
-			
-			System.out.println("ture ture ture       new/cost="+qual1);
-			System.out.println("退出的k="+k);
-			System.out.println("\n\n\n");
-			return new_q;
-		}
-
-		int step=k/4,p=k/2+step,r=k/2;
-		
-		virtual_all_hits.clear();//clear the virtual_all_hits
-		a3_IndexWriter.deleteAll();
-		a3_IndexWriter.commit();
-		virtual_all_hits.addAll(asset);
-		initial_add_from_original_to_sample_by_SET(asset, a3_IndexWriter, db_IndexReader, db_IndexSearcher);
-		
-		while(true)
-		{
-			
-			while(p>Terms.size())
-			{
-				System.out.println("the query number got in algorithm3 is more than the number in algorithm2");
-				step=step/2;
-				p=p-step;
-				if(step<1)
+				if(!downloadFlag)continue;
+				if(!allHits.contains(every_hit.doc))
 				{
-					k=r;
-					for(int i=0;i<k;i++)
-					{
-						new_q.add(Terms.get(i));
-					}
-					System.out.println("new/cost="+qual1);
-					System.out.println("退出的k="+k);
-					System.out.println("\n\n\n");
-					return new_q;
+					Document document=db_IndexSearcher.doc(every_hit.doc);
+					d_IndexWriter.addDocument(document);
+					allHits.add(every_hit.doc);
 				}
 			}
-			Quality qual1_unity=getQual1(p, Terms, search_in_DB, df_in_search_in_DB);
-			qual1=qual1_unity.quality;
-			Quality qual2_unity=getQual2_for_improved1(asset,k, Terms, virtual_all_hits,search_in_DB, df_in_search_in_DB, a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher, qual1_unity.Coat,initial_pool,update_df_D);
-			if(qual2_unity==null)return null;
-			qual2=qual2_unity.quality;
-			
-			System.out.println("k="+p);
-			System.out.println("\n\n\n");
-			if(Math.abs((double)(qual2-qual1)/(qual1+qual2))<u)
-			{
-				k=p;
-				for(int i=0;i<k;i++)
-				{
-					new_q.add(Terms.get(i));
-				}
-				System.out.println("ture ture ture      new/cost="+qual1);
-				System.out.println("退出的k="+k);
-				System.out.println("\n\n\n");
-				return new_q;
+			if(downloadFlag){
+				q.add(term);
+				allDownloadNumber+=hits.length;
+				double HR=(double)allHits.size()/dbSize;
+				double OR=(double)allDownloadNumber/allHits.size();
+				System.out.println("HR="+HR+"   OR="+OR+"  "+term);
+				hrorWriter.write(HR+","+OR);
+				hrorWriter.newLine();
+				termWriter.write(term);
+				termWriter.newLine();
 			}
-			if(qual1<qual2)
-			{
-				step=step/2;
-				p=p-step;
-				virtual_all_hits.clear();//clear the virtual_all_hits
-				a3_IndexWriter.deleteAll();
-				a3_IndexWriter.commit();
-				virtual_all_hits.addAll(asset);
-				initial_add_from_original_to_sample_by_SET(asset, a3_IndexWriter, db_IndexReader, db_IndexSearcher);
-			}
-			if(qual1>qual2)
-			{
-				r=p;
-				p=p+step;
-			}
-			if(step<1)
-			{
-				k=r;
-				for(int i=0;i<k;i++)
-				{
-					new_q.add(Terms.get(i));
-					
-				}
-				System.out.println("new/cost="+qual1);
-				System.out.println("退出的k="+k);
-				System.out.println("\n\n\n");
-				return new_q;
-			}
+			searchInDB.put(term, inner);//no new
+			dfInSearchInDB.put(term, hits.length);
+			d_IndexWriter.commit();
 		}
 	}
-	public ArrayList<String> Algorithm_3(Set<Integer> asset,Directory a3_Directory,IndexWriter a3_IndexWriter,IndexReader db_IndexReader,IndexSearcher db_IndexSearcher,ArrayList<String> Terms,ArrayList<String> q_be_checked) throws IOException
+	public void Algorithm3(ArrayList<String> Terms) throws IOException
 	{
 		new_q.clear();
-
 		//calculate the new and cost for every query
 		Map<String, HashSet<Integer>> search_in_DB=new HashMap<>();
 		Map<String, Integer> df_in_search_in_DB=new HashMap<>();
-		for(String eachTerm:Terms)
+		backup.clear();
+		backup.addAll(allHits);
+		int k=recordK/2;
+		int preK=0;
+		for(int i=0;i<k;i++)
 		{
-			TermQuery termQuery=new TermQuery(new Term(main_Field,eachTerm));
-			ScoreDoc[] hits=db_IndexSearcher.search(termQuery, 100000).scoreDocs;
-			HashSet<Integer> inner=new HashSet<>();
-			for(ScoreDoc every_hit:hits)
-			{
-				inner.add(every_hit.doc);
-			}
-			inner.removeAll(asset);
-			search_in_DB.put(eachTerm, inner);//as new
-			df_in_search_in_DB.put(eachTerm, hits.length);//as cost
+			queryInDB(Terms.get(i), search_in_DB, df_in_search_in_DB,true);
 		}
-
-
-		virtual_all_hits.clear();
-		a3_IndexWriter.deleteAll();
-		a3_IndexWriter.commit();
-		virtual_all_hits.addAll(asset);
-		initial_add_from_original_to_sample_by_SET(asset, a3_IndexWriter, db_IndexReader, db_IndexSearcher);
-
-
-		int k=1;
-		float qual1=0,qual2=-1,u=0.05f;
-		while(qual1>qual2)
+		while(true)
 		{
+			preK=k;
 			k=2*k;
 			if(k<=Terms.size())
 			{
-				Quality qual1_unity=getQual1(k, Terms, search_in_DB, df_in_search_in_DB);
-				qual1=qual1_unity.quality;
-				System.out.println("quality1="+(float)qual1); 
-				int pre_cost=qual1_unity.Coat;
- 				qual2=getQual2(asset,k, Terms,q_be_checked, virtual_all_hits,search_in_DB, df_in_search_in_DB, a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher, pre_cost).quality;
- 				System.out.println("quality2="+(float)qual2); 
- 				System.out.println("k="+k);
- 				System.out.println("\n\n\n");
+				if(qualityProcessing(k, preK,Terms, search_in_DB, df_in_search_in_DB))break;
 			}
 			else
+			{
+				k=Terms.size();
+				qualityProcessing(k,preK, Terms, search_in_DB, df_in_search_in_DB);
 				break;
-		}
-		if(Math.abs((double)(qual2-qual1)/(qual1+qual2))<u&&k<=Terms.size())
-		{
-			for(int i=0;i<k;i++)
-			{
-				new_q.add(Terms.get(i));
 			}
-			
-			System.out.println("ture ture ture       new/cost="+qual1);
-			System.out.println("退出的k="+k);
-			System.out.println("\n\n\n");
-			return new_q;
+			System.out.println("k="+k);
 		}
+		//改进1
+		recordK=k;
+		for(int i=0;i<k;i++)
+		{
+			new_q.add(Terms.get(i));
+		}
+		System.out.println("\n\n\n");
 
-		int step=k/4,p=k/2+step,r=k/2;
-		
-		virtual_all_hits.clear();//clear the virtual_all_hits
-		a3_IndexWriter.deleteAll();
-		a3_IndexWriter.commit();
-		virtual_all_hits.addAll(asset);
-		initial_add_from_original_to_sample_by_SET(asset, a3_IndexWriter, db_IndexReader, db_IndexSearcher);
-		
-		while(true)
-		{
-			
-			while(p>Terms.size())
-			{
-				System.out.println("the query number got in algorithm3 is more than the number in algorithm2");
-				step=step/2;
-				p=p-step;
-				if(step<1)
-				{
-					k=r;
-					for(int i=0;i<k;i++)
-					{
-						new_q.add(Terms.get(i));
-					}
-					System.out.println("new/cost="+qual1);
-					System.out.println("退出的k="+k);
-					System.out.println("\n\n\n");
-					return new_q;
-				}
-			}
-			Quality qual1_unity=getQual1(p, Terms, search_in_DB, df_in_search_in_DB);
-			qual1=qual1_unity.quality;
-			System.out.println("quality1="+(float)qual1); 
-			qual2=getQual2(asset,p, Terms,q_be_checked, virtual_all_hits,search_in_DB, df_in_search_in_DB, a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher,qual1_unity.Coat ).quality;
-			System.out.println("quality2="+(float)qual2); 
-			System.out.println("k="+p);
-			System.out.println("\n\n\n");
-			if(Math.abs((double)(qual2-qual1)/(qual1+qual2))<u)
-			{
-				k=p;
-				for(int i=0;i<k;i++)
-				{
-					new_q.add(Terms.get(i));
-				}
-				System.out.println("ture ture ture      new/cost="+qual1);
-				System.out.println("退出的k="+k);
-				System.out.println("\n\n\n");
-				return new_q;
-			}
-			if(qual1<qual2)
-			{
-				step=step/2;
-				p=p-step;
-				virtual_all_hits.clear();//clear the virtual_all_hits
-				a3_IndexWriter.deleteAll();
-				a3_IndexWriter.commit();
-				virtual_all_hits.addAll(asset);
-				initial_add_from_original_to_sample_by_SET(asset, a3_IndexWriter, db_IndexReader, db_IndexSearcher);
-			}
-			if(qual1>qual2)
-			{
-				r=p;
-				p=p+step;
-			}
-			if(step<1)
-			{
-				k=r;
-				for(int i=0;i<k;i++)
-				{
-					new_q.add(Terms.get(i));
-					
-				}
-				System.out.println("new/cost="+qual1);
-				System.out.println("退出的k="+k);
-				System.out.println("\n\n\n");
-				return new_q;
-			}
-		}
 	}
-
-	public String getting_initial_Term(int lower_limit,int upper_limit,IndexSearcher target_IndexSearcher) throws IOException
+	public String gettingInitialTerm(int lower_limit,int upper_limit,IndexSearcher target_IndexSearcher) throws IOException
 	{
 		RandomAlgorithm randomAlgorithm=new RandomAlgorithm();
 		String initial_Term=null;
 		while(true)
 		{
 			initial_Term=randomAlgorithm.randomAccess();
-			TermQuery qi_query=new TermQuery(new Term(main_Field, initial_Term));
-			ScoreDoc[] add_to_sample=target_IndexSearcher.search(qi_query,this.IFINITY).scoreDocs;
+			TermQuery qi_query=new TermQuery(new Term(mainField, initial_Term));
+			ScoreDoc[] add_to_sample=target_IndexSearcher.search(qi_query,IFINITY).scoreDocs;
 			if(add_to_sample.length>lower_limit&&add_to_sample.length<upper_limit)break;//确保取词足够
 		}
 		return initial_Term;
 	}
-	public void Algorithm_1(String path_in_algorithm3,String db_Path,String d_Path,Float lambda) throws IOException
+	public void Algorithm1(String db_Path,String d_Path,Float lambda) throws IOException
 	{
-		BufferedWriter hrorWriter=new BufferedWriter(new FileWriter(new File(stored_file)));
-		BufferedWriter bufferedWriter=new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("F:/experiment/result_chinese.txt"))));
-	
-		Directory db_Directory=FSDirectory.open(Paths.get(db_Path));
-		IndexReader db_IndexReader=DirectoryReader.open(db_Directory);
-		IndexSearcher db_IndexSearcher=new IndexSearcher(db_IndexReader);
-		int db_Size=db_IndexReader.numDocs();
+		hrorWriter=new BufferedWriter(new FileWriter(new File(storedFile)));//存HR OR
+		termWriter=new BufferedWriter(new FileWriter(new File(termStoredFile)));//存词
+		db_Directory=FSDirectory.open(Paths.get(db_Path));
+		db_IndexReader=DirectoryReader.open(db_Directory);
+		db_IndexSearcher=new IndexSearcher(db_IndexReader);
+		initialQuery=gettingInitialTerm(10000, 30000, db_IndexSearcher);
+		System.out.println(initialQuery);
+		//initial_queries="our";//真实环境无法random
+		q.add(initialQuery);
+		termWriter.write(initialQuery);
+		termWriter.newLine();
+		d_Directory=FSDirectory.open(Paths.get(d_Path));
+		d_IndexWriter=new IndexWriter(d_Directory,indexWriterConfig);
 		
-		initial_queries=getting_initial_Term(10000, 30000, db_IndexSearcher);
-		bufferedWriter.write(initial_queries);
-		bufferedWriter.newLine();
-		
-		Directory d_Directory=FSDirectory.open(Paths.get(d_Path));
-		IndexWriter d_IndexWriter=new IndexWriter(d_Directory,indexWriterConfig);
 		ArrayList<String> tmp=new ArrayList<>();
-		tmp.add(initial_queries);
-		add_from_original_to_sample(all_hits,d_IndexWriter,db_IndexReader,db_IndexSearcher,tmp);
+		tmp.add(initialQuery);
+		addFromOriginalToSample(tmp);
+		System.out.println("inital sample size is"+allHits.size());
 		
-		System.out.println("inital sample size is"+all_hits.size());
+		d_IndexReader=DirectoryReader.open(d_Directory);
+		d_IndexSearcher=new IndexSearcher(d_IndexReader);
 		
-		IndexReader d_IndexReader=DirectoryReader.open(d_Directory);
-		IndexSearcher d_IndexSearcher=new IndexSearcher(d_IndexReader);
+		dbSize=db_IndexReader.numDocs();
 		int d_Size=d_IndexReader.numDocs();
-		Directory a3_Directory=FSDirectory.open(Paths.get(path_in_algorithm3));
-		IndexWriter a3_IndexWriter=new IndexWriter(a3_Directory,indexWriterConfig2);
-		
-		double all_num=d_Size;
-		hrorWriter.write((double)all_hits.size()/db_Size+","+all_num/all_hits.size());
+		allDownloadNumber=d_Size;
+		hrorWriter.write((double)allHits.size()/dbSize+","+allDownloadNumber/allHits.size());
+		System.out.println("HR="+(double)allHits.size()/dbSize+"  OR="+allDownloadNumber/allHits.size());
 		hrorWriter.newLine();
-		while(d_Size<(lambda*db_Size))
+		while(d_Size<(lambda*dbSize))
 		{
-			
-			ArrayList<String> Terms=Algorithm_2(d_IndexReader,d_IndexSearcher,q);	
-			new_q=Algorithm_3(all_hits, a3_Directory,a3_IndexWriter,db_IndexReader,db_IndexSearcher,Terms,q);	
-			
-			for (String every_new_q :new_q)
+			ArrayList<String> terms=Algorithm2(d_IndexSearcher,q);	
+			for(String each:terms)
 			{
-				q.add(every_new_q);
-				bufferedWriter.write(every_new_q);
-				bufferedWriter.newLine();
-				
-				ArrayList<String> tmp_new_q=new ArrayList<>();
-				tmp_new_q.add(every_new_q);
-				double tmps=add_from_original_to_sample(all_hits,d_IndexWriter,db_IndexReader, db_IndexSearcher, tmp_new_q);
-				all_num+=tmps;
-				//total_Cost=total_Cost+100+tmps;
-				double HR=(double)all_hits.size()/db_Size;
-				double OR=all_num/all_hits.size();
-				
-				//hrorWriter.write(HR+","+total_Cost);//for store message
-				hrorWriter.write(HR+","+OR);//for draw HR_OR graph
-				hrorWriter.newLine();
-				
-				
-				System.out.println(every_new_q);
-				System.out.println("HR="+HR);
-				System.out.println("OR="+OR);
-				System.out.println("current sample size is"+all_hits.size());
+				System.out.println(each);
 			}
+			Algorithm3(terms);	
 			
 			System.out.println("此轮共"+new_q.size()+"个term");
-			
-			bufferedWriter.write("此轮共"+new_q.size()+"个term");
-			bufferedWriter.newLine();
-			bufferedWriter.newLine();
-			
-			try
-			{
-				d_IndexReader=DirectoryReader.openIfChanged((DirectoryReader)d_IndexReader);
-				d_IndexSearcher=new IndexSearcher(d_IndexReader);
-			}
-			catch(Exception e)
-			{
-				e.printStackTrace();
-				d_IndexReader=DirectoryReader.open(d_Directory);
-				d_IndexSearcher=new IndexSearcher(d_IndexReader);
-			}
-			d_Size=d_IndexReader.numDocs();
-		}
-		bufferedWriter.close();
-		hrorWriter.close();
-		d_IndexWriter.close();
-		a3_IndexWriter.close();
-		db_IndexReader.close();
-		d_IndexReader.close();
-		db_Directory.close();
-		d_Directory.close();
-		a3_Directory.close();
-		
-	}
-	
-	
-	public void Algorithm_1_improved1(String path_in_algorithm3,String db_Path,String d_Path,int initial_num) throws IOException
-	{
-		BufferedWriter bufferedWriter=new BufferedWriter(new FileWriter(new File(stored_file)));
-		
-		Directory db_Directory=FSDirectory.open(Paths.get(db_Path));
-		IndexReader db_IndexReader=DirectoryReader.open(db_Directory);
-		IndexSearcher db_IndexSearcher=new IndexSearcher(db_IndexReader);
-		
-		int db_size=db_IndexReader.numDocs();
-		
-		Directory d_Directory=FSDirectory.open(Paths.get(d_Path));
-		IndexWriter d_IndexWriter=new IndexWriter(d_Directory,indexWriterConfig);
-		
-		
-		AlgorithmByTable.initial_create_sample(initial_num, (HashSet<Integer>) all_hits, d_IndexWriter, db_IndexSearcher);
-		
-		//注：initial_pool构建成int的形式更易维护
-		int initial_pool=0;
-		initial_pool=all_hits.size();
-		System.out.println("初始样本个数"+initial_pool);
-		
-		IndexReader d_IndexReader=DirectoryReader.open(d_Directory);
-		IndexSearcher d_IndexSearcher=new IndexSearcher(d_IndexReader);
-		int d_Size=d_IndexReader.numDocs();
-		
-		Directory a3_Directory=FSDirectory.open(Paths.get(path_in_algorithm3));
-		IndexWriter a3_IndexWriter=new IndexWriter(a3_Directory,indexWriterConfig2);
-		
-		update_df_D=initial_setting(initial_num, d_IndexReader, d_IndexSearcher);
-		
-		
-		double all_num=initial_num;
-		double total_Cost=initial_num;//for compute
-		while(true)
-		{
-			
-			ArrayList<String> Terms=Algorithm_2_for_improved1(d_IndexReader,d_IndexSearcher,initial_pool,update_df_D);
-			total_Cost+=0.001*algo2_Cost;//for compute
-			bufferedWriter.write((double)all_hits.size()/db_size+","+total_Cost);//for store message
-			//bufferedWriter.write((double)all_hits.size()/db_size+","+1);//for draw HR_OR graph
-			bufferedWriter.newLine();
-			
-			
-			if(Terms.size()==0)
-			{
-				System.out.println("无词可选，异常退出");
-				break;
-			}
-			
-			new_q=Algorithm_3_for_improved1(all_hits, a3_Directory, a3_IndexWriter, db_IndexReader, db_IndexSearcher, Terms,initial_pool,update_df_D);
-			if(new_q==null)
-			{
-				break;
-			}
-			
-			Set<Integer> global_to_be_sub=new HashSet<>();
-			for (String every_new_q :new_q)
-			{
-				global_to_be_sub.addAll(update_df_D.get(every_new_q));
-				update_df_D.remove(every_new_q);
-				
-				q.add(every_new_q);
-				
-				System.out.println(every_new_q);
-			}
-			
-			System.out.println("初始样本将减少"+global_to_be_sub.size());
-			for(String each:update_df_D.keySet())
-			{
-				update_df_D.get(each).remove(global_to_be_sub);
-				
-			}
-			initial_pool-=global_to_be_sub.size();
-			System.out.println("全局initial_pool还剩"+initial_pool);
-			
-			
-			for(String each_term:new_q)
-			{
-				ArrayList<String> tmp_new_q=new ArrayList<>();
-				tmp_new_q.add(each_term);
-				double tmps=add_from_original_to_sample(all_hits,d_IndexWriter,db_IndexReader, db_IndexSearcher, tmp_new_q);
-				all_num+=tmps;
-				total_Cost=total_Cost+100+tmps;
-				double HR=(double)all_hits.size()/db_size;
-				double OR=all_num/all_hits.size();
-				System.out.println("HR="+HR);
-				System.out.println("OR="+OR);
-				bufferedWriter.write(HR+","+total_Cost);//for store message
-				//bufferedWriter.write(HR+","+OR);//for draw HR_OR graph
-				bufferedWriter.newLine();
-				
-			}
+			termWriter.write("此轮共"+new_q.size()+"个term");
+			termWriter.newLine();
+			termWriter.newLine();
 			
 			d_IndexReader=DirectoryReader.openIfChanged((DirectoryReader)d_IndexReader);
 			d_IndexSearcher=new IndexSearcher(d_IndexReader);
 			d_Size=d_IndexReader.numDocs();
-			
-			if(initial_pool==0)
-			{
-				System.out.println("初始样本实现全覆盖，正常退出");
-				break;
-			}
-			
 		}
-		bufferedWriter.close();
-		
+		termWriter.close();
+		hrorWriter.close();
 		d_IndexWriter.close();
-		a3_IndexWriter.close();
 		db_IndexReader.close();
 		d_IndexReader.close();
 		db_Directory.close();
 		d_Directory.close();
-		a3_Directory.close();
 	}
-	
 	
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
-		String stored_file="F:/experiment/chinese_HR_OR.csv";
+		long start=System.currentTimeMillis();
+		String storedFile="F:/experiment/HR_OR/wiki_HR_OR.csv";
+		String termStoredFile="F:/experiment/Term/result_wiki.txt";
 		Algorithm algorithm=new Algorithm();
-		algorithm.stored_file_Setter(stored_file);
-		algorithm.main_Field_Setter("body");
-		//algorithm.bound_Setter(0.001f, 0.20f);
-		algorithm.bound_Setter(0.02f, 0.15f);
-		algorithm.analyzer_Setter(true);
-		algorithm.Algorithm_1(path_for_algorithm33,chinese_DB,sample_D_path3, 0.90f);
-		
-		
-		//algorithm.Algorithm_1_improved1(path_for_algorithm31, wiki_new, sample_D_path, 3000);
+		algorithm.storedFileSetter(storedFile);
+		algorithm.termStoredFileSetter(termStoredFile);
+		algorithm.mainFieldSetter("text");
+		algorithm.boundSetter(0.001f, 0.20f);
+		//algorithm.boundSetter(0.02f, 0.15f);
+		//algorithm.analyzerSetter(true);
+		algorithm.Algorithm1(wiki_new,sample_D_path4, 0.95f);
+		long end=System.currentTimeMillis();
+		System.out.println("总耗时："+(double)(end-start)/(1000*3600));
 	}
 }

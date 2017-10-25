@@ -1,12 +1,7 @@
 eclipse.preferences.version=1
 encoding//src/Algorithm.java=UTF-8
 encoding//src/Algorithm/Algorithm.java=UTF-8
-encoding//src/Algorithm/AlgorithmByTable.java=UTF-8
 encoding//src/Algorithm/SmallText.java=UTF-8
-encoding//src/Algorithm/\u5907\u9009\u4EE3\u7801.txt=UTF-8
 encoding//src/AlgorithmByTable.java=UTF-8
 encoding//src/Algorithm_improved/PredictingAlgorithm.java=UTF-8
 encoding//src/drawtable.java=UTF-8
-encoding//src/nlpirToken/NLPIRTokenizer.java=UTF-8
-encoding//src/nlpirToken/NLPIRTokenizerAnalyzer.java=UTF-8
-encoding//src/nlpirToken/NLPIRTokenizerTest.java=UTF-8
