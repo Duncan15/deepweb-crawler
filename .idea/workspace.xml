@@ -2,23 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7d2cc1d1-abd7-4082-8c32-c4a746ac5ce6" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__commons_cli_commons_cli_1_4.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/RAMDocIDDedutor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crawler.iml" beforeDir="false" afterPath="$PROJECT_DIR$/crawler.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/Constant.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Constant.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/LinearIncrementalAlgorithm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/LinearIncrementalAlgorithm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/SetCoverAlgorithm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/SetCoverAlgorithm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/demo/Starter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/demo/Starter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/Deduplicator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/Deduplicator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/RAMDeduplicator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/RAMMD5Dedutor.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/index/IndexClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/index/IndexClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Producer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Producer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/InfoLinkService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/InfoLinkService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/QueryLinkService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/QueryLinkService.java" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <ignored path="$PROJECT_DIR$/target/" />
@@ -54,6 +38,7 @@
         <counts>
           <entry key="class" value="11" />
           <entry key="java" value="229" />
+          <entry key="md" value="1" />
           <entry key="xml" value="7" />
         </counts>
       </usages-collector>
@@ -61,6 +46,7 @@
         <counts>
           <entry key="CLASS" value="11" />
           <entry key="JAVA" value="229" />
+          <entry key="Scratch" value="1" />
           <entry key="XML" value="7" />
         </counts>
       </usages-collector>
@@ -68,6 +54,7 @@
         <counts>
           <entry key="dummy" value="3" />
           <entry key="java" value="23159" />
+          <entry key="md" value="70" />
           <entry key="xml" value="56" />
         </counts>
       </usages-collector>
@@ -75,6 +62,7 @@
         <counts>
           <entry key="JAVA" value="23159" />
           <entry key="PLAIN_TEXT" value="3" />
+          <entry key="Scratch" value="70" />
           <entry key="XML" value="56" />
         </counts>
       </usages-collector>
@@ -118,16 +106,28 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/index/IndexClient.java">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="-403">
-              <caret line="211" column="4" selection-start-line="211" selection-start-column="4" selection-end-line="211" selection-end-column="4" />
+              <caret line="211" selection-start-line="211" selection-end-line="211" />
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="e#5475#5476#0" expanded="true" />
                 <element signature="e#5516#5517#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+            <state split_layout="SPLIT">
+              <first_editor relative-caret-position="60">
+                <caret line="4" column="11" lean-forward="true" selection-start-line="4" selection-start-column="11" selection-end-line="4" selection-end-column="11" />
+              </first_editor>
+              <second_editor />
             </state>
           </provider>
         </entry>
@@ -225,6 +225,7 @@
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/RAMDocIDDedutor.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/demo/Starter.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/index/IndexClient.java" />
+        <option value="$APPLICATION_CONFIG_DIR$/scratches/scratch.md" />
       </list>
     </option>
   </component>
@@ -316,129 +317,6 @@
               <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
               <item name="crawler" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="deepweb" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="deepweb" type="462c0819:PsiDirectoryNode" />
-              <item name="algorithm" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="deepweb" type="462c0819:PsiDirectoryNode" />
-              <item name="algorithm" type="462c0819:PsiDirectoryNode" />
-              <item name="demo" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="deepweb" type="462c0819:PsiDirectoryNode" />
-              <item name="common" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="deepweb" type="462c0819:PsiDirectoryNode" />
-              <item name="common" type="462c0819:PsiDirectoryNode" />
-              <item name="dedu" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="deepweb" type="462c0819:PsiDirectoryNode" />
-              <item name="common" type="462c0819:PsiDirectoryNode" />
-              <item name="index" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="deepweb" type="462c0819:PsiDirectoryNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="resources" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="resources" type="462c0819:PsiDirectoryNode" />
-              <item name="orm" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="test" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="test" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="crawler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="test" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="miscella" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-            </path>
           </expand>
           <select />
         </subPane>
@@ -449,7 +327,8 @@
     <property name="SearchEverywhereHistoryKey" value="maven&#9;ACTION&#9;ActivateMavenProjectsToolWindow" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1542519572559" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1542528033343" />
+    <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="Markdown" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="project.structure.last.edited" value="Modules" />
@@ -547,7 +426,7 @@
       <workItem from="1541511482950" duration="39000" />
       <workItem from="1541511550522" duration="8755000" />
       <workItem from="1541674776623" duration="87120000" />
-      <workItem from="1542455627394" duration="15823000" />
+      <workItem from="1542455627394" duration="16520000" />
     </task>
     <servers />
   </component>
@@ -566,7 +445,7 @@
     </history-entry>
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="195084000" />
+    <option name="totallyTimeSpent" value="195781000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="91" y="23" width="1340" height="837" extended-state="0" />
@@ -611,13 +490,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_161.jdk/Contents/Home/src.zip!/java/nio/file/Path.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="597">
-          <caret line="799" column="11" selection-start-line="799" selection-start-column="11" selection-end-line="799" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar://$MAVEN_REPOSITORY$/org/apache/lucene/lucene-core/6.6.1/lucene-core-6.6.1-sources.jar!/org/apache/lucene/document/TextField.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="327">
@@ -1104,12 +976,22 @@
     <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/index/IndexClient.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-403">
-          <caret line="211" column="4" selection-start-line="211" selection-start-column="4" selection-end-line="211" selection-end-column="4" />
+          <caret line="211" selection-start-line="211" selection-end-line="211" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="e#5475#5476#0" expanded="true" />
             <element signature="e#5516#5517#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="60">
+            <caret line="4" column="11" lean-forward="true" selection-start-line="4" selection-start-column="11" selection-end-line="4" selection-end-column="11" />
+          </first_editor>
+          <second_editor />
         </state>
       </provider>
     </entry>

@@ -209,7 +209,7 @@ public final class IndexClient implements Closeable {
         });
         return docIDValueMap;
     }
-    
+
 
     /**
      * 获取当前索引最近一次更新时存在的文档数量
