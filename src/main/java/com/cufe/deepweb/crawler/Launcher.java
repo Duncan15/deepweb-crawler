@@ -1,6 +1,5 @@
 package com.cufe.deepweb.crawler;
 
-import com.cufe.deepweb.Constant;
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
 import com.cufe.deepweb.crawler.branch.Producer;
@@ -16,7 +15,7 @@ import com.cufe.deepweb.common.orm.model.WebSite;
 import com.cufe.deepweb.crawler.service.InfoLinkService;
 import com.cufe.deepweb.crawler.branch.Consumer;
 import com.cufe.deepweb.common.dedu.Deduplicator;
-import com.cufe.deepweb.common.dedu.RAMDeduplicator;
+import com.cufe.deepweb.common.dedu.RAMMD5Dedutor;
 import com.cufe.deepweb.common.orm.Orm;
 import com.cufe.deepweb.crawler.service.QueryLinkService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -158,7 +157,7 @@ public final class Launcher {
         //配置索引客户端
         indexClient = new IndexClient.Builder(Paths.get(Constant.webSite.getWorkFile(),Constant.FT_INDEX_ADDR)).build();
         //配置去重器
-        dedu = new RAMDeduplicator(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
+        dedu = new RAMMD5Dedutor(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
         //配置模拟器
         webBrowser = new HtmlUnitBrowser.Builder().build();
         if (!StringUtils.isBlank(Constant.webSite.getLoginUrl())) {//如果有配置登录链接，则表示必须登录才能爬取

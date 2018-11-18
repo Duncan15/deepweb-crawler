@@ -1,6 +1,6 @@
 package com.cufe.deepweb.algorithm;
 
-import com.cufe.deepweb.Constant;
+import com.cufe.deepweb.crawler.Constant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,6 +1,6 @@
 package com.cufe.deepweb.crawler.branch;
 
-import com.cufe.deepweb.Constant;
+import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.orm.model.Current;
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.common.orm.Orm;

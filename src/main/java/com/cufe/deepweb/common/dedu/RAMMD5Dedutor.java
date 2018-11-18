@@ -1,6 +1,6 @@
 package com.cufe.deepweb.common.dedu;
 
-import com.cufe.deepweb.Constant;
+import com.cufe.deepweb.crawler.Constant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,14 +11,15 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class RAMDeduplicator extends Deduplicator<String> {
-    private final Logger logger = LoggerFactory.getLogger(RAMDeduplicator.class);
+/**
+ * 根据md5去重的内存去重器
+ */
+public class RAMMD5Dedutor extends Deduplicator<String> {
+    private final Logger logger = LoggerFactory.getLogger(RAMMD5Dedutor.class);
     private Set<byte[]> deduSet;
     private MessageDigest md5;
-    private int newV;
-    private int costV;
     private Path dataPath; //数据存储文件夹
-    public RAMDeduplicator(Path dataPath){
+    public RAMMD5Dedutor(Path dataPath){
         this.dataPath = dataPath;
         deduSet = null;
         File f  = dataPath.resolve( Constant.round+DATA_FILE_NAME).toFile();
@@ -58,20 +59,6 @@ public class RAMDeduplicator extends Deduplicator<String> {
             return true;
         }
         return false;
-    }
-
-    @Override
-    public int getNew() {
-        int tmp = newV;
-        newV = 0;
-        return tmp;
-    }
-
-    @Override
-    public int getCost() {
-        int tmp = costV;
-        costV = 0;
-        return tmp;
     }
 
     @Override

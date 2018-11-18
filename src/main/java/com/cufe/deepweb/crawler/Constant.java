@@ -1,4 +1,4 @@
-package com.cufe.deepweb;
+package com.cufe.deepweb.crawler;
 
 import com.cufe.deepweb.common.orm.model.Current;
 import com.cufe.deepweb.common.orm.model.WebSite;
@@ -54,7 +54,7 @@ public final class Constant {
         }
     };
     /**
-     * 爬虫会建立索引的field和xpaht对
+     * 爬虫会建立索引的field和xpah对
      */
     public final static Map<String, String> patternMap = new HashMap<String, String>() {
         {

@@ -1,6 +1,6 @@
 package com.cufe.deepweb.crawler.service;
 
-import com.cufe.deepweb.Constant;
+import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;

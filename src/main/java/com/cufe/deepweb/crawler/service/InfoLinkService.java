@@ -1,6 +1,6 @@
 package com.cufe.deepweb.crawler.service;
 
-import com.cufe.deepweb.Constant;
+import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.common.http.client.CusHttpClient;
 import com.cufe.deepweb.common.index.IndexClient;

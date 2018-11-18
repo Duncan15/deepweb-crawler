@@ -1,6 +1,6 @@
 package com.cufe.deepweb.algorithm;
 
-import com.cufe.deepweb.Constant;
+import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.index.IndexClient;
 import com.cufe.deepweb.common.dedu.Deduplicator;
 
