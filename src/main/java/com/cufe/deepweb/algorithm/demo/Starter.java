@@ -5,6 +5,8 @@ import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
 import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.common.dedu.RAMDocIDDedutor;
 import com.cufe.deepweb.common.index.IndexClient;
+import com.cufe.deepweb.crawler.Constant;
+import com.google.common.base.Stopwatch;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,12 +17,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 算法验证demo
  */
 public class Starter {
     private static final Logger logger = LoggerFactory.getLogger(Starter.class);
+    private Starter() {}
     /**
      * 爬虫停止的爬取比例
      */
@@ -48,10 +52,13 @@ public class Starter {
      * 1 target dir
      */
     public static void main(String[] args) {
+        Stopwatch stopwatch = Stopwatch.createStarted();
         init(args);
-        AlgorithmBase algo = new LinearIncrementalAlgorithm.Builder(targetClient, dedu).build();
+        //默认使用的field为fulltext
+        AlgorithmBase algo = new LinearIncrementalAlgorithm.Builder(targetClient, dedu).setInitQuery("produce").build();
         //当爬取比例小于指定比例时，继续
         while (threshold > dedu.getTotal() / (double)sourceClient.getDocSize()) {
+            logger.info("HR:{}", dedu.getTotal() / (double)sourceClient.getDocSize());
             //通过算法获取query
             String query = algo.getNextQuery();
             //在源索引中搜索
@@ -67,10 +74,12 @@ public class Starter {
             Map<Integer, String> docIDValueMap = sourceClient.loadDocuments(field, docIDSet);
             //写入目标索引
             docIDValueMap.forEach((k, v) -> {
-                targetClient.addDocument(Collections.singletonMap(field, v));
+                targetClient.addDocument(Collections.singletonMap(Constant.FT_INDEX_FIELD, v));
             });
         }
         exit();
+        logger.info("总耗时:{}分钟", stopwatch.elapsed(TimeUnit.MINUTES));
+        logger.info("总用词量:{}", algo.getqList().size());
     }
 
     /**
@@ -116,7 +125,7 @@ public class Starter {
             field = cmd.getOptionValue("field-name");
         }
         if (field == null) {
-            field = "body";//默认值为body
+            field = "text";//默认值为body
         }
         threshold = 0.99;//默认值
         sourceClient = sBuilder.setReadOnly().setSearchThreadNum(10).build();

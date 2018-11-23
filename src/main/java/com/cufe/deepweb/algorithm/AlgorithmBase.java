@@ -1,6 +1,7 @@
 package com.cufe.deepweb.algorithm;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /*
@@ -22,8 +23,13 @@ public abstract class AlgorithmBase {
         qList.clear();
         qList.add(init);
     }
-    protected final List<String> getqList(){
-        return qList;
+
+    /**
+     * 获取算法所生成的所有词的列表，该列表不可修改
+     * @return
+     */
+    public final List<String> getqList(){
+        return Collections.unmodifiableList(qList);
     }
     /*
     使用该算法时直接调用该方法，不必关心具体算法实现
@@ -32,9 +38,11 @@ public abstract class AlgorithmBase {
         if(qCount != 0){//当不是第一个词时，通过动态绑定调用实现类的generateQuery方法，获取下一个词
             String nextQuery = generateQuery();
             qList.add(nextQuery);
-            qCount++;
+
         }
-        return qList.get(qCount);
+        String query = qList.get(qCount);
+        qCount++;
+        return query;
     }
 
     /*

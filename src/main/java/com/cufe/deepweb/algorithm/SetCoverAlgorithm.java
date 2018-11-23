@@ -1,10 +1,13 @@
 package com.cufe.deepweb.algorithm;
 
 import com.cufe.deepweb.crawler.Constant;
+import com.google.common.base.Stopwatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+
 /*
     set-covering algorithm:该类只关注set-covering算法的过程实现，具体数据以及是否启动新一轮set-covering由具体实现类提供
  */
@@ -15,10 +18,16 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
     private double lowBound;
     private double threshold;
     private int sendingCost;
-    private long buildTableCost; //the cost to build matrix in the beginning of set covering algorithm
+    /**
+     * 建表消耗
+     */
+    private long buildTableCost;
+    /**
+     * 当前词的改表消耗
+     */
+    private long modifyTableCost;
     private int snapshootSize; //the snapshoot size of index when start set covering
 
-    private Map<String, Long> modifyTableCostMap;
     private List<String> termList; //term list collect by set cover
     private Map<String, Integer> df; //the initial df in set cover
     private Map<String, Set<Integer>> newMap; //the new doc set map in set cover,this map would be updated every round
@@ -33,14 +42,13 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
     @param sCost set covering计算中，每个term的send cost
     */
     public SetCoverAlgorithm(String mField,double ubound,double lbound,double thres,int sCost) {
-        mainField = Constant.FT_INDEX_FIELD;
-        upBound = 0.15;
-        lowBound = 0.02;
-        threshold = 0.99;
-        sendingCost = 100;
+        mainField = mField;
+        upBound = ubound;
+        lowBound = lbound;
+        threshold = thres;
+        sendingCost = sCost;
         buildTableCost = 0;
         snapshootSize = 0;
-        modifyTableCostMap = new HashMap<>();
         termList = new ArrayList<>();
         df = new HashMap<>();
         s = new HashSet<>();
@@ -79,10 +87,10 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
      */
     private void buildMatrix() {
         //以下建立矩阵
+        logger.info("set-cover num:{}", termList.size());
         termList.clear();
-        modifyTableCostMap.clear();
         //用于记录建立矩阵的时间消耗
-        long milestone = System.currentTimeMillis();
+        Stopwatch stopwatch = Stopwatch.createStarted();
         s.clear(); //set to store all the downloaded(logically) doc in set cover
         df.clear(); //the initial df in set cover
         newMap = getDocSetMap(mainField,lowBound,upBound); //the new doc set map in set cover,this map would be updated every round
@@ -97,7 +105,7 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
         for(Map.Entry<String,Set<Integer>> entry : newMap.entrySet()){
             df.put(entry.getKey(),entry.getValue().size());
         }
-        buildTableCost = System.currentTimeMillis()-milestone;
+        buildTableCost = stopwatch.elapsed(TimeUnit.MILLISECONDS);
         snapshootSize = getDocSize();
     }
     /*
@@ -108,10 +116,9 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
     */
     private String generateTerm() {
         //以下进入set cover主流程
-        long milestone;
         if (s.size() < threshold*snapshootSize) {
             //以下进入每一轮set cover流程
-            milestone = System.currentTimeMillis();
+            Stopwatch stopwatch = Stopwatch.createStarted();//计算消耗
             Set<String> candidate = new HashSet<>(); //用于存放new/cost相同的词
             String query = null; //the seleted query in this round
             double maxRate = 0.0; //the known biggest new/cost value
@@ -149,7 +156,7 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
                 entry.getValue().removeAll(deleted);
             }
             newMap.remove(query);
-            modifyTableCostMap.put(query,System.currentTimeMillis()-milestone);
+            modifyTableCost = stopwatch.elapsed(TimeUnit.MILLISECONDS);
             return query;
         }
         return null;
@@ -179,6 +186,13 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
         return buildTableCost;
     }
 
+    /**
+     *
+     * @return
+     */
+    protected final long getModifyTableCost() {
+        return modifyTableCost;
+    }
     /*
     供子类实现
      */

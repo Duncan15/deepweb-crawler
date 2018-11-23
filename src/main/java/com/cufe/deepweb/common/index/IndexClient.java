@@ -2,6 +2,7 @@ package com.cufe.deepweb.common.index;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
@@ -12,7 +13,6 @@ import org.apache.lucene.store.FSDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.print.Doc;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -136,7 +136,6 @@ public final class IndexClient implements Closeable {
     }
     /**
      * 用于更新索引，此操作比较消耗资源
-     * 注意本方法不用于只用于更新，不用于新建
      */
     public synchronized void updateIndex() {
         if (!readOnly) {//如果为读写客户端，则新建indexWriter
@@ -175,9 +174,8 @@ public final class IndexClient implements Closeable {
     public Set<Integer> search(String field, String query) {
         Set<Integer> docIDSet = new HashSet<>();
         if (indexSearcher == null) return docIDSet;//还未初始化，直接返回
-        ScoreDoc[] scoreDocs = null;
         try {
-            scoreDocs = indexSearcher.search(new TermQuery(new Term(field, query)), maxHitNum).scoreDocs;
+            ScoreDoc[] scoreDocs = indexSearcher.search(new TermQuery(new Term(field, query)), maxHitNum).scoreDocs;
             for (ScoreDoc scoreDoc : scoreDocs) {
                 int k = scoreDoc.doc;
                 docIDSet.add(k);
@@ -271,7 +269,9 @@ public final class IndexClient implements Closeable {
         }
     }
 
-
+    public static enum AnalyzerTpye {
+        en,cn
+    }
     /**
      * 构造器
      */
@@ -287,10 +287,14 @@ public final class IndexClient implements Closeable {
 
         /**
          * 设置解析器
-         * @param analyzr
+         * @param type 解析器类型
          */
-        public Builder setAnalyzer(Analyzer analyzr){
-            analyzer = analyzr;
+        public Builder setAnalyzer(AnalyzerTpye type){
+            if (type == AnalyzerTpye.cn) {
+                this.analyzer = new SmartChineseAnalyzer();
+            } else if (type == AnalyzerTpye.en) {
+                this.analyzer = new StandardAnalyzer();
+            }
             return this;
         }
 
@@ -322,7 +326,7 @@ public final class IndexClient implements Closeable {
 
         public IndexClient build(){
             if (analyzer == null) {
-                analyzer = new SmartChineseAnalyzer();
+                analyzer = new StandardAnalyzer();
             }
             if (maxHitNum == 0) {
                 maxHitNum = Integer.MAX_VALUE;

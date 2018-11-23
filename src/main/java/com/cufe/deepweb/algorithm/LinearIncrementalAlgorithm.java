@@ -31,12 +31,17 @@ public class LinearIncrementalAlgorithm extends SetCoverAlgorithm {
     @Override
     protected boolean isUpdate() {
         int scSize = getSetCoverSize();
-        if (scSize == 0)return true;//当该函数第一次运行时，应该返回true，以便先进行一次set covering
+        if (scSize == 0){
+            si.updateIndex();
+            return true;//当该函数第一次运行时，应该返回true，以便先进行一次set covering
+        }
         if (scSize == 1) {//size为1代表进行新一轮的setcovering，则应该清空stepqueue
             stepQueue.clear();
+            newV = 0;//新一轮格点搜素开始，newV清空
+            costV = getBuildTableCost();//costV设置为建表消耗
         }
-        newV = dedu.getNew();
-        costV = getBuildTableCost() + dedu.getCost();
+        newV += dedu.getNew();
+        costV += getModifyTableCost() + dedu.getCost();
         if(stepQueue.size() < stepLen){//先记录前n个词的quality
             stepQueue.offer(newV/(double)costV);
             return false;
@@ -72,7 +77,7 @@ public class LinearIncrementalAlgorithm extends SetCoverAlgorithm {
         private Deduplicator deduplicator;
         private int stepLen = 3;
 
-        private String mainField = Constant.FT_INDEX_FIELD; //the lucene index's main field
+        private String mainField = Constant.FT_INDEX_FIELD; //the default lucene index's main field
         private double upBound = 0.15; //set covering algorithm's up bound
         private double lowBound = 0.02;
         private double threshold = 0.99;

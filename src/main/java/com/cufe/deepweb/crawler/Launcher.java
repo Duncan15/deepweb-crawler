@@ -34,6 +34,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
 
+/**
+ * 爬虫工具启动类
+ */
 public final class Launcher {
     private static Logger logger = LoggerFactory.getLogger(Launcher.class);
     private static IndexClient indexClient;//索引客户端
