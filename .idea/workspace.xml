@@ -3,13 +3,9 @@
   <component name="ChangeListManager">
     <list default="true" id="7d2cc1d1-abd7-4082-8c32-c4a746ac5ce6" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/AlgorithmBase.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/AlgorithmBase.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/LinearIncrementalAlgorithm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/LinearIncrementalAlgorithm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/SetCoverAlgorithm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/SetCoverAlgorithm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/demo/Starter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/demo/Starter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/index/IndexClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/index/IndexClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/log4j2.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/log4j2.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/cufe/deepweb/algorithm/demo/Starter.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/cufe/deepweb/algorithm/demo/Starter.class" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <ignored path="$PROJECT_DIR$/target/" />
@@ -44,34 +40,34 @@
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="class" value="11" />
-          <entry key="java" value="237" />
+          <entry key="java" value="238" />
           <entry key="md" value="1" />
-          <entry key="xml" value="9" />
+          <entry key="xml" value="10" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="CLASS" value="11" />
-          <entry key="JAVA" value="237" />
+          <entry key="JAVA" value="238" />
           <entry key="Scratch" value="1" />
-          <entry key="XML" value="9" />
+          <entry key="XML" value="10" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="dummy" value="3" />
-          <entry key="java" value="23891" />
+          <entry key="java" value="23898" />
           <entry key="md" value="70" />
           <entry key="txt" value="43" />
-          <entry key="xml" value="59" />
+          <entry key="xml" value="67" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="JAVA" value="23891" />
+          <entry key="JAVA" value="23898" />
           <entry key="PLAIN_TEXT" value="46" />
           <entry key="Scratch" value="70" />
-          <entry key="XML" value="59" />
+          <entry key="XML" value="67" />
         </counts>
       </usages-collector>
     </session>
@@ -81,8 +77,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/demo/Starter.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="847">
-              <caret line="103" column="10" lean-forward="true" selection-start-line="103" selection-start-column="10" selection-end-line="103" selection-end-column="10" />
+            <state relative-caret-position="-958">
+              <caret line="56" column="29" selection-start-line="56" selection-start-column="29" selection-end-line="56" selection-end-column="29" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -112,11 +108,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/SetCoverAlgorithm.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="232">
-              <caret line="50" column="26" lean-forward="true" selection-start-line="50" selection-start-column="26" selection-end-line="50" selection-end-column="26" />
+            <state relative-caret-position="-1888">
+              <caret line="50" column="26" selection-start-line="50" selection-start-column="26" selection-end-line="50" selection-end-column="26" />
               <folding>
                 <element signature="e#6082#6083#0" expanded="true" />
                 <element signature="e#6128#6129#0" expanded="true" />
@@ -137,6 +133,15 @@
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/pom.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="756">
+              <caret line="140" column="86" selection-start-line="140" selection-start-column="86" selection-end-line="140" selection-end-column="86" />
             </state>
           </provider>
         </entry>
@@ -209,7 +214,6 @@
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/web/crawler/common/dedu/RAMDeduplicator.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/web/crawler/branch/Consumer.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/web/crawler/Launcher.java" />
-        <option value="$PROJECT_DIR$/pom.xml" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/Constant.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Constant.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/RAMDeduplicator.java" />
@@ -222,8 +226,9 @@
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/LinearIncrementalAlgorithm.java" />
         <option value="$PROJECT_DIR$/src/main/resources/log4j2.xml" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/AlgorithmBase.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/demo/Starter.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/SetCoverAlgorithm.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/demo/Starter.java" />
+        <option value="$PROJECT_DIR$/pom.xml" />
       </list>
     </option>
   </component>
@@ -249,7 +254,16 @@
   </component>
   <component name="MavenProjectNavigator">
     <treeState>
-      <expand />
+      <expand>
+        <path>
+          <item name="" type="16c1761:MavenProjectsStructure$RootNode" />
+          <item name="Profiles" type="6783ec58:MavenProjectsStructure$ProfilesNode" />
+        </path>
+        <path>
+          <item name="" type="16c1761:MavenProjectsStructure$RootNode" />
+          <item name="crawler" type="9519ce18:MavenProjectsStructure$ProjectNode" />
+        </path>
+      </expand>
       <select />
     </treeState>
   </component>
@@ -366,6 +380,27 @@
               <item name="main" type="462c0819:PsiDirectoryNode" />
               <item name="resources" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
+              <item name="crawler" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
+              <item name="crawler" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
+              <item name="crawler" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="miscella" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
@@ -376,7 +411,7 @@
     <property name="SearchEverywhereHistoryKey" value="maven&#9;ACTION&#9;ActivateMavenProjectsToolWindow" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1542985425629" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1543033432455" />
     <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="Markdown" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
@@ -476,8 +511,8 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.Starter" />
         <item itemvalue="JUnit.SyntaxTest" />
+        <item itemvalue="Application.Starter" />
       </list>
     </recent_temporary>
   </component>
@@ -497,7 +532,7 @@
       <workItem from="1541511482950" duration="39000" />
       <workItem from="1541511550522" duration="8755000" />
       <workItem from="1541674776623" duration="87120000" />
-      <workItem from="1542455627394" duration="32177000" />
+      <workItem from="1542455627394" duration="33773000" />
     </task>
     <servers />
   </component>
@@ -514,21 +549,25 @@
     <history-entry file="SyntaxTest - 2018.10.21 at 15h 20m 56s.xml">
       <configuration name="SyntaxTest" configurationId="JUnit" />
     </history-entry>
+    <history-entry file="SyntaxTest - 2018.11.24 at 12h 23m 31s.xml">
+      <configuration name="SyntaxTest" configurationId="JUnit" />
+    </history-entry>
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="211438000" />
+    <option name="totallyTimeSpent" value="213034000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="91" y="23" width="1340" height="837" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info id="Capture Tool" order="0" />
       <window_info id="Designer" order="1" />
       <window_info id="UI Designer" order="2" />
       <window_info id="Favorites" order="3" side_tool="true" />
-      <window_info content_ui="combo" id="Project" order="4" weight="0.27272728" />
+      <window_info content_ui="combo" id="Project" order="4" visible="true" weight="0.27272728" />
       <window_info id="Structure" order="5" weight="0.25" />
       <window_info id="Image Layers" order="6" />
-      <window_info id="Maven Projects" order="7" visible="true" weight="0.23882897" />
+      <window_info id="Maven Projects" order="7" weight="0.23882897" />
       <window_info anchor="bottom" id="Event Log" order="0" sideWeight="0.5030817" side_tool="true" weight="0.32884097" />
       <window_info anchor="bottom" id="Version Control" order="1" show_stripe_button="false" />
       <window_info anchor="bottom" id="CheckStyle" order="2" sideWeight="0.49691835" weight="0.19541779" />
@@ -572,13 +611,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="jar://$MAVEN_REPOSITORY$/org/apache/httpcomponents/httpcore/4.4.6/httpcore-4.4.6-sources.jar!/org/apache/http/util/EntityUtils.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-351">
-          <caret line="195" column="34" selection-start-line="195" selection-start-column="26" selection-end-line="195" selection-end-column="34" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/orm/model/Pattern.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="75">
@@ -989,13 +1021,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pom.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="28">
-          <caret line="61" column="19" selection-start-line="61" selection-start-column="19" selection-end-line="61" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_161.jdk/Contents/Home/src.zip!/java/util/Collections.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="150">
@@ -1052,20 +1077,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/demo/Starter.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="847">
-          <caret line="103" column="10" lean-forward="true" selection-start-line="103" selection-start-column="10" selection-end-line="103" selection-end-column="10" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/SetCoverAlgorithm.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="232">
-          <caret line="50" column="26" lean-forward="true" selection-start-line="50" selection-start-column="26" selection-end-line="50" selection-end-column="26" />
+        <state relative-caret-position="-1888">
+          <caret line="50" column="26" selection-start-line="50" selection-start-column="26" selection-end-line="50" selection-end-column="26" />
           <folding>
             <element signature="e#6082#6083#0" expanded="true" />
             <element signature="e#6128#6129#0" expanded="true" />
@@ -1074,6 +1089,30 @@
             <element signature="e#6345#6346#0" expanded="true" />
             <element signature="e#6383#6384#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/algorithm/demo/Starter.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-958">
+          <caret line="56" column="29" selection-start-line="56" selection-start-column="29" selection-end-line="56" selection-end-column="29" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/java/miscella/SyntaxTest.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pom.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="756">
+          <caret line="140" column="86" selection-start-line="140" selection-start-column="86" selection-end-line="140" selection-end-column="86" />
         </state>
       </provider>
     </entry>

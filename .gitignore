@@ -1,0 +1,9 @@
+#IDE
+.idea/
+
+#compile result
+target/
+
+#miscella
+dependency-reduced-pom.xml
+
