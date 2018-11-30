@@ -1,5 +1,6 @@
 package com.cufe.deepweb.crawler.service;
 
+import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
 import org.apache.commons.lang3.StringUtils;
@@ -7,6 +8,8 @@ import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,6 +20,7 @@ import java.util.stream.Collectors;
 public class QueryLinkService extends LinkService {
     private static final Logger logger = LoggerFactory.getLogger(QueryLinkService.class);
     private WebBrowser browser;
+    private Deduplicator dedu;
 
 
     /**
@@ -26,10 +30,15 @@ public class QueryLinkService extends LinkService {
      * @return
      */
     private String buildQueryLink(String keyword, int pageNum) {
+        try {
+            keyword = URLEncoder.encode(keyword, Constant.webSite.getCharset());
+        } catch (UnsupportedEncodingException ex) {
+
+        }
         String queryLink = Constant.webSite.getPrefix();
         List<String> paramPairList = new ArrayList<>();
         paramPairList.add(Constant.webSite.getParamQuery()+"="+keyword);
-        if (StringUtils.isBlank(Constant.webSite.getParamList()) || StringUtils.isBlank(Constant.webSite.getParamValueList())) {
+        if (StringUtils.isNotBlank(Constant.webSite.getParamList()) && StringUtils.isNotBlank(Constant.webSite.getParamValueList())) {
             String[] params = Constant.webSite.getParamList().split(",");
             String[] paramVs = Constant.webSite.getParamValueList().split(",");
             for (int i = 0 ; i < params.length ; i++) {
@@ -44,6 +53,7 @@ public class QueryLinkService extends LinkService {
         if (!queryLink.endsWith("?")) {
             queryLink += "?" + StringUtils.join(paramPairList,"&");
         }
+
         return queryLink;
     }
 
@@ -54,6 +64,7 @@ public class QueryLinkService extends LinkService {
      */
     private int getTotalPageNum(String keyword) {
         int endNum = this.incrementNum(keyword);//指数递增获取第一个空页页码
+        if (endNum == 1) return 0;
         int startNum = endNum/2;
         return getEndPageNum(startNum, endNum, keyword);
     }
@@ -83,9 +94,11 @@ public class QueryLinkService extends LinkService {
     private int incrementNum(String keyword) {
         int cur = 1;
         String preContent = browser.getPageContent(buildQueryLink(keyword, cur)).get(), curContent;
+        logger.info("increment page num to {}", cur);
         while (true) {
             cur *= 2;
             curContent = browser.getPageContent(buildQueryLink(keyword, cur)).get();
+            logger.info("increment page num to {}", cur);
             if (isSimilarity(preContent, curContent)) break; //如果两个页面相似，则都是空页
             preContent = curContent;
         }
@@ -99,15 +112,17 @@ public class QueryLinkService extends LinkService {
      */
     private boolean isSimilarity(String doc1, String doc2) {
         LevenshteinDistance distance = LevenshteinDistance.getDefaultInstance();//用于计算文本距离
-        return distance.apply(doc1.trim(), doc2.trim()) < 20;
+        int gap = distance.apply(doc1.trim(), doc2.trim());
+        return gap < 500;
     }
 
     /**
      * QueryLinkService只依赖于WebBrowser
      * @param browser
      */
-    public QueryLinkService(WebBrowser browser) {
+    public QueryLinkService(WebBrowser browser, Deduplicator dedu) {
         this.browser = browser;
+        this.dedu = dedu;
     }
     /**
      * 获取关键词能拿到的所有链接
@@ -117,7 +132,8 @@ public class QueryLinkService extends LinkService {
     public List<String> getQueryLinks(String keyword) {
         List<String> queryLinks = new ArrayList<>();
         int num = getTotalPageNum(keyword);
-        for (int i=1 ; 1 <= num ; i++) {
+        logger.info("total page num is {}", num);
+        for (int i=1 ; i <= num ; i++) {
             queryLinks.add(buildQueryLink(keyword, i));
         }
         this.totalLinkNum = queryLinks.size();
@@ -149,11 +165,11 @@ public class QueryLinkService extends LinkService {
         if (links.size() == 0) {//记录失败的查询链接数量
             this.failedLinkNum++;
         }
-        links = links.stream().filter(link -> {//去除链接中分页链接
+        links = links.stream().filter(link -> {//去除链接中分页链接和重复链接
             if (link.startsWith(Constant.webSite.getPrefix())) {
                 return false;
             } else {
-                return true;
+                return dedu.add(link);
             }
         }).collect(Collectors.toList());
         return links;

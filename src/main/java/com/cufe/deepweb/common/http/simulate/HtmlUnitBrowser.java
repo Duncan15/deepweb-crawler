@@ -6,11 +6,14 @@ import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.LogFactory;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +23,9 @@ import java.util.Optional;
  */
 public final class HtmlUnitBrowser extends ThreadLocal<WebClient> implements WebBrowser {
     private Logger logger = LoggerFactory.getLogger(HtmlUnitBrowser.class);
+    static {
+        LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
+    }
     private Builder builder;
     private CookieManager cookieManager;
     private volatile boolean isLogin;
@@ -34,6 +40,7 @@ public final class HtmlUnitBrowser extends ThreadLocal<WebClient> implements Web
      * @return
      */
     protected WebClient initialValue(){
+
         WebClient client = new WebClient(BrowserVersion.BEST_SUPPORTED);
         client.getOptions().setCssEnabled(false);//headless browser不需要css支持
         client.getOptions().setDownloadImages(false);//同样不需要下载图片，节省带宽
@@ -41,6 +48,7 @@ public final class HtmlUnitBrowser extends ThreadLocal<WebClient> implements Web
         client.getOptions().setRedirectEnabled(true);
         client.getOptions().setThrowExceptionOnFailingStatusCode(false);//当访问错误时不打出日志
         client.getOptions().setThrowExceptionOnScriptError(false);//当js运行出错不打出日志
+
         client.getOptions().setTimeout(builder.timeout);//设置模拟器连接网络的超时参数
         client.setAjaxController(new NicelyResynchronizingAjaxController());
         client.setCookieManager(this.cookieManager);
@@ -65,8 +73,9 @@ public final class HtmlUnitBrowser extends ThreadLocal<WebClient> implements Web
         HtmlTextInput userNameInput = null;//用户名输入框
         HtmlPasswordInput passwordInput = null;//密码输入框
         HtmlElement button = null;//登录按钮,最好不要限定为必须button
+        HtmlPage page = null;
         try{
-            HtmlPage page = client.getPage(loginURL);
+            page = client.getPage(loginURL);
             if ((!StringUtils.isBlank(usernameXpath)) && (!StringUtils.isBlank(passwordXpath)) && (!StringUtils.isBlank(submitXpath))) {//如果xpath都有指定
                 List uList = page.getByXPath(usernameXpath);
                 List pList = page.getByXPath(passwordXpath);
@@ -99,8 +108,8 @@ public final class HtmlUnitBrowser extends ThreadLocal<WebClient> implements Web
         try {
             HtmlPage page = client.getPage(URL);
             return Optional.ofNullable(page.getBody().asText());
-        } catch (IOException ex) {
-            logger.error("IOException happen when get page content", ex);
+        } catch (Exception ex) {
+            logger.error("Exception happen when get page content", ex);
             return Optional.empty();
         }
 
@@ -111,6 +120,7 @@ public final class HtmlUnitBrowser extends ThreadLocal<WebClient> implements Web
         List<String> links = new ArrayList<>();
         WebClient client = this.get();
         try {
+            client.getPage(URL);
             HtmlPage page = client.getPage(URL);
             URL curURL = page.getUrl();//当前页面链接
             List<HtmlAnchor> anchors = page.getAnchors();
@@ -119,7 +129,13 @@ public final class HtmlUnitBrowser extends ThreadLocal<WebClient> implements Web
                 String hrefAttr = anchor.getHrefAttribute().trim();
                 if ("".equals(hrefAttr)) continue;//如果href属性为空则跳过
                 if (!hrefAttr.startsWith("http")) {
-                    anchorURL = new URL(curURL, hrefAttr).toString();
+                    if (hrefAttr.startsWith(".") && hrefAttr.startsWith("/")) {
+                        anchorURL = new URL(curURL, hrefAttr).toString();
+                    } else { //既不是http开头又不是相对路径，跳过
+                        continue;
+                    }
+                } else {//如果http开头直接当成可用链接
+                    anchorURL = hrefAttr;
                 }
                 links.add(anchorURL);
             }

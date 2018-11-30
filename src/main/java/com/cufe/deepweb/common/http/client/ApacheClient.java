@@ -3,12 +3,15 @@ package com.cufe.deepweb.common.http.client;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import com.gargoylesoftware.htmlunit.httpclient.HtmlUnitCookieStore;
 import org.apache.http.HttpEntity;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
@@ -17,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -24,12 +29,25 @@ import java.util.Optional;
  */
 public class ApacheClient extends ThreadLocal<HttpContext> implements CusHttpClient {
     private static final Logger logger = LoggerFactory.getLogger(ApacheClient.class);
+    private static List<String> userAgent = new ArrayList<String>(){
+        {
+            add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+            add("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0");
+            add("Mozilla/5.0(WindowsNT6.1;rv:31.0)Gecko/20100101Firefox/31.0");
+            add("Mozilla");
+            add("HTTP Banner Detection(security.ipip.net)");
+        }
+    };
     /**
      * httpClient是线程安全的，因此可在多个线程中共用一个client
      */
     private CloseableHttpClient httpClient;
     private PoolingHttpClientConnectionManager manager;
+    private RequestConfig config;
     private Builder builder;
+    private static String getUserAgent() {
+        return userAgent.get((int)(System.currentTimeMillis()%userAgent.size()));
+    }
     private ApacheClient(Builder builder) {
         this.builder =builder;
         manager = new PoolingHttpClientConnectionManager();
@@ -37,8 +55,15 @@ public class ApacheClient extends ThreadLocal<HttpContext> implements CusHttpCli
         manager.setDefaultMaxPerRoute(this.builder.defaultMaxPerRoute);
         httpClient = HttpClients.custom()
                 .setConnectionManager(manager)
+                .setRetryHandler(new StandardHttpRequestRetryHandler())
                 .build();
+        config = RequestConfig.custom()
+            .setConnectionRequestTimeout(builder.timeout)
+            .setConnectTimeout(builder.timeout)
+            .setSocketTimeout(builder.timeout)
+            .build();
     }
+
 
 
     /**
@@ -62,6 +87,8 @@ public class ApacheClient extends ThreadLocal<HttpContext> implements CusHttpCli
      */
     public Optional<String> getContent(String URL) {
         HttpGet httpGet = new HttpGet(URL);
+        httpGet.setConfig(config);
+        httpGet.setHeader("user-agent", getUserAgent());
         try (CloseableHttpResponse response = httpClient.execute(httpGet,get())) {
             if (response.getStatusLine().getStatusCode() >= 300) {
                 logger.error("HTTP response status code {}, reason phase: {}",response.getStatusLine().getStatusCode(),response.getStatusLine().getReasonPhrase());
@@ -91,6 +118,10 @@ public class ApacheClient extends ThreadLocal<HttpContext> implements CusHttpCli
         private int maxTotal;
         private int defaultMaxPerRoute;
         /**
+         * 超时参数的设置值
+         */
+        private int timeout;
+        /**
          * 来自模拟器的cookieManager
          */
         private CookieManager cookieManager;
@@ -116,6 +147,10 @@ public class ApacheClient extends ThreadLocal<HttpContext> implements CusHttpCli
 
         public Builder setCookieManager(CookieManager cookieManager) {
             this.cookieManager = cookieManager;
+            return this;
+        }
+        public Builder setTimeout(int timeout) {
+            this.timeout = timeout;
             return this;
         }
         public Builder() {

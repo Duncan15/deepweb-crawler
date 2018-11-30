@@ -4,6 +4,8 @@ import com.cufe.deepweb.crawler.Constant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.bind.DatatypeConverter;
+
 import java.io.*;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -16,16 +18,33 @@ import java.util.Set;
  */
 public class RAMMD5Dedutor extends Deduplicator<String> {
     private final Logger logger = LoggerFactory.getLogger(RAMMD5Dedutor.class);
-    private Set<byte[]> deduSet;
+    private Set<String> deduSet;
     private MessageDigest md5;
     private Path dataPath; //数据存储文件夹
+
+    /**
+     * 不使用数据存储文件
+     */
+    public RAMMD5Dedutor() {
+        deduSet = new HashSet<>();
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException ex){
+            logger.error("can't find the md5 algorithm");//此错误不可能发生
+        }
+    }
+
+    /**
+     * 使用数据存储文件
+     * @param dataPath
+     */
     public RAMMD5Dedutor(Path dataPath){
         this.dataPath = dataPath;
         deduSet = null;
         File f  = dataPath.resolve( Constant.round+DATA_FILE_NAME).toFile();
         if (f.exists()) {//如果对象文件存在
             try(ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(f))) {
-                deduSet = (Set<byte[]>) inputStream.readObject();
+                deduSet = (Set<String>) inputStream.readObject();
             } catch (Exception ex) {
                 logger.error("Exception happen when read dedu object file");
             } finally {
@@ -54,7 +73,8 @@ public class RAMMD5Dedutor extends Deduplicator<String> {
     public synchronized boolean add(String o) {
         costV++;
         byte[] osmd5 = md5.digest(o.getBytes());
-        if (deduSet.add(osmd5)) {
+        String hexMd5 = DatatypeConverter.printHexBinary(osmd5);
+        if (deduSet.add(hexMd5)) {
             newV++;
             return true;
         }
@@ -72,6 +92,7 @@ public class RAMMD5Dedutor extends Deduplicator<String> {
      */
     @Override
     public void close() throws IOException {
+        if (dataPath == null) return;
         String fileName = Constant.round+DATA_FILE_NAME;
         File f = this.dataPath.resolve(fileName).toFile();
         if (f.exists()) {//如果该轮次的备份文件已经存在，直接退出

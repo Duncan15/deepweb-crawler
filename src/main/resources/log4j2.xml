@@ -12,7 +12,7 @@
         <!--过滤掉sql2o和hikari的一些无用的DEBUG信息-->
         <logger name="org.sql2o" level="INFO"></logger>
         <logger name="com.zaxxer.hikari" level="INFO"></logger>
-        <logger name="com.gargoylesoftware.htmlunit" level="WARN"></logger>
+        <logger name="com.gargoylesoftware.htmlunit" level="ERROR"></logger>
         <Root level="info">
             <AppenderRef ref="Console"/>
         </Root>

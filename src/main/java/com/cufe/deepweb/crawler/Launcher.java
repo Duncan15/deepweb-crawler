@@ -2,8 +2,7 @@ package com.cufe.deepweb.crawler;
 
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
-import com.cufe.deepweb.crawler.branch.Producer;
-import com.cufe.deepweb.common.Utils;
+import com.cufe.deepweb.crawler.branch.Scheduler;
 import com.cufe.deepweb.common.http.client.ApacheClient;
 import com.cufe.deepweb.common.http.client.CusHttpClient;
 import com.cufe.deepweb.common.http.simulate.HtmlUnitBrowser;
@@ -13,14 +12,18 @@ import com.cufe.deepweb.common.orm.model.Current;
 import com.cufe.deepweb.common.orm.model.Pattern;
 import com.cufe.deepweb.common.orm.model.WebSite;
 import com.cufe.deepweb.crawler.service.InfoLinkService;
-import com.cufe.deepweb.crawler.branch.Consumer;
 import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.common.dedu.RAMMD5Dedutor;
 import com.cufe.deepweb.common.orm.Orm;
 import com.cufe.deepweb.crawler.service.QueryLinkService;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +52,6 @@ public final class Launcher {
      * msg备份文件文件名
      */
     private static final String MSG_DATA_NAME = "msg.dat";
-    private static ExecutorService threadPool;//消费线程池
     private Launcher() { }
     public static void main(final String[] args) {
         init(args);
@@ -57,15 +59,12 @@ public final class Launcher {
         //初始化策略算法，该算法只会使用在producer线程中
         AlgorithmBase alg = new LinearIncrementalAlgorithm.Builder(indexClient,dedu).build();
         //初始化查询链接处理服务
-        QueryLinkService queryLinkService = new QueryLinkService(webBrowser);
+        QueryLinkService queryLinkService = new QueryLinkService(webBrowser, dedu);
         //初始化信息链接处理服务
-        InfoLinkService infoLinkService = new InfoLinkService(httpClient, indexClient, dedu);
+        InfoLinkService infoLinkService = new InfoLinkService(httpClient, indexClient);
+
         //初始化线程
-        Producer producer = new Producer(alg, queryLinkService, infoLinkService, msgQueue);
-        for (int i = 0; i < Constant.webSite.getThreadNum() ; i++) {
-            Consumer consumer = new Consumer(queryLinkService, infoLinkService, msgQueue);
-            threadPool.execute(consumer);
-        }
+        Scheduler producer = new Scheduler(alg, queryLinkService, infoLinkService, msgQueue);
         producer.start();
     }
 
@@ -78,16 +77,50 @@ public final class Launcher {
      * @param args
      */
     private static void init(final String[] args) {
+        Options options = new Options();
+        options.addOption(Option.builder("i")
+            .longOpt("web-id")
+            .hasArg()
+            .required()
+            .desc("指定的爬取网站ID")
+            .build()
+        );
+        options.addOption(Option.builder("l")
+            .longOpt("jdbc-url")
+            .hasArg()
+            .required()
+            .desc("指定的JDBC链接")
+            .build()
+        );
+        options.addOption(Option.builder("u")
+            .longOpt("username")
+            .hasArg()
+            .required()
+            .desc("数据库用户名")
+            .build()
+        );
+        options.addOption(Option.builder("p")
+            .longOpt("password")
+            .hasArg()
+            .required()
+            .desc("数据库密码")
+            .build()
+        );
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            cmd = parser.parse(options, args);
+        } catch (ParseException ex) {
+            logger.error("error happen when parse commandline args");
+            System.exit(1);
+        }
         //config mysql
         HikariConfig hikariConfig = new HikariConfig("/orm/hikari.properties");
-        String webIDStr = Utils.getValue(args,0);
+        String webIDStr = cmd.getOptionValue("web-id");
         int webID = Integer.parseInt(webIDStr);//webID
-        String jdbcURL = Utils.getValue(args, 1);
-        String userName = Utils.getValue(args, 2);
-        String password = Utils.getValue(args, 3);
-        jdbcURL = jdbcURL != null ? jdbcURL : "jdbc:xxx";
-        userName = userName != null ? userName : "root";
-        password = password != null ? password : "1215287416";
+        String jdbcURL = cmd.getOptionValue("jdbc-url");
+        String userName = cmd.getOptionValue("username");
+        String password = cmd.getOptionValue("password");
         logger.info("crawler start at {}", new Date().toString());
         logger.info("configure cmd param with jdbcURL:{},userName:{},password:{}", jdbcURL, userName, password);
         hikariConfig.setJdbcUrl(jdbcURL);
@@ -97,13 +130,13 @@ public final class Launcher {
         Orm.setSql2o(new Sql2o(ds));
 
         //config website info
-        Sql2o sql2o=Orm.getSql2o();
-        try(Connection conn=sql2o.open()){
+        Sql2o sql2o = Orm.getSql2o();
+        try (Connection conn=sql2o.open()) {
             String sql = "select * from website where webId=:webID";
             Constant.webSite = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(WebSite.class);
             sql = "select * from current where webId=:webID";
             Constant.current = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(Current.class);
-            sql = "select * from pattern where webId=:webID";
+            sql = "select id, webId, patternName, xpath from pattern where webId=:webID";
             List<Pattern> patterns = conn.createQuery(sql).addParameter("webID", webID).executeAndFetch(Pattern.class);
             patterns.forEach(pattern -> {
                 if (Constant.FT_INDEX_FIELD.equals(pattern.getPatternName())) return;//跳过全文索引的pattern，因为全文索引在爬虫中默认执行
@@ -117,7 +150,6 @@ public final class Launcher {
                     Constant.round = ro;
                 }
             }
-            Constant.round++;//最大值+1
         }
         if(Constant.webSite == null || Constant.current == null){
             logger.error("webID所对应的webSite信息无法找到，程序退出");
@@ -153,7 +185,9 @@ public final class Launcher {
         //将列表中的数据插入消息队列
         if (msgList != null) {
             msgList.forEach(link -> {
-                msgQueue.offer(link);
+                if (StringUtils.isNotBlank(link)) {//如果是有效链接
+                    msgQueue.offer(link);
+                }
             });
         }
 
@@ -174,24 +208,12 @@ public final class Launcher {
                 .setCookieManager(((HtmlUnitBrowser)webBrowser).getCookieManager())
                 .build();
 
-
-        //配置下载线程池
-        ThreadFactory threadFactory = new ThreadFactoryBuilder()
-                .setUncaughtExceptionHandler((thread, exception) -> {
-            logger.error("消费线程出错", exception);
-        })
-                .setNameFormat("consume_thread_%s")
-                .build();
-        threadPool = Executors.newFixedThreadPool(Constant.webSite.getThreadNum(), threadFactory);
-
     }
     private static class Exitor extends Thread {
         private Logger logger = LoggerFactory.getLogger(Exitor.class);
         @Override
         public void run() {
             logger.info("start the exit thread");
-            threadPool.shutdown();
-            while (!threadPool.isTerminated()) {}//等待线程池完全退出
             //将msgQueue的内容写入文件
             List<String> msgList = new ArrayList<>();
             msgQueue.forEach( link -> {

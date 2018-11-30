@@ -28,7 +28,6 @@ public class InfoLinkService extends LinkService {
     private final static Logger logger = LoggerFactory.getLogger(InfoLinkService.class);
     private CusHttpClient httpClient;
     private IndexClient indexClient;
-    private Deduplicator dedu;
     /**
      * html标签解析器，多线程安全
      */
@@ -37,25 +36,15 @@ public class InfoLinkService extends LinkService {
      * 用于计算当前round所下载的文件数量
      */
     private AtomicInteger count;
-    public InfoLinkService(CusHttpClient httpClient, IndexClient indexClient, Deduplicator dedu) {
+    public InfoLinkService(CusHttpClient httpClient, IndexClient indexClient) {
         this.httpClient = httpClient;
         this.indexClient = indexClient;
-        this.dedu = dedu;
         this.htmlCleaner = new HtmlCleaner();
         CleanerProperties properties = this.htmlCleaner.getProperties();
         properties.setOmitComments(true);//忽略注释
         count = new AtomicInteger(0);
     }
 
-    /**
-     * 判断该链接是否已经下载过
-     * 此方法的调用会影响new和cost的值，不要随意调用
-     * @param infoLink
-     * @return true if has existed, or false
-     */
-    public boolean exists(String infoLink) {
-        return !dedu.add(infoLink);
-    }
     public Map<String, String> getFieldContentMap(String content) {
         Map<String, String> fieldContentMap = new HashMap<>();
         Constant.patternMap.forEach((k, v) -> {

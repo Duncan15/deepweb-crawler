@@ -12,6 +12,26 @@ public class Current {
     private String M4status;
     private Integer SampleData_sum;
 
+    public Integer getfQueryLink_sum() {
+        return this.fQueryLink_sum;
+    }
+
+    public void setfQueryLink_sum(Integer fQueryLink_sum) {
+        this.fQueryLink_sum = fQueryLink_sum;
+    }
+
+    private Integer fQueryLink_sum;
+
+    public Integer getfInfoLink_sum() {
+        return this.fInfoLink_sum;
+    }
+
+    public void setfInfoLink_sum(Integer fInfoLink_sum) {
+        this.fInfoLink_sum = fInfoLink_sum;
+    }
+
+    private Integer fInfoLink_sum;
+
     public Long getWebId() {
         return webId;
     }
