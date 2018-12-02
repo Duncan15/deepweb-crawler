@@ -7,13 +7,11 @@ import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -21,39 +19,42 @@ import java.util.Optional;
 /**
  * 使用HtmlUnit实现的Browser
  */
-public final class HtmlUnitBrowser extends ThreadLocal<WebClient> implements WebBrowser {
+public final class HtmlUnitBrowser implements WebBrowser {
     private Logger logger = LoggerFactory.getLogger(HtmlUnitBrowser.class);
     static {
+        //关闭HtmlUnit日志输出
         LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
     }
     private Builder builder;
     private CookieManager cookieManager;
     private volatile boolean isLogin;
+    private ThreadLocal<WebClient> client = new ThreadLocal<WebClient>() {
+        @Override
+        protected WebClient initialValue() {
+            WebClient client = new WebClient(BrowserVersion.BEST_SUPPORTED);
+            client.setCookieManager(cookieManager);
+            client.getOptions().setCssEnabled(false);//headless browser不需要css支持
+            client.getOptions().setDownloadImages(false);//同样不需要下载图片，节省带宽
+            client.getOptions().setJavaScriptEnabled(true);
+            client.getOptions().setThrowExceptionOnFailingStatusCode(false);//当访问错误时不打出日志
+            client.getOptions().setThrowExceptionOnScriptError(false);//当js运行出错不打出日志
+            client.getOptions().setTimeout(builder.timeout);//设置模拟器连接网络的超时参数
+            client.getOptions().setDoNotTrackEnabled(true);//不让浏览行为被记录
+            client.getOptions().setHistoryPageCacheLimit(1);//限制缓存大小
+            client.getOptions().setHistorySizeLimit(1);
+            client.setAjaxController(new NicelyResynchronizingAjaxController());
+            client.waitForBackgroundJavaScript(builder.timeout);
+            logger.info("create new webclient");
+            return client;
+        }
+    };
     private HtmlUnitBrowser(Builder builder){
         this.builder = builder;
         this.cookieManager = new CookieManager();//设置全局统一的cookieManager
         this.isLogin = false;//cookieManager是否保留登录信息
+
     }
 
-    /**
-     * override ThreadLocal的方法
-     * @return
-     */
-    protected WebClient initialValue(){
-
-        WebClient client = new WebClient(BrowserVersion.BEST_SUPPORTED);
-        client.getOptions().setCssEnabled(false);//headless browser不需要css支持
-        client.getOptions().setDownloadImages(false);//同样不需要下载图片，节省带宽
-        client.getOptions().setJavaScriptEnabled(true);
-        client.getOptions().setRedirectEnabled(true);
-        client.getOptions().setThrowExceptionOnFailingStatusCode(false);//当访问错误时不打出日志
-        client.getOptions().setThrowExceptionOnScriptError(false);//当js运行出错不打出日志
-
-        client.getOptions().setTimeout(builder.timeout);//设置模拟器连接网络的超时参数
-        client.setAjaxController(new NicelyResynchronizingAjaxController());
-        client.setCookieManager(this.cookieManager);
-        return client;
-    }
     /**
      * override remove方法（未实现）
      */
@@ -69,7 +70,7 @@ public final class HtmlUnitBrowser extends ThreadLocal<WebClient> implements Web
      */
     @Override
     public boolean login(String loginURL, String username, String password, String usernameXpath, String passwordXpath, String submitXpath) {
-        WebClient client = this.get();
+        WebClient client = this.client.get();
         HtmlTextInput userNameInput = null;//用户名输入框
         HtmlPasswordInput passwordInput = null;//密码输入框
         HtmlElement button = null;//登录按钮,最好不要限定为必须button
@@ -104,7 +105,7 @@ public final class HtmlUnitBrowser extends ThreadLocal<WebClient> implements Web
 
     @Override
     public Optional<String> getPageContent(String URL) {
-        WebClient client = this.get();
+        WebClient client = this.client.get();
         try {
             HtmlPage page = client.getPage(URL);
             return Optional.ofNullable(page.getBody().asText());
@@ -118,12 +119,13 @@ public final class HtmlUnitBrowser extends ThreadLocal<WebClient> implements Web
     @Override
     public List<String> getAllLinks(String URL) {
         List<String> links = new ArrayList<>();
-        WebClient client = this.get();
+        WebClient client = this.client.get();
         try {
             client.getPage(URL);
             HtmlPage page = client.getPage(URL);
             URL curURL = page.getUrl();//当前页面链接
             List<HtmlAnchor> anchors = page.getAnchors();
+            logger.info("anchor size {}", anchors.size());
             for (HtmlAnchor anchor : anchors) {
                 String anchorURL = "";
                 String hrefAttr = anchor.getHrefAttribute().trim();

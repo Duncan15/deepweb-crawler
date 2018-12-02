@@ -43,6 +43,7 @@ public class RAMMD5Dedutor extends Deduplicator<String> {
         deduSet = null;
         File f  = dataPath.resolve( Constant.round+DATA_FILE_NAME).toFile();
         if (f.exists()) {//如果对象文件存在
+            logger.info("read dedu from file {}", f.getAbsolutePath());
             try(ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(f))) {
                 deduSet = (Set<String>) inputStream.readObject();
             } catch (Exception ex) {

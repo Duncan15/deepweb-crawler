@@ -70,20 +70,17 @@ public class QueryLinkService extends LinkService {
     }
     private int getEndPageNum(int startNum, int endNum, String keyword) {
         String endContent = browser.getPageContent(buildQueryLink(keyword,endNum)).get();
-        int counter = 30;//计数器，防止二分出错执行次数太多
         while (startNum < endNum) {
-            counter--;
             int mid = (startNum + endNum)/2;
             String midContent = browser.getPageContent(buildQueryLink(keyword, mid)).get();
+            logger.info("mid num is {}", mid);
             if(isSimilarity(midContent,endContent)) {
                 endNum = mid - 1;
             } else {
                 startNum = mid;
-                if (endNum - startNum == 1) return startNum;
+                if (endNum - startNum == 1) break;
             }
-            if(counter <= 0 ) break;
         }
-        logger.error("error because to much time in binary search end page num");
         return startNum;
     }
     /**
@@ -97,7 +94,7 @@ public class QueryLinkService extends LinkService {
         logger.info("increment page num to {}", cur);
         while (true) {
             cur *= 2;
-            curContent = browser.getPageContent(buildQueryLink(keyword, cur)).get();
+            curContent = browser.getPageContent(buildQueryLink(keyword, cur)).orElse("");
             logger.info("increment page num to {}", cur);
             if (isSimilarity(preContent, curContent)) break; //如果两个页面相似，则都是空页
             preContent = curContent;

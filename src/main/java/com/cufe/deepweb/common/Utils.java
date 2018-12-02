@@ -4,6 +4,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.Future;
 
 public final class Utils {
     private Utils() { }
@@ -30,6 +33,25 @@ public final class Utils {
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(filePath), "UTF8")) {
             writer.write(content);
         }
+    }
+    /**
+     * 判断集合内任务是否运行完毕，同时对运行完毕的任务进行清理
+     * @param runSet
+     * @return true if have task running
+     */
+    public static boolean isRun(Set<Future> runSet) {
+        if (runSet == null) return false;
+        Iterator<Future> iter = runSet.iterator();
+        boolean isRun = false;
+        while (iter.hasNext()) {
+            Future f = iter.next();
+            if (f.isDone()) {
+                iter.remove();
+            } else {
+                isRun = true;
+            }
+        }
+        return isRun;
     }
 
 

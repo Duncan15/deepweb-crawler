@@ -2,23 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7d2cc1d1-abd7-4082-8c32-c4a746ac5ce6" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/functional/ConsumerHandlerFunc.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/http/ClientTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/miscella/DeduTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/miscella/SyncTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/http/BrowserTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/Utils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/Utils.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/RAMMD5Dedutor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/RAMMD5Dedutor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/http/client/ApacheClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/http/client/ApacheClient.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/http/simulate/HtmlUnitBrowser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/http/simulate/HtmlUnitBrowser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/orm/model/Current.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/orm/model/Current.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Consumer.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Producer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Scheduler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/InfoLinkService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/InfoLinkService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Scheduler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Scheduler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/QueryLinkService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/QueryLinkService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/log4j2.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/log4j2.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/miscella/SyntaxTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/miscella/SyntaxTest.java" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <ignored path="$PROJECT_DIR$/target/" />
@@ -42,34 +33,35 @@
     <session id="-2080572466">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="3" />
+          <entry key="project.closed" value="5" />
           <entry key="project.open.time.1" value="1" />
+          <entry key="project.open.time.2" value="1" />
           <entry key="project.open.time.21" value="1" />
           <entry key="project.open.time.3" value="1" />
           <entry key="project.open.time.6" value="1" />
-          <entry key="project.opened" value="4" />
+          <entry key="project.opened" value="5" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="class" value="11" />
-          <entry key="java" value="336" />
+          <entry key="java" value="363" />
           <entry key="md" value="1" />
-          <entry key="xml" value="12" />
+          <entry key="xml" value="13" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="CLASS" value="11" />
-          <entry key="JAVA" value="336" />
+          <entry key="JAVA" value="363" />
           <entry key="Scratch" value="1" />
-          <entry key="XML" value="12" />
+          <entry key="XML" value="13" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="dummy" value="4" />
-          <entry key="java" value="27377" />
+          <entry key="java" value="28689" />
           <entry key="md" value="70" />
           <entry key="txt" value="43" />
           <entry key="xml" value="74" />
@@ -77,7 +69,7 @@
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="JAVA" value="27377" />
+          <entry key="JAVA" value="28689" />
           <entry key="PLAIN_TEXT" value="47" />
           <entry key="Scratch" value="70" />
           <entry key="XML" value="74" />
@@ -90,12 +82,10 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Scheduler.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="216">
-              <caret line="142" column="63" lean-forward="true" selection-start-line="142" selection-start-column="63" selection-end-line="142" selection-end-column="63" />
+            <state relative-caret-position="-56">
+              <caret line="148" column="33" lean-forward="true" selection-start-line="148" selection-start-column="33" selection-end-line="148" selection-end-column="33" />
               <folding>
                 <element signature="imports" expanded="true" />
-                <element signature="method#isContinue#0;class#Producer#0" />
-                <element signature="method#fixStatus#0;class#Producer#0" />
                 <element signature="docComment;method#consumeQueryLink#0;class#Scheduler#0" />
                 <element signature="docComment;method#consumeInfoLink#0;class#Scheduler#0" />
               </folding>
@@ -104,36 +94,26 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/QueryLinkService.java">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="117">
-              <caret line="28" column="32" lean-forward="true" selection-start-line="28" selection-start-column="32" selection-end-line="28" selection-end-column="32" />
+            <state relative-caret-position="620">
+              <caret line="221" column="15" lean-forward="true" selection-start-line="221" selection-start-column="15" selection-end-line="221" selection-end-column="15" />
               <folding>
                 <element signature="imports" expanded="true" />
-                <element signature="method#getTotalPageNum#0;class#QueryLinkService#0" />
-                <element signature="method#incrementNum#0;class#QueryLinkService#0" />
-                <element signature="method#isSimilarity#0;class#QueryLinkService#0" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/test/java/miscella/SyntaxTest.java">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/index/IndexClient.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="135">
-              <caret line="14" column="54" selection-start-line="14" selection-start-column="54" selection-end-line="14" selection-end-column="54" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1858">
-              <caret line="229" column="13" lean-forward="true" selection-start-line="229" selection-start-column="13" selection-end-line="229" selection-end-column="13" />
+            <state relative-caret-position="3840">
+              <caret line="256" column="16" selection-start-line="256" selection-start-column="16" selection-end-line="256" selection-end-column="16" />
               <folding>
                 <element signature="imports" expanded="true" />
+                <element signature="e#8759#8760#0" expanded="true" />
+                <element signature="e#8800#8801#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -174,8 +154,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/src/main/java/com/cufe/web/crawler/common/http/WebBrowser.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/cufe/web/crawler/common/orm/model/Status.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/web/crawler/common/orm/Orm.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/web/crawler/common/orm/model/Current.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/web/crawler/common/http/client/HttpClient.java" />
@@ -212,18 +190,20 @@
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/orm/model/Current.java" />
         <option value="$PROJECT_DIR$/src/main/resources/log4j2.xml" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/http/client/ApacheClient.java" />
-        <option value="$PROJECT_DIR$/src/test/java/http/ClientTest.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/functional/ConsumerHandlerFunc.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Producer.java" />
         <option value="$PROJECT_DIR$/src/test/java/miscella/SyncText.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/InfoLinkService.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/http/simulate/HtmlUnitBrowser.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Consumer.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java" />
         <option value="$PROJECT_DIR$/src/test/java/miscella/DeduTest.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/RAMMD5Dedutor.java" />
         <option value="$PROJECT_DIR$/src/test/java/miscella/SyntaxTest.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/RAMMD5Dedutor.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/QueryLinkService.java" />
+        <option value="$PROJECT_DIR$/src/test/java/http/ClientTest.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/http/simulate/HtmlUnitBrowser.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/Utils.java" />
+        <option value="$PROJECT_DIR$/src/test/java/http/BrowserTest.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Scheduler.java" />
       </list>
     </option>
@@ -306,8 +286,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="PackagesPane" />
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -407,6 +385,16 @@
               <item name="main" type="462c0819:PsiDirectoryNode" />
               <item name="java" type="462c0819:PsiDirectoryNode" />
               <item name="deepweb" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+              <item name="index" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
+              <item name="crawler" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="deepweb" type="462c0819:PsiDirectoryNode" />
               <item name="crawler" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -455,19 +443,29 @@
               <item name="src" type="462c0819:PsiDirectoryNode" />
               <item name="test" type="462c0819:PsiDirectoryNode" />
               <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="http" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="crawler" type="b2602c69:ProjectViewProjectNode" />
+              <item name="crawler" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
               <item name="miscella" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="PackagesPane" />
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="SearchEverywhereHistoryKey" value="maven&#9;ACTION&#9;ActivateMavenProjectsToolWindow" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1543549183111" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1543721238611" />
     <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="Markdown" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
@@ -496,7 +494,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.Launcher">
+  <component name="RunManager" selected="JUnit.BrowserTest.testHtmlUnit">
     <configuration default="true" type="Applet" factoryName="Applet">
       <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
       <method v="2">
@@ -507,6 +505,7 @@
       <option name="MAIN_CLASS_NAME" value="com.cufe.deepweb.crawler.Launcher" />
       <module name="crawler" />
       <option name="PROGRAM_PARAMETERS" value="--web-id=93 --jdbc-url=jdbc:mysql://127.0.0.1:3306/webcrawler?useUnicode=true&amp;characterEncoding=utf-8&amp;useSSL=false&amp;serverTimezone=GMT --username=root --password=1215287416" />
+      <option name="VM_PARAMETERS" value="-Xms4G -Xmx4G" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="com.cufe.deepweb.crawler.*" />
@@ -519,6 +518,23 @@
     </configuration>
     <configuration default="true" type="Application" factoryName="Application">
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="BrowserTest.testHtmlUnit" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="crawler" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="http.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="http" />
+      <option name="MAIN_CLASS_NAME" value="http.BrowserTest" />
+      <option name="METHOD_NAME" value="testHtmlUnit" />
+      <option name="TEST_OBJECT" value="method" />
+      <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -551,23 +567,6 @@
       <option name="PACKAGE_NAME" value="miscella" />
       <option name="MAIN_CLASS_NAME" value="miscella.DeduTest" />
       <option name="METHOD_NAME" value="testHash" />
-      <option name="TEST_OBJECT" value="method" />
-      <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="SyncTest.testSync" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="crawler" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="miscella.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="PACKAGE_NAME" value="miscella" />
-      <option name="MAIN_CLASS_NAME" value="miscella.SyncTest" />
-      <option name="METHOD_NAME" value="testSync" />
       <option name="TEST_OBJECT" value="method" />
       <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
       <method v="2">
@@ -616,18 +615,18 @@
     </configuration>
     <list>
       <item itemvalue="Application.Launcher" />
-      <item itemvalue="JUnit.SyncTest.testSync" />
       <item itemvalue="JUnit.DeduTest.testDedu" />
       <item itemvalue="JUnit.DeduTest.testHash" />
       <item itemvalue="JUnit.SyntaxTest.testEncode" />
+      <item itemvalue="JUnit.BrowserTest.testHtmlUnit" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.BrowserTest.testHtmlUnit" />
         <item itemvalue="Application.Launcher" />
         <item itemvalue="JUnit.SyntaxTest.testEncode" />
         <item itemvalue="JUnit.DeduTest.testDedu" />
         <item itemvalue="JUnit.DeduTest.testHash" />
-        <item itemvalue="JUnit.SyncTest.testSync" />
       </list>
     </recent_temporary>
   </component>
@@ -647,23 +646,12 @@
       <workItem from="1541511482950" duration="39000" />
       <workItem from="1541511550522" duration="8755000" />
       <workItem from="1541674776623" duration="87120000" />
-      <workItem from="1542455627394" duration="85101000" />
+      <workItem from="1542455627394" duration="98422000" />
+      <workItem from="1543653421808" duration="3131000" />
     </task>
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="ClientTest_testClient - 2018.11.25 at 20h 55m 18s.xml">
-      <configuration name="ClientTest.testClient" configurationId="JUnit" />
-    </history-entry>
-    <history-entry file="ClientTest_testClient - 2018.11.25 at 20h 55m 42s.xml">
-      <configuration name="ClientTest.testClient" configurationId="JUnit" />
-    </history-entry>
-    <history-entry file="ClientTest_testClient - 2018.11.25 at 20h 58m 56s.xml">
-      <configuration name="ClientTest.testClient" configurationId="JUnit" />
-    </history-entry>
-    <history-entry file="SyncText_testSync - 2018.11.28 at 20h 34m 04s.xml">
-      <configuration name="SyncText.testSync" configurationId="JUnit" />
-    </history-entry>
     <history-entry file="DeduTest_testDedu - 2018.11.28 at 22h 07m 44s.xml">
       <configuration name="DeduTest.testDedu" configurationId="JUnit" />
     </history-entry>
@@ -682,9 +670,21 @@
     <history-entry file="SyntaxTest_testEncode - 2018.11.29 at 21h 51m 48s.xml">
       <configuration name="SyntaxTest.testEncode" configurationId="JUnit" />
     </history-entry>
+    <history-entry file="BrowserTest_testHtmlUnit - 2018.12.01 at 18h 02m 29s.xml">
+      <configuration name="BrowserTest.testHtmlUnit" configurationId="JUnit" />
+    </history-entry>
+    <history-entry file="BrowserTest_testHtmlUnit - 2018.12.01 at 18h 06m 32s.xml">
+      <configuration name="BrowserTest.testHtmlUnit" configurationId="JUnit" />
+    </history-entry>
+    <history-entry file="BrowserTest_testHtmlUnit - 2018.12.01 at 18h 26m 23s.xml">
+      <configuration name="BrowserTest.testHtmlUnit" configurationId="JUnit" />
+    </history-entry>
+    <history-entry file="BrowserTest_testHtmlUnit - 2018.12.01 at 18h 26m 35s.xml">
+      <configuration name="BrowserTest.testHtmlUnit" configurationId="JUnit" />
+    </history-entry>
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="264362000" />
+    <option name="totallyTimeSpent" value="280814000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="91" y="23" width="1340" height="837" extended-state="0" />
@@ -694,18 +694,18 @@
       <window_info id="Designer" order="1" />
       <window_info id="UI Designer" order="2" />
       <window_info id="Favorites" order="3" side_tool="true" />
-      <window_info content_ui="combo" id="Project" order="4" visible="true" weight="0.27272728" />
+      <window_info active="true" content_ui="combo" id="Project" order="4" visible="true" weight="0.27657935" />
       <window_info id="Structure" order="5" weight="0.25" />
       <window_info id="Image Layers" order="6" />
       <window_info id="Maven Projects" order="7" weight="0.23882897" />
       <window_info anchor="bottom" id="Event Log" order="0" sideWeight="0.5030817" side_tool="true" weight="0.32884097" />
       <window_info anchor="bottom" id="Version Control" order="1" show_stripe_button="false" />
       <window_info anchor="bottom" id="CheckStyle" order="2" sideWeight="0.49691835" weight="0.19541779" />
-      <window_info anchor="bottom" id="Terminal" order="3" sideWeight="0.49383667" weight="0.32884097" />
+      <window_info anchor="bottom" id="Terminal" order="3" sideWeight="0.49383667" weight="0.32751676" />
       <window_info anchor="bottom" id="Problems" order="4" sideWeight="0.49075502" weight="0.32884097" />
       <window_info anchor="bottom" id="Message" order="5" />
       <window_info anchor="bottom" id="Find" order="6" weight="0.32751676" />
-      <window_info active="true" anchor="bottom" id="Run" order="7" visible="true" weight="0.3261745" />
+      <window_info anchor="bottom" id="Run" order="7" weight="0.3261745" />
       <window_info anchor="bottom" id="Debug" order="8" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="9" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="10" weight="0.4" />
@@ -728,98 +728,26 @@
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
   </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java</url>
+          <line>216</line>
+          <properties />
+          <option name="timeStamp" value="46" />
+        </line-breakpoint>
+      </breakpoints>
+      <breakpoints-dialog>
+        <breakpoints-dialog />
+      </breakpoints-dialog>
+    </breakpoint-manager>
+  </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/RAMDocIDDedutor.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="174">
-          <caret line="17" selection-start-line="17" selection-end-line="17" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_161.jdk/Contents/Home/src.zip!/java/util/Collections.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="1023" column="8" selection-start-line="1023" selection-start-column="8" selection-end-line="1023" selection-end-column="8" />
-          <folding>
-            <element signature="e#58225#58226#0" expanded="true" />
-            <element signature="e#58260#58261#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/orm/model/Current.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
-          <caret line="24" column="39" selection-start-line="24" selection-start-column="39" selection-end-line="24" selection-end-column="39" />
-          <folding>
-            <element signature="e#330#331#0" expanded="true" />
-            <element signature="e#372#373#0" expanded="true" />
-            <element signature="e#433#434#0" expanded="true" />
-            <element signature="e#485#486#0" expanded="true" />
-            <element signature="e#604#605#0" expanded="true" />
-            <element signature="e#663#664#0" expanded="true" />
-            <element signature="e#713#714#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/orm/model/Pattern.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="75">
-          <caret line="5" column="13" selection-start-line="5" selection-start-column="13" selection-end-line="5" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/orm/model/WebSite.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="188" selection-start-line="188" selection-end-line="188" />
-          <folding>
-            <element signature="e#3582#3583#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.ideaLibSources/htmlunit-2.33-sources.jar!/com/gargoylesoftware/htmlunit/WebClientOptions.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="139">
-          <caret line="237" column="16" selection-start-line="237" selection-start-column="16" selection-end-line="237" selection-end-column="16" />
-          <folding>
-            <element signature="e#9071#9072#0" expanded="true" />
-            <element signature="e#9108#9109#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_161.jdk/Contents/Home/src.zip!/java/lang/ThreadLocal.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="132">
-          <caret line="125" column="16" selection-start-line="125" selection-start-column="16" selection-end-line="125" selection-end-column="16" />
-          <folding>
-            <element signature="e#4309#4310#0" expanded="true" />
-            <element signature="e#4336#4337#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="jar://$USER_HOME$/.ideaLibSources/htmlunit-2.33-sources.jar!/com/gargoylesoftware/htmlunit/Page.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="251">
           <caret line="63" column="7" lean-forward="true" selection-start-line="63" selection-start-column="7" selection-end-line="63" selection-end-column="7" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.ideaLibSources/htmlunit-2.33-sources.jar!/com/gargoylesoftware/htmlunit/WebClient.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="313">
-          <caret line="445" column="25" selection-start-line="445" selection-start-column="25" selection-end-line="445" selection-end-column="25" />
-          <folding>
-            <element signature="e#68888#68889#0" expanded="true" />
-            <element signature="e#68934#68935#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -852,10 +780,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="289">
           <caret line="297" column="67" lean-forward="true" selection-start-line="297" selection-start-column="67" selection-end-line="297" selection-end-column="67" />
-          <folding>
-            <element signature="e#9581#9582#0" expanded="true" />
-            <element signature="e#9616#9617#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -873,10 +797,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="263" column="11" selection-start-line="263" selection-start-column="11" selection-end-line="263" selection-end-column="11" />
-          <folding>
-            <element signature="e#9084#9085#0" expanded="true" />
-            <element signature="e#9131#9132#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -923,16 +843,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/http/simulate/WebBrowser.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="304">
-          <caret line="34" column="17" selection-start-line="34" selection-start-column="17" selection-end-line="34" selection-end-column="17" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="jar://$MAVEN_REPOSITORY$/org/apache/httpcomponents/httpclient/4.5.3/httpclient-4.5.3-sources.jar!/org/apache/http/client/RedirectStrategy.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
@@ -972,18 +882,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/java/http/ClientTest.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="11" column="46" lean-forward="true" selection-start-line="11" selection-start-column="46" selection-end-line="11" selection-end-column="46" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#291#292#0" expanded="true" />
-            <element signature="e#327#328#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Constant.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-395">
@@ -998,13 +896,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="15">
           <caret line="1" column="20" lean-forward="true" selection-start-line="1" selection-start-column="20" selection-end-line="1" selection-end-column="20" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pom.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="219">
-          <caret line="117" column="34" lean-forward="true" selection-start-line="117" selection-start-column="34" selection-end-line="117" selection-end-column="34" />
         </state>
       </provider>
     </entry>
@@ -1046,27 +937,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/http/simulate/HtmlUnitBrowser.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="146">
-          <caret line="111" selection-start-line="111" selection-end-line="111" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="method#login#0;class#HtmlUnitBrowser#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/InfoLinkService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="130">
-          <caret line="46" selection-start-line="46" selection-end-line="46" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_161.jdk/Contents/Home/src.zip!/java/net/URLEncoder.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="413">
@@ -1100,16 +970,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Consumer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="63" column="55" selection-start-line="63" selection-start-column="55" selection-end-line="63" selection-end-column="55" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Consumer.java" />
     <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_161.jdk/Contents/Home/src.zip!/javax/xml/bind/DatatypeConverter.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="8970">
@@ -1134,20 +995,74 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/RAMMD5Dedutor.java">
+    <entry file="file://$PROJECT_DIR$/src/test/java/miscella/SyntaxTest.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="39">
-          <caret line="21" column="30" lean-forward="true" selection-start-line="21" selection-start-column="30" selection-end-line="21" selection-end-column="30" />
+        <state relative-caret-position="135">
+          <caret line="14" column="54" selection-start-line="14" selection-start-column="54" selection-end-line="14" selection-end-column="54" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/LinkService.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="10" column="15" selection-start-line="10" selection-start-column="15" selection-end-line="10" selection-end-column="15" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/InfoLinkService.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="352">
+          <caret line="56" column="50" lean-forward="true" selection-start-line="56" selection-start-column="50" selection-end-line="56" selection-end-column="50" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java">
+    <entry file="jar://$USER_HOME$/.ideaLibSources/htmlunit-2.33-sources.jar!/com/gargoylesoftware/htmlunit/CookieManager.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1858">
-          <caret line="229" column="13" lean-forward="true" selection-start-line="229" selection-start-column="13" selection-end-line="229" selection-end-column="13" />
+        <state relative-caret-position="158">
+          <caret line="62" column="29" selection-start-line="62" selection-start-column="29" selection-end-line="62" selection-end-column="29" />
+          <folding>
+            <element signature="e#2157#2158#0" expanded="true" />
+            <element signature="e#2198#2199#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pom.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1190">
+          <caret line="117" column="34" lean-forward="true" selection-start-line="117" selection-start-column="34" selection-end-line="117" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.ideaLibSources/htmlunit-2.33-sources.jar!/com/gargoylesoftware/htmlunit/WebClientOptions.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="546">
+          <caret line="590" column="16" selection-start-line="590" selection-start-column="16" selection-end-line="590" selection-end-column="16" />
+          <folding>
+            <element signature="e#9071#9072#0" expanded="true" />
+            <element signature="e#9108#9109#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_161.jdk/Contents/Home/src.zip!/java/io/File.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="139">
+          <caret line="554" column="18" selection-start-line="554" selection-start-column="18" selection-end-line="554" selection-end-column="18" />
+          <folding>
+            <element signature="e#23018#23019#0" expanded="true" />
+            <element signature="e#23057#23058#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/dedu/RAMMD5Dedutor.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="175">
+          <caret line="45" column="61" lean-forward="true" selection-start-line="45" selection-start-column="61" selection-end-line="45" selection-end-column="61" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
@@ -1156,21 +1071,89 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/service/QueryLinkService.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="117">
-          <caret line="28" column="32" lean-forward="true" selection-start-line="28" selection-start-column="32" selection-end-line="28" selection-end-column="32" />
+        <state relative-caret-position="212">
+          <caret line="165" selection-start-line="165" selection-end-line="165" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="method#getTotalPageNum#0;class#QueryLinkService#0" />
-            <element signature="method#incrementNum#0;class#QueryLinkService#0" />
             <element signature="method#isSimilarity#0;class#QueryLinkService#0" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/java/http/ClientTest.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="14" column="21" lean-forward="true" selection-start-line="14" selection-start-column="21" selection-end-line="15" selection-end-column="113" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.ideaLibSources/htmlunit-2.33-sources.jar!/com/gargoylesoftware/htmlunit/WebClient.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="159">
+          <caret line="1956" column="15" selection-start-line="1956" selection-start-column="15" selection-end-line="1956" selection-end-column="15" />
+          <folding>
+            <element signature="e#68888#68889#0" expanded="true" />
+            <element signature="e#68934#68935#0" expanded="true" />
+            <element signature="e#70328#70329#0" expanded="true" />
+            <element signature="e#70387#70388#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/java/http/BrowserTest.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="275">
+          <caret line="24" column="26" selection-start-line="24" selection-start-column="26" selection-end-line="24" selection-end-column="26" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#311#312#0" expanded="true" />
+            <element signature="e#354#355#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/Utils.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="41" column="26" selection-start-line="41" selection-start-column="26" selection-end-line="41" selection-end-column="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/http/simulate/WebBrowser.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="405">
+          <caret line="27" column="21" selection-start-line="27" selection-start-column="21" selection-end-line="27" selection-end-column="21" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/http/simulate/HtmlUnitBrowser.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1618">
+          <caret line="45" column="43" selection-start-line="45" selection-start-column="43" selection-end-line="45" selection-end-column="43" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_161.jdk/Contents/Home/src.zip!/java/util/concurrent/BlockingQueue.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="332">
+          <caret line="374" column="8" selection-start-line="374" selection-start-column="8" selection-end-line="374" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/common/index/IndexClient.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="148">
-          <caret line="235" selection-start-line="235" selection-end-line="235" />
+        <state relative-caret-position="3840">
+          <caret line="256" column="16" selection-start-line="256" selection-start-column="16" selection-end-line="256" selection-end-column="16" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="e#8759#8760#0" expanded="true" />
@@ -1179,21 +1162,22 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/java/miscella/SyntaxTest.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/Launcher.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="14" column="54" selection-start-line="14" selection-start-column="54" selection-end-line="14" selection-end-column="54" />
+        <state relative-caret-position="620">
+          <caret line="221" column="15" lean-forward="true" selection-start-line="221" selection-start-column="15" selection-end-line="221" selection-end-column="15" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/cufe/deepweb/crawler/branch/Scheduler.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="216">
-          <caret line="142" column="63" lean-forward="true" selection-start-line="142" selection-start-column="63" selection-end-line="142" selection-end-column="63" />
+        <state relative-caret-position="-56">
+          <caret line="148" column="33" lean-forward="true" selection-start-line="148" selection-start-column="33" selection-end-line="148" selection-end-column="33" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="method#isContinue#0;class#Producer#0" />
-            <element signature="method#fixStatus#0;class#Producer#0" />
             <element signature="docComment;method#consumeQueryLink#0;class#Scheduler#0" />
             <element signature="docComment;method#consumeInfoLink#0;class#Scheduler#0" />
           </folding>

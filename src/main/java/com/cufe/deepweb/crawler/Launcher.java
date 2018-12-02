@@ -174,6 +174,7 @@ public final class Launcher {
         List<String> msgList = null;
         //如果文件存在，将列表读入内存
         if (f.exists()) {
+            logger.info("read msg from file {}", f.getAbsolutePath());
             try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(f))) {
                 msgList = (List<String>)inputStream.readObject();
             } catch (Exception ex) {
@@ -232,6 +233,7 @@ public final class Launcher {
             try {
                 httpClient.close();
                 dedu.close();//数据保存
+                indexClient.close();
             } catch (IOException ex) {
                 //nothing to do
             }

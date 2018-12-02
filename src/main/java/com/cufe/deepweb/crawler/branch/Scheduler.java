@@ -1,5 +1,6 @@
 package com.cufe.deepweb.crawler.branch;
 
+import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.orm.model.Current;
 import com.cufe.deepweb.algorithm.AlgorithmBase;
@@ -14,7 +15,6 @@ import org.sql2o.Sql2o;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingDeque;
@@ -65,7 +65,6 @@ public final class Scheduler extends Thread{
         logger.info("start the produce thread");
 
         while (this.isContinue()) {
-            Constant.round++;//增加当前轮次标示
             //part1:处理数据库初始化
             try (Connection conn = sql2o.open()) {//初始化current表中的对应行
                 String sql = "update current set M1status =:M1status, M2status =:M2status, M3status =:M3status, M4status =:M4status where webId =:webID";
@@ -78,21 +77,37 @@ public final class Scheduler extends Thread{
                         .executeUpdate();
 
                 //插入status表
+                sql = "update status set fLinkNum =:fLinkNum, sLinkNum =:sLinkNum where webId =:webID and type =:type";
+                int fLinkNum = infoLinkService.getFailedLinkNum();
+                conn.createQuery(sql)
+                    .addParameter("fLinkNum", fLinkNum)
+                    .addParameter("sLinkNum", infoLinkService.getTotalLinkNum() - fLinkNum)
+                    .addParameter("webID", Constant.webSite.getWebId())
+                    .addParameter("type", Constant.STATUS_TYPE_INFO)
+                    .executeUpdate();
+                fLinkNum = queryLinkService.getFailedLinkNum();
+                conn.createQuery(sql)
+                    .addParameter("fLinkNum", fLinkNum)
+                    .addParameter("sLinkNum", queryLinkService.getTotalLinkNum() - fLinkNum)
+                    .addParameter("webID", Constant.webSite.getWebId())
+                    .addParameter("type", Constant.STATUS_TYPE_QUERY)
+                    .executeUpdate();
+                Constant.round++;//增加当前轮次标示
                 sql = "insert into status(webId,round,type,fLinkNum,sLinkNum)" +
                     "values(:webID,:round,:type,:fLinkNum,:sLinkNum)";
                 conn.createQuery(sql)
                     .addParameter("webID", Constant.webSite.getWebId())
                     .addParameter("round", Constant.round+"")
                     .addParameter("type", Constant.STATUS_TYPE_INFO)
-                    .addParameter("fLinkNum", infoLinkService.getFailedLinkNum())
-                    .addParameter("sLinkNum", infoLinkService.getTotalLinkNum())
+                    .addParameter("fLinkNum", 0)
+                    .addParameter("sLinkNum", 0)
                     .executeUpdate();
                 conn.createQuery(sql)
                     .addParameter("webID", Constant.webSite.getWebId())
                     .addParameter("round", Constant.round+"")
                     .addParameter("type", Constant.STATUS_TYPE_QUERY)
-                    .addParameter("fLinkNum", queryLinkService.getFailedLinkNum())
-                    .addParameter("sLinkNum", queryLinkService.getTotalLinkNum())
+                    .addParameter("fLinkNum", 0)
+                    .addParameter("sLinkNum", 0)
                     .executeUpdate();
             }
             this.fixStatus(0,1);
@@ -110,33 +125,32 @@ public final class Scheduler extends Thread{
             logger.info("start the M3status");
             //part3:确定分页链接
             List<String> queryLinks = queryLinkService.getQueryLinks(curQuery);
-            for (String queryLink : queryLinks) {
-                while (true) {//如果阻塞过程中出行InterruptedException，则重试，保证不丢数据
+            //正在运行的任务集合
+            Set<Future> runSet = new HashSet<>();
+            runSet.add(threadPool.submit(() -> {
+                queryLinks.forEach(link -> {
                     try {
-                        msgQueue.put(queryLink);
-                        break;
+                        msgQueue.put(link);
                     } catch (InterruptedException ex) {
                         logger.error("InterruptedException happen when put queryLink into msgQueue",ex);
                     }
-                }
-            }
 
+                });
+            }));
 
             this.fixStatus(3,4);
             logger.info("start the M4status");
             //part4:下载链接
             List runList = new ArrayList(Constant.webSite.getThreadNum());
-            //正在运行的任务集合
-            Set<Future> runSet = new HashSet<>();
             do {
-                if (threadPool.getActiveCount() < Constant.webSite.getThreadNum()) {
+                int runNum = threadPool.getActiveCount();
+                if (runNum < Constant.webSite.getThreadNum()) {
                     runList.clear();
-                    msgQueue.drainTo(runList, Constant.webSite.getThreadNum());
+                    msgQueue.drainTo(runList, Constant.webSite.getThreadNum() - runNum);
                     runList.forEach(o -> {
                         runSet.add(threadPool.submit(() -> {
                             if (o instanceof String) {
                                 String link = (String)o;
-                                logger.info("consume link {}", link);
                                 if (queryLinkService.isQueryLink(link)) {//如果是分页链接
                                     this.consumeQueryLink(link);
                                 }else {//如果是数据链接
@@ -147,7 +161,7 @@ public final class Scheduler extends Thread{
                     });
 
                 }
-            } while (isRun(runSet) || threadPool.getQueue().size() > 0 || msgQueue.size() > 0);
+            } while (Utils.isRun(runSet) || threadPool.getQueue().size() > 0 || msgQueue.size() > 0);
             this.fixStatus(4,0);
         }
         System.exit(0);
@@ -217,7 +231,7 @@ public final class Scheduler extends Thread{
      */
     private void consumeQueryLink(String queryLink) {
         List<String> infoLinks = queryLinkService.getInfoLinks(queryLink);
-        logger.info("get info link num {}", infoLinks.size());
+        logger.info("consume query link {},get info link num {}", queryLink, infoLinks.size());
         infoLinks.forEach(infoLink -> {
             if (!msgQueue.offer(infoLink)) {//如果不能存入消息队列，则直接在本线程进行消费
                 consumeInfoLink(infoLink);
@@ -230,26 +244,8 @@ public final class Scheduler extends Thread{
      * @param infoLink
      */
     private void consumeInfoLink(String infoLink) {
+        logger.info("consume info link {}", infoLink);
         infoLinkService.downloadAndIndex(infoLink, infoLinkService.getFileAddr(infoLink));
     }
 
-    /**
-     * 判断集合内任务是否运行完毕，同时对运行完毕的任务进行清理
-     * @param runSet
-     * @return true if have task running
-     */
-    private static boolean isRun(Set<Future> runSet) {
-        if (runSet == null) return false;
-        Iterator<Future> iter = runSet.iterator();
-        boolean isRun = false;
-        while (iter.hasNext()) {
-            Future f = iter.next();
-            if (f.isDone()) {
-                iter.remove();
-            } else {
-                isRun = true;
-            }
-        }
-        return isRun;
-    }
 }
