@@ -55,7 +55,7 @@ public class Starter {
         Stopwatch stopwatch = Stopwatch.createStarted();
         init(args);
         //默认使用的field为fulltext
-        AlgorithmBase algo = new LinearIncrementalAlgorithm.Builder(targetClient, dedu).setInitQuery("consume").build();
+        AlgorithmBase algo = new LinearIncrementalAlgorithm.Builder(targetClient, dedu).setMainField(Constant.FT_INDEX_FIELD).setInitQuery("consume").build();
         //当爬取比例小于指定比例时，继续
         while (threshold > dedu.getTotal() / (double)sourceClient.getDocSize()) {
             logger.info("HR:{}", dedu.getTotal() / (double)sourceClient.getDocSize());
@@ -108,6 +108,13 @@ public class Starter {
                 .desc("源索引中使用的field")
                 .build()
         );
+        options.addOption(Option.builder("c")
+            .longOpt("chinese")
+            .hasArg(false)
+            .desc("指定进行中文分词")
+            .build()
+        );
+
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
         try {
@@ -121,6 +128,10 @@ public class Starter {
         IndexClient.Builder sBuilder = new IndexClient.Builder(Paths.get(sourceAddr));
         String targetAddr = cmd.getOptionValue("target-addr");
         IndexClient.Builder tBuilder = new IndexClient.Builder(Paths.get(targetAddr));
+        if (cmd.hasOption("chinese")) {
+            sBuilder.setAnalyzer(IndexClient.AnalyzerTpye.cn);
+            tBuilder.setAnalyzer(IndexClient.AnalyzerTpye.cn);
+        }
         if (cmd.hasOption("field-name")) {
             field = cmd.getOptionValue("field-name");
         }
