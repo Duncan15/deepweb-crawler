@@ -1,9 +1,9 @@
 #IDE
-.idea/
+#.idea/
 
 #compile result
 target/
 
 #miscella
 dependency-reduced-pom.xml
-
+#crawler.iml
