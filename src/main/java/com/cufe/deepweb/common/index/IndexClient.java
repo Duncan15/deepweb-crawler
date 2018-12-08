@@ -165,6 +165,7 @@ public final class IndexClient implements Closeable {
         }
     }
 
+
     /**
      * 从对应的field中根据query搜索数据,获取docID的集合
      * @param field
@@ -208,6 +209,29 @@ public final class IndexClient implements Closeable {
         return docIDValueMap;
     }
 
+    /**
+     * 将源客户端的文档直接写入目标客户端（不改变文档内的结构，如field等等）
+     * @param targetClient 目标写入的客户端
+     * @param docIDSet 源客户端中将要写到目标客户端的文档的索引编号
+     * @return 成功写入的文档数量
+     */
+    public int write2TargetIndex(IndexClient targetClient, Set<Integer> docIDSet) {
+        Integer successNum = 0;
+        if (targetClient.readOnly || indexReader == null || targetClient.indexWriter == null) {
+            return successNum;
+        }
+        for (int id : docIDSet) {
+            try {
+                Document doc = indexReader.document(id);
+                targetClient.indexWriter.addDocument(doc);
+                successNum++;
+            } catch (IOException ex) {
+                logger.error("IOException happen when read and write document to target index, docID is {}", id);
+            }
+        }
+        return successNum;
+    }
+
 
     /**
      * 获取当前索引最近一次更新时存在的文档数量
@@ -248,9 +272,31 @@ public final class IndexClient implements Closeable {
                 }
             }
         }catch (IOException ex){
-            logger.error("IOException in read lucene index",ex);
+            logger.error("IOException in read lucene index", ex);
         }
         return docSetMap;
+    }
+
+    /**
+     * 搜集索引的相关信息
+     * @return size/fields/leaves
+     */
+    public Map<String, Object> getIndexInfo() {
+        Map<String, Object> infoMap = new HashMap<>();
+        if (indexReader == null) return infoMap;
+        //收集索引中的文档数量
+        infoMap.put("size", indexReader.numDocs());
+        //收集索引中的field名称
+        Set<String> fieldSet = new HashSet<>();
+        try {
+            Fields fields = MultiFields.getFields(indexReader);
+            fields.forEach( field -> fieldSet.add(field));
+        } catch (IOException ex) {
+            logger.info("IOException happen when read index", ex);
+        }
+        infoMap.put("fields", fieldSet);
+        infoMap.put("leaves", indexReader.leaves().size());
+        return infoMap;
     }
 
     @Override

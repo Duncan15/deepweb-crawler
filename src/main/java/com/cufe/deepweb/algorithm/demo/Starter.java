@@ -13,11 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * 算法验证demo
@@ -55,7 +53,7 @@ public class Starter {
         Stopwatch stopwatch = Stopwatch.createStarted();
         init(args);
         //默认使用的field为fulltext
-        AlgorithmBase algo = new LinearIncrementalAlgorithm.Builder(targetClient, dedu).setMainField(Constant.FT_INDEX_FIELD).setInitQuery("consume").build();
+        AlgorithmBase algo = new LinearIncrementalAlgorithm.Builder(targetClient, dedu).setMainField(field).setInitQuery("consume").build();
         //当爬取比例小于指定比例时，继续
         while (threshold > dedu.getTotal() / (double)sourceClient.getDocSize()) {
             logger.info("HR:{}", dedu.getTotal() / (double)sourceClient.getDocSize());
@@ -64,18 +62,11 @@ public class Starter {
             //在源索引中搜索
             Set<Integer> docIDSet = sourceClient.search(field, query);
             //去重
-            Iterator<Integer> i = docIDSet.iterator();
-            while(i.hasNext()) {
-                int id = i.next();
-                if (!dedu.add(id)) {//如果该id已经存在
-                    i.remove();
-                }
-            }
-            Map<Integer, String> docIDValueMap = sourceClient.loadDocuments(field, docIDSet);
-            //写入目标索引
-            docIDValueMap.forEach((k, v) -> {
-                targetClient.addDocument(Collections.singletonMap(Constant.FT_INDEX_FIELD, v));
-            });
+            docIDSet = docIDSet.stream().filter(id -> {
+                return dedu.add(id);
+            }).collect(Collectors.toSet());
+            //写入索引
+            sourceClient.write2TargetIndex(targetClient, docIDSet);
         }
         exit();
         logger.info("总耗时:{}分钟", stopwatch.elapsed(TimeUnit.MINUTES));
@@ -136,10 +127,10 @@ public class Starter {
             field = cmd.getOptionValue("field-name");
         }
         if (field == null) {
-            field = "text";//默认值为body
+            field = "text";//默认值为text
         }
-        threshold = 0.99;//默认值
-        sourceClient = sBuilder.setReadOnly().setSearchThreadNum(10).build();
+        threshold = 0.95;//默认值
+        sourceClient = sBuilder.setReadOnly().build();
         targetClient = tBuilder.build();
         dedu = new RAMDocIDDedutor();
     }
