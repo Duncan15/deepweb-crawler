@@ -78,14 +78,19 @@ public final class IndexClient implements Closeable {
      */
     private synchronized void updateIndexReader() {
         try {
-            if (!DirectoryReader.indexExists(indexDirectory)) return;
+            if (!DirectoryReader.indexExists(indexDirectory)) {
+                logger.info("this index have no data, refuse to initialize indexReader");
+                return;
+            }
 
             if (indexReader == null) {//第一次新建indexReader
+                logger.info("initialize indexReader");
                 indexReader = DirectoryReader.open(indexDirectory);
             } else {//更新indexReader
                 if (indexReader instanceof DirectoryReader) {
                     IndexReader ir = DirectoryReader.openIfChanged((DirectoryReader) indexReader);
-                    if(ir == null){
+                    if(ir != null){
+                        logger.info("update indexReader");
                         indexReader.close();
                         indexReader = ir;
                     }
@@ -103,9 +108,11 @@ public final class IndexClient implements Closeable {
     private synchronized void updateIndexSearcher() {
         if (indexReader != null) {
             if (indexSearcher == null && searchThreadNum != 0) {//设置了searchThreadNum，且还未初始化indexSearcher
+                logger.info("initialize executorService for indexSearcher");
                 searchThreadPool = Executors.newFixedThreadPool(searchThreadNum);
             }
             //每次更新都会执行
+            logger.info("update indexSearcher");
             if (searchThreadNum == 0) {
                 indexSearcher = new IndexSearcher(indexReader);
             } else {
@@ -123,10 +130,11 @@ public final class IndexClient implements Closeable {
         try {
             //如果indexWriter已经存在
             if (indexWriter != null) {
+                logger.info("commit indexWriter");
                 indexWriter.commit();
                 return;
             }
-
+            logger.info("initialize indexWriter");
             IndexWriterConfig config = new IndexWriterConfig(analyzer);
             config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
             indexWriter = new IndexWriter(indexDirectory,config);
@@ -138,11 +146,13 @@ public final class IndexClient implements Closeable {
      * 用于更新索引，此操作比较消耗资源
      */
     public synchronized void updateIndex() {
+        logger.info("start to update index");
         if (!readOnly) {//如果为读写客户端，则新建indexWriter
             updateIndexWriter();
         }
         updateIndexReader();
         updateIndexSearcher();
+        logger.info("update index finish");
     }
 
 
@@ -152,7 +162,10 @@ public final class IndexClient implements Closeable {
      * @param fieldContentPairs
      */
     public void addDocument(Map<String, String> fieldContentPairs) {
-        if (readOnly) return;//只读客户端，不可写
+        if (readOnly) {
+            logger.warn("this client is readOnly, no support to write");
+            return;//只读客户端，不可写
+        }
         if (fieldContentPairs.isEmpty()) return;
         Document doc = new Document();
         for (Map.Entry<String, String> entry : fieldContentPairs.entrySet()) {
@@ -174,7 +187,10 @@ public final class IndexClient implements Closeable {
      */
     public Set<Integer> search(String field, String query) {
         Set<Integer> docIDSet = new HashSet<>();
-        if (indexSearcher == null) return docIDSet;//还未初始化，直接返回
+        if (indexSearcher == null) {
+            logger.warn("this indexSearcher hasn't been initialized");
+            return docIDSet;//还未初始化，直接返回
+        }
         try {
             ScoreDoc[] scoreDocs = indexSearcher.search(new TermQuery(new Term(field, query)), maxHitNum).scoreDocs;
             for (ScoreDoc scoreDoc : scoreDocs) {
@@ -195,7 +211,10 @@ public final class IndexClient implements Closeable {
      */
     public Map<Integer, String> loadDocuments(String field, Set<Integer> docIDSet) {
         Map<Integer, String> docIDValueMap = new HashMap<>();
-        if (indexReader == null) return docIDValueMap;
+        if (indexReader == null) {
+            logger.warn("this indexReader hasn't been initialized");
+            return docIDValueMap;
+        }
         docIDSet.forEach(id -> {
             String v = "";
             try {
@@ -218,6 +237,7 @@ public final class IndexClient implements Closeable {
     public int write2TargetIndex(IndexClient targetClient, Set<Integer> docIDSet) {
         Integer successNum = 0;
         if (targetClient.readOnly || indexReader == null || targetClient.indexWriter == null) {
+            logger.warn("unable to write to target client");
             return successNum;
         }
         for (int id : docIDSet) {
@@ -239,6 +259,7 @@ public final class IndexClient implements Closeable {
      */
     public int getDocSize(){
         if (indexReader == null) {
+            logger.warn("this indexReader hasn't been initialized");
             return 0;
         }
         return indexReader.numDocs();
@@ -253,19 +274,22 @@ public final class IndexClient implements Closeable {
      */
     public Map<String, Set<Integer>> getDocSetMap(String field,double low,double up){
         Map<String, Set<Integer>> docSetMap = new HashMap<>();
-        if (indexReader == null ) return docSetMap;
+        if (indexReader == null ) {
+            logger.warn("this indexReader hasn't been initialized");
+            return docSetMap;
+        }
         int size = indexReader.numDocs();
         try{
             Terms terms = MultiFields.getTerms(indexReader,field);
             TermsEnum termsEnum = terms.iterator();
             while (termsEnum.next() != null){
                 String term = termsEnum.term().utf8ToString();
-                if((low*size) < termsEnum.docFreq() && termsEnum.docFreq() <= (up*size)){
+                if((low * size) < termsEnum.docFreq() && termsEnum.docFreq() <= (up * size)){
                     //当前算法设计中不会对已存在对lucene索引进行删除，因此不需要考虑删除的情况
                     PostingsEnum postingsEnum = termsEnum.postings(null,PostingsEnum.NONE);
                     int id = 0;
                     Set<Integer> docSet = new HashSet<>();
-                    while ((id = postingsEnum.nextDoc())!= DocIdSetIterator.NO_MORE_DOCS){
+                    while ((id = postingsEnum.nextDoc()) != DocIdSetIterator.NO_MORE_DOCS) {
                         docSet.add(id);
                     }
                     docSetMap.put(term,docSet);
@@ -283,7 +307,10 @@ public final class IndexClient implements Closeable {
      */
     public Map<String, Object> getIndexInfo() {
         Map<String, Object> infoMap = new HashMap<>();
-        if (indexReader == null) return infoMap;
+        if (indexReader == null) {
+            logger.warn("this indexReader hasn't been initialized");
+            return infoMap;
+        }
         //收集索引中的文档数量
         infoMap.put("size", indexReader.numDocs());
         //收集索引中的field名称

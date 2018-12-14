@@ -111,7 +111,7 @@ public class Starter {
         try {
             cmd = parser.parse(options, args);
         } catch (ParseException ex) {
-            logger.error("error happen when parse commandline args");
+            logger.error("error when parse commandline args", ex);
             System.exit(1);
         }
 

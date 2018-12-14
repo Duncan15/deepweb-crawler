@@ -12,7 +12,7 @@ public class ClientTest {
   static IndexClient client;
   @BeforeAll
   static void init() {
-    client = new IndexClient.Builder(Paths.get("/Users/cwc/Documents/reuters_target")).setReadOnly().build();
+    client = new IndexClient.Builder(Paths.get("F:/experiment/tmp/Indexjieba21")).setReadOnly().build();
   }
   @Test
   void testPrintFields() {
