@@ -1,5 +1,7 @@
 package com.cufe.deepweb.common.index;
 
+import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
+import com.cufe.deepweb.common.Utils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -17,8 +19,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public final class IndexClient implements Closeable {
     private final Logger logger = LoggerFactory.getLogger(IndexClient.class);
@@ -79,18 +80,18 @@ public final class IndexClient implements Closeable {
     private synchronized void updateIndexReader() {
         try {
             if (!DirectoryReader.indexExists(indexDirectory)) {
-                logger.info("this index have no data, refuse to initialize indexReader");
+                logger.trace("this index have no data, refuse to initialize indexReader");
                 return;
             }
 
             if (indexReader == null) {//第一次新建indexReader
-                logger.info("initialize indexReader");
+                logger.trace("initialize indexReader");
                 indexReader = DirectoryReader.open(indexDirectory);
             } else {//更新indexReader
                 if (indexReader instanceof DirectoryReader) {
                     IndexReader ir = DirectoryReader.openIfChanged((DirectoryReader) indexReader);
                     if(ir != null){
-                        logger.info("update indexReader");
+                        logger.trace("update indexReader");
                         indexReader.close();
                         indexReader = ir;
                     }
@@ -112,7 +113,7 @@ public final class IndexClient implements Closeable {
                 searchThreadPool = Executors.newFixedThreadPool(searchThreadNum);
             }
             //每次更新都会执行
-            logger.info("update indexSearcher");
+            logger.trace("update indexSearcher");
             if (searchThreadNum == 0) {
                 indexSearcher = new IndexSearcher(indexReader);
             } else {
@@ -130,11 +131,11 @@ public final class IndexClient implements Closeable {
         try {
             //如果indexWriter已经存在
             if (indexWriter != null) {
-                logger.info("commit indexWriter");
+                logger.trace("commit indexWriter");
                 indexWriter.commit();
                 return;
             }
-            logger.info("initialize indexWriter");
+            logger.trace("initialize indexWriter");
             IndexWriterConfig config = new IndexWriterConfig(analyzer);
             config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
             indexWriter = new IndexWriter(indexDirectory,config);
@@ -147,11 +148,15 @@ public final class IndexClient implements Closeable {
      */
     public synchronized void updateIndex() {
         logger.info("start to update index");
+        Utils.logMemorySize();
         if (!readOnly) {//如果为读写客户端，则新建indexWriter
             updateIndexWriter();
         }
+        Utils.logMemorySize();
         updateIndexReader();
+        Utils.logMemorySize();
         updateIndexSearcher();
+        Utils.logMemorySize();
         logger.info("update index finish");
     }
 
@@ -204,17 +209,42 @@ public final class IndexClient implements Closeable {
     }
 
     /**
+     * load documents by the set of docID and add them into a list
+     * @param docIDSet
+     * @return
+     */
+    public List<Map<String, String>> loadDocuments(Set<Integer> docIDSet) {
+        Utils.logMemorySize();
+        if (indexReader == null) {
+            logger.warn("this indexReader hasn't been initialized");
+            return Collections.emptyList();
+        }
+        List<Map<String, String>> docList = new ArrayList<>(docIDSet.size());
+        docIDSet.forEach(id -> {
+            try {
+                Map<String, String> doc = new HashMap<>();
+                Document document = indexReader.document(id);
+                document.forEach(indexableField -> doc.put(indexableField.name(), indexableField.stringValue()));
+                docList.add(doc);
+            } catch (IOException ex) {
+                logger.error("IOException happen when read document, docID is {}",id);
+            }
+        });
+        Utils.logMemorySize();
+        return docList;
+    }
+    /**
      * 根据dicIDSet获取索引中field区域的内容
      * @param field
      * @param docIDSet
      * @return
      */
     public Map<Integer, String> loadDocuments(String field, Set<Integer> docIDSet) {
-        Map<Integer, String> docIDValueMap = new HashMap<>();
         if (indexReader == null) {
             logger.warn("this indexReader hasn't been initialized");
-            return docIDValueMap;
+            return Collections.emptyMap();
         }
+        Map<Integer, String> docIDValueMap = new HashMap<>();
         docIDSet.forEach(id -> {
             String v = "";
             try {
@@ -232,24 +262,59 @@ public final class IndexClient implements Closeable {
      * 将源客户端的文档直接写入目标客户端（不改变文档内的结构，如field等等）
      * @param targetClient 目标写入的客户端
      * @param docIDSet 源客户端中将要写到目标客户端的文档的索引编号
-     * @return 成功写入的文档数量
      */
-    public int write2TargetIndex(IndexClient targetClient, Set<Integer> docIDSet) {
-        Integer successNum = 0;
+    public void write2TargetIndex(IndexClient targetClient, Set<Integer> docIDSet, int parallelNum) {
+        logger.info("start to download");
+        Utils.logMemorySize();
         if (targetClient.readOnly || indexReader == null || targetClient.indexWriter == null) {
             logger.warn("unable to write to target client");
-            return successNum;
+            return;
         }
-        for (int id : docIDSet) {
+        ExecutorService service = Executors.newFixedThreadPool(parallelNum);
+        BlockingDeque<Integer> queue = new LinkedBlockingDeque<>(parallelNum * parallelNum);
+        Runnable produceTask = () -> {
+            docIDSet.forEach(id -> {
+                try {
+                    queue.put(id);
+                } catch (InterruptedException ex) {
+                    logger.error("interrupted in put id {} into queue", id);
+                }
+            });
+            logger.trace("exit produce thread");
+        };
+        Runnable consumeTask = () -> {
+            while (true) {
+                try {
+                    Integer id = queue.poll(parallelNum, TimeUnit.SECONDS);
+                    if (id == null) {
+                        break;
+                    }
+                    Document doc = indexReader.document(id);
+                    targetClient.indexWriter.addDocument(doc);
+                } catch (InterruptedException ex) {
+                    logger.error("interrupted in load document and write it to index");
+                } catch (IOException ex) {
+                    logger.error("IOException happen when read and write document to target index");
+                }
+            }
+            logger.trace("exit consume thread");
+        };
+        service.execute(produceTask);
+        for (int i = 0 ; i < parallelNum - 1 ; i ++) {
+            service.execute(consumeTask);
+        }
+        service.shutdown();
+        while (true) {
             try {
-                Document doc = indexReader.document(id);
-                targetClient.indexWriter.addDocument(doc);
-                successNum++;
-            } catch (IOException ex) {
-                logger.error("IOException happen when read and write document to target index, docID is {}", id);
+                if (service.awaitTermination(parallelNum, TimeUnit.SECONDS)) {
+                    break;
+                }
+            } catch (InterruptedException ex) {
+                logger.error("interrupted when wait for thread pool");
             }
         }
-        return successNum;
+        Utils.logMemorySize();
+        logger.info("download finish");
     }
 
 
@@ -273,11 +338,13 @@ public final class IndexClient implements Closeable {
      * @return
      */
     public Map<String, Set<Integer>> getDocSetMap(String field,double low,double up){
+        Utils.logMemorySize();
         Map<String, Set<Integer>> docSetMap = new HashMap<>();
-        if (indexReader == null ) {
+        if (indexReader == null) {
             logger.warn("this indexReader hasn't been initialized");
             return docSetMap;
         }
+        int matrixSize = 0;//store the total length of matrix
         int size = indexReader.numDocs();
         try{
             Terms terms = MultiFields.getTerms(indexReader,field);
@@ -285,11 +352,12 @@ public final class IndexClient implements Closeable {
             while (termsEnum.next() != null){
                 String term = termsEnum.term().utf8ToString();
                 if((low * size) < termsEnum.docFreq() && termsEnum.docFreq() <= (up * size)){
-                    //当前算法设计中不会对已存在对lucene索引进行删除，因此不需要考虑删除的情况
-                    PostingsEnum postingsEnum = termsEnum.postings(null,PostingsEnum.NONE);
+                    //the current algorithm design wouldn't think about delete references in index, therefore don't prepare for deleting
+                    PostingsEnum postingsEnum = termsEnum.postings(null, PostingsEnum.NONE);
                     int id = 0;
                     Set<Integer> docSet = new HashSet<>();
                     while ((id = postingsEnum.nextDoc()) != DocIdSetIterator.NO_MORE_DOCS) {
+                        matrixSize++;
                         docSet.add(id);
                     }
                     docSetMap.put(term,docSet);
@@ -298,6 +366,8 @@ public final class IndexClient implements Closeable {
         }catch (IOException ex){
             logger.error("IOException in read lucene index", ex);
         }
+        logger.info("the matrix length is {}", matrixSize);
+        Utils.logMemorySize();
         return docSetMap;
     }
 

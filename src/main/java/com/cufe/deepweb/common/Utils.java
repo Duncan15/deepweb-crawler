@@ -1,5 +1,8 @@
 package com.cufe.deepweb.common;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -10,7 +13,10 @@ import java.util.concurrent.Future;
 
 public final class Utils {
     private Utils() { }
-
+    private static final Logger logger = LoggerFactory.getLogger(Utils.class);
+    public static void logMemorySize() {
+        logger.trace("current memory size is {} G", (double)Runtime.getRuntime().totalMemory() / 1024 / 1024 /1024);
+    }
     /**
      * 获取数组中对应未知的值，当越界时返回空值或0值
      * @param arr

@@ -1,20 +1,25 @@
 package com.cufe.deepweb.algorithm;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/*
-    abstract class for crawling algorithm
-    query-generate algorithm，该类仅关注query的生成逻辑
+/**
+ * abstract class for crawling algorithm
+ * query-generate algorithm，该类仅关注query的生成逻辑
  */
 public abstract class AlgorithmBase {
+    private final Logger logger = LoggerFactory.getLogger(AlgorithmBase.class);
     private List<String> qList; //the list which store all seleted queries
     private int qCount; //the new generated query index
 
     public AlgorithmBase() {
         qCount = 0;
         qList = new ArrayList<>();
+        setInitQuery("consume");//set the default initial query
     }
     /*
     for set initial query when algorithm initiates
@@ -36,9 +41,10 @@ public abstract class AlgorithmBase {
      */
     public final String getNextQuery() {
         if(qCount != 0){//当不是第一个词时，通过动态绑定调用实现类的generateQuery方法，获取下一个词
+            logger.trace("start to infer query by algorithm");
             String nextQuery = generateQuery();
+            logger.trace("get query {}", nextQuery);
             qList.add(nextQuery);
-
         }
         String query = qList.get(qCount);
         qCount++;

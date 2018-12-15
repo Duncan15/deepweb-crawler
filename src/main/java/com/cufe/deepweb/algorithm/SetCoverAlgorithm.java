@@ -8,39 +8,67 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-/*
-    set-covering algorithm:该类只关注set-covering算法的过程实现，具体数据以及是否启动新一轮set-covering由具体实现类提供
+/**
+ * set-covering algorithm: this class only focus on the implementation of set-covering algorithm，
+ * the concrete data and whether to start a new turn of set-covering provided by the following implementation class
  */
 public abstract class SetCoverAlgorithm extends AlgorithmBase {
-    private static Logger logger = LoggerFactory.getLogger(SetCoverAlgorithm.class);
-    private String mainField; //the lucene index's main field
-    private double upBound; //set covering algorithm's up bound
+    private final Logger logger = LoggerFactory.getLogger(SetCoverAlgorithm.class);
+    /**
+     * the lucene index's main field focused by this algorithm
+     */
+    private String mainField;
+    /**
+     * set covering algorithm's up bound
+     */
+    private double upBound;
     private double lowBound;
+    /**
+     * set covering threshold, such as 0.95
+     */
     private double threshold;
+    /**
+     * the cost for sending a query
+     */
     private int sendingCost;
     /**
-     * 建表消耗
+     * the cost for building the set covering matrix
      */
     private long buildTableCost;
     /**
-     * 当前词的改表消耗
+     * the cost for modifying the set covering matrix by current query
      */
     private long modifyTableCost;
-    private int snapshootSize; //the snapshoot size of index when start set covering
+    /**
+     * the snapshot size of index when start current turn's set covering
+     */
+    private int snapshotSize;
+    /**
+     * term list collect by current turn's set covering
+     */
+    private List<String> termList;
+    /**
+     * the each term's initial document frequency at the beginning of current turn's set covering
+     */
+    private Map<String, Integer> df;
+    /**
+     * the each term's new docID set in set covering,this map would be updated every round
+     */
+    private Map<String, Set<Integer>> newMap;
+    /**
+     * a set to store all the downloaded(logically) docID in current turn's set covering
+     */
+    private Set<Integer> s;
 
-    private List<String> termList; //term list collect by set cover
-    private Map<String, Integer> df; //the initial df in set cover
-    private Map<String, Set<Integer>> newMap; //the new doc set map in set cover,this map would be updated every round
-    private Set<Integer> s; //set to store all the downloaded(logically) doc in set cover
 
-
-    /*
-    @param mField 算法使用的索引字段名
-    @param ubound set covering的词频上限
-    @param lbound set covering的词频下限
-    @param thres set covering的终止条件
-    @param sCost set covering计算中，每个term的send cost
-    */
+    /**
+     *
+     * @param mField the lucene index's main field focused by this algorithm
+     * @param ubound set covering algorithm's up bound
+     * @param lbound
+     * @param thres set covering threshold, such as 0.95
+     * @param sCost the cost for sending a query
+     */
     public SetCoverAlgorithm(String mField,double ubound,double lbound,double thres,int sCost) {
         mainField = mField;
         upBound = ubound;
@@ -48,95 +76,97 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
         threshold = thres;
         sendingCost = sCost;
         buildTableCost = 0;
-        snapshootSize = 0;
+        snapshotSize = 0;
         termList = new ArrayList<>();
         df = new HashMap<>();
         s = new HashSet<>();
     }
 
-    /*
-    当update为true时，直接进行新一轮set covering
-    @V@没错这个函数就是在炫技hhh
+    /**
+     * if update is true，start the new turn's set covering
+     * @param update
+     * @return
      */
     private String getNextTerm(boolean update) {
-        if(!update){
+        if(!update){ //if update is false
+            logger.trace("try to generate term in current turn's set covering");
             String newTerm = generateTerm();
-            if(newTerm == null){
+            if(newTerm == null) {
+                logger.trace("fail to generate term from current turn's set covering");
                 return getNextTerm(true);
             }
+            logger.trace("generate successfully");
             termList.add(newTerm);
             return newTerm;
-//            if(newMap == null){ //第一次运行该方法，这个判断条件比较巧妙，需要注意buildMatrix的行为
-//                return getNextTerm(true);
-//            }else {
-//                String newTerm = generateTerm();
-//                if(newTerm == null){
-//                    return getNextTerm(true);
-//                }
-//                termList.add(newTerm);
-//                return newTerm;
-//            }
-        }else { //当指定进行新一轮set covering时
+        }else { //when update is true
             buildMatrix();
             return getNextTerm(false);
         }
     }
 
-    /*
-    在set covering开启时建立矩阵
+    /**
+     * build the set covering matrix at the beginning of each turn's set covering
      */
     private void buildMatrix() {
-        //以下建立矩阵
-        logger.info("set-cover num:{}", termList.size());
+        //start to build matrix
+
         termList.clear();
-        //用于记录建立矩阵的时间消耗
-        Stopwatch stopwatch = Stopwatch.createStarted();
-        s.clear(); //set to store all the downloaded(logically) doc in set cover
-        df.clear(); //the initial df in set cover
-        newMap = getDocSetMap(mainField,lowBound,upBound); //the new doc set map in set cover,this map would be updated every round
-        //从候选词中去除已经选中的query
-        if(getqList().size() != 0){
-            for(String query:getqList()){
-                if(newMap.containsKey(query)){
+        Stopwatch stopwatch = Stopwatch.createStarted();//use to record the time cost in building matrix
+        s.clear();
+        df.clear();
+        newMap = getDocSetMap(mainField,lowBound,upBound);//store each term's new docID set in set covering
+
+        //remove the selected query in the candidate terms
+        if(getqList().size() != 0) {
+            for(String query : getqList()) {
+                if(newMap.containsKey(query)) {
                     newMap.remove(query);
                 }
             }
         }
-        for(Map.Entry<String,Set<Integer>> entry : newMap.entrySet()){
-            df.put(entry.getKey(),entry.getValue().size());
-        }
+
+        newMap.entrySet().forEach(entry -> df.put(entry.getKey(), entry.getValue().size()));//store each term's initial document frequency
+
         buildTableCost = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-        snapshootSize = getDocSize();
+        snapshotSize = getDocSize();
     }
-    /*
-    当本轮set covering无法继续进行下去时，返回null
-    出现以下情况，set covering无法继续进行：
-    1.set covering达到预定当threshold
-    2.set covering已经把所有候选词的new减少到0
-    */
+
+    /**
+     * when can't generate new term in current turn's set covering, return null
+     * when following situations happen, can't generate new term in current turn's set covering:
+     * 1.the current turn's set covering hit the predefined threshold
+     * 2.the current turn's set covering has decreased all the candidate terms' new to 0
+     * @return
+     */
     private String generateTerm() {
-        //以下进入set cover主流程
-        if (s.size() < threshold*snapshootSize) {
-            //以下进入每一轮set cover流程
-            Stopwatch stopwatch = Stopwatch.createStarted();//计算消耗
-            Set<String> candidate = new HashSet<>(); //用于存放new/cost相同的词
-            String query = null; //the seleted query in this round
+        //the following is set covering's main flow
+
+        if (s.size() < threshold * snapshotSize) {//check whether satisfy the predefined threshold
+            Stopwatch stopwatch = Stopwatch.createStarted();//use to compute the cost in modifying matrix for current term
+            Set<String> candidate = new HashSet<>(); //use to store the terms whose new/cost is identical
+            String query = null; //the term would be generate in current round
             double maxRate = 0.0; //the known biggest new/cost value
             int maxDF = 0; //the known biggest DF value
-            //选择当前new/cost值最大的词
-            for(Map.Entry<String, Set<Integer>> entry: newMap.entrySet()){
-                if(entry.getValue().size()!=0) { //过滤在之前的round中new已经减少到0的词
-                    double curRate = entry.getValue().size()/(double)(df.get(entry.getKey())+sendingCost); //new/cost=new/(df+100)
-                    if(curRate > maxRate){ //当前词new/cost大于已知值时，更新最大值，同时清空candidate
+
+            //select the term from candidates, which has the biggest new/cost value
+            for(Map.Entry<String, Set<Integer>> entry : newMap.entrySet()) {
+                if(entry.getValue().size() != 0) { //filter out the term whose new has been decreased to 0
+                    double curRate = entry.getValue().size() / (double)(df.get(entry.getKey()) + sendingCost); //new/cost=new/(df+100)
+
+                    //if current term's new/cost bigger than the known biggest one，update the biggest value，and clear candidate
+                    if(curRate > maxRate){
                         maxRate = curRate;
                         candidate.clear();
                     }
-                    if(curRate >= maxRate){ //当当前词new/cost等于最大值时，加入candidate
+
+                    //if current term's new/cost is equal to biggest one, add it to candidate
+                    if(curRate >= maxRate){
                         candidate.add(entry.getKey());
                     }
                 }
             }
-            //当candidate大于等于1时，选择DF最大的词。这种情况下一定会选出词
+
+            //when the size of candidates bigger than 1, choose the term whose document frequency is biggest
             if(candidate.size() >= 1){
                 maxDF = 0;
                 for(String each : candidate){
@@ -145,17 +175,21 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
                         query = each;
                     }
                 }
-            }else { //当candidate等于0时，无词可选，以后也会无词可选，直接退出set covering
+            }else { //when the size is 0, it means can't generate new term from current turn's set covering, return null
                 logger.warn("set covering 中出现new全部为0的情况，set covering");
                 return null;
             }
+
+            //remove the reference of query in df and newMap
+            Set<Integer> deleted = newMap.remove(query);
             df.remove(query);
-            Set<Integer> deleted = new HashSet<>(newMap.get(query));
             s.addAll(deleted);
-            for(Map.Entry<String,Set<Integer>> entry : newMap.entrySet()){
+
+            //update new
+            for(Map.Entry<String,Set<Integer>> entry : newMap.entrySet()) {
                 entry.getValue().removeAll(deleted);
             }
-            newMap.remove(query);
+
             modifyTableCost = stopwatch.elapsed(TimeUnit.MILLISECONDS);
             return query;
         }
@@ -170,17 +204,20 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
         return getNextTerm(isUpdate());
     }
 
-    /*
-    供子类使用
+    /**
+     * the following method is for sub class to use
      */
-    /*
-    @return 获取当前setcovering获得的termList的size
-    */
+    /**
+     * get the termList's size in current turn's set covering
+     * @return
+     */
     protected final int getSetCoverSize() {
         return termList.size();
     }
-    /*
-    @return 本轮setcovering的建表消耗
+
+    /**
+     * get the current turn's set covering's build matrix cost
+     * @return
      */
     protected final long getBuildTableCost() {
         return buildTableCost;
@@ -193,10 +230,28 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
     protected final long getModifyTableCost() {
         return modifyTableCost;
     }
-    /*
-    供子类实现
+
+    /**
+     * the following method is for sub class to implement
+     */
+    /**
+     * judge whether to start a new turn set covering
+     * @return
      */
     protected abstract boolean isUpdate();
+
+    /**
+     * get the specified field's candidate terms with corresponding docID set
+     * @param field
+     * @param low
+     * @param up
+     * @return
+     */
     protected abstract Map<String, Set<Integer>> getDocSetMap(String field,double low,double up);
+
+    /**
+     * get current index's document size
+     * @return
+     */
     protected abstract int getDocSize();
 }

@@ -2,6 +2,7 @@ package com.cufe.deepweb.algorithm.demo;
 
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
+import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.common.dedu.RAMDocIDDedutor;
 import com.cufe.deepweb.common.index.IndexClient;
@@ -65,8 +66,10 @@ public class Starter {
             docIDSet = docIDSet.stream().filter(id -> {
                 return dedu.add(id);
             }).collect(Collectors.toSet());
+            logger.info("new doc size is {}", docIDSet.size());
             //写入索引
-            sourceClient.write2TargetIndex(targetClient, docIDSet);
+            sourceClient.write2TargetIndex(targetClient, docIDSet, Runtime.getRuntime().availableProcessors() / 3);
+            Utils.logMemorySize();
         }
         exit();
         logger.info("总耗时:{}分钟", stopwatch.elapsed(TimeUnit.MINUTES));
