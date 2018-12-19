@@ -1,5 +1,6 @@
 package com.cufe.deepweb.algorithm;
 
+import com.cufe.deepweb.common.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,14 +41,21 @@ public abstract class AlgorithmBase {
     使用该算法时直接调用该方法，不必关心具体算法实现
      */
     public final String getNextQuery() {
-        if(qCount != 0){//当不是第一个词时，通过动态绑定调用实现类的generateQuery方法，获取下一个词
-            logger.trace("start to infer query by algorithm");
+        logger.info("start to infer query by algorithm");
+        Utils.logMemorySize();
+
+        //if the query to get is not the first one
+        // invoke the implementation class's override method generateQuery() by dynamic binding
+        if(qCount != 0) {
             String nextQuery = generateQuery();
             logger.trace("get query {}", nextQuery);
             qList.add(nextQuery);
         }
+
         String query = qList.get(qCount);
         qCount++;
+        Utils.logMemorySize();
+        logger.info("infer finish");
         return query;
     }
 

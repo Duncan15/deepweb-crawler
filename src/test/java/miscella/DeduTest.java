@@ -1,6 +1,8 @@
 package miscella;
 
+import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.common.dedu.Deduplicator;
+import com.cufe.deepweb.common.dedu.RAMDocIDDedutor;
 import com.cufe.deepweb.common.dedu.RAMMD5Dedutor;
 import org.junit.jupiter.api.Test;
 
@@ -21,5 +23,15 @@ public class DeduTest {
     MessageDigest md5 = MessageDigest.getInstance("MD5");
     byte[] ans = md5.digest("md5hhhh".getBytes());
     System.out.println(DatatypeConverter.printHexBinary(ans));
+  }
+  @Test
+  void testRAMDocIDDedutorMemoryCost() {
+    int num = 10908792;
+    Utils.logMemorySize();
+    Deduplicator deduplicator = new RAMDocIDDedutor();
+    for (int i = 0 ; i < num ; i ++) {
+      deduplicator.add(i);
+    }
+    Utils.logMemorySize();
   }
 }

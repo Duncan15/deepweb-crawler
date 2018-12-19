@@ -20,24 +20,29 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class IndexClient implements Closeable {
     private final Logger logger = LoggerFactory.getLogger(IndexClient.class);
     /**
-     * 用于判断打开的客户端的状态
+     * judge whether this client is used to write index
      */
     private boolean readOnly;
+    /**
+     * the address of index in file system
+     */
+    private Path indexAddr;
     private Analyzer analyzer;
     /**
-     * directory for storing index，该实例可在文件夹中打开
+     * directory for storing index
      */
     private Directory indexDirectory;
     /**
-     * indexReader for getting info，只有当索引存在时reader才可以正确打开
+     * indexReader for getting info，only when index exists in the index this reader will be opened
      */
     private IndexReader indexReader;
     /**
-     * indexWriter for writing index，该类有文件锁，一个文件夹只能由一个实例并发访问
+     * indexWriter for writing index，this class have a file lock, a directory can only be written by a instance
      */
     private IndexWriter indexWriter;
     /**
@@ -45,19 +50,19 @@ public final class IndexClient implements Closeable {
      */
     private IndexSearcher indexSearcher;
     /**
-     * 用于indexSearcher
+     * thread pool used for indexSearcher to search
      */
     private ExecutorService searchThreadPool;
     /**
-     * 用于indexSearcher的线程池线程数量
+     * the pool size of indexSearcher's thread pool
      */
     private int searchThreadNum;
     /**
-     * 单条搜索最大击中数量
+     * the maximum hit number for unique query
      */
     private int maxHitNum;
     /**
-     * 初始化directory 和 writer
+     * initialize directory
      * @param builder
      */
     private IndexClient(Builder builder){
@@ -65,14 +70,49 @@ public final class IndexClient implements Closeable {
         this.readOnly = builder.readOnly;
         this.searchThreadNum = builder.searchThreadNum;
         this.maxHitNum = builder.maxHitNum;
+        this.indexAddr = builder.sampleAddr;
         try{
-            indexDirectory = FSDirectory.open(builder.sampleAddr);
+            indexDirectory = FSDirectory.open(this.indexAddr);
             updateIndex();
         }catch (IOException ex){
             logger.error("IOException in open lucene index",ex);
         }
     }
 
+    /**
+     * force update index, can used to free memory out of JVM
+     */
+    public synchronized void forceUpdateIndex() {
+        logger.info("start to force update index");
+        Utils.logMemorySize();
+        try {
+            if (!readOnly && indexWriter != null) {
+                indexWriter.close();
+            }
+            if (indexReader != null) {
+                indexReader.close();
+            }
+            if (indexDirectory != null) {
+                indexDirectory.close();
+            }
+
+            indexDirectory = FSDirectory.open(indexAddr);
+            if (DirectoryReader.indexExists(indexDirectory)) {
+                indexReader = DirectoryReader.open(indexDirectory);
+                indexSearcher = new IndexSearcher(indexReader);
+            }
+
+            IndexWriterConfig config = new IndexWriterConfig(analyzer);
+            config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+            if (!readOnly) {
+                indexWriter = new IndexWriter(indexDirectory, config);
+            }
+        } catch (IOException ex) {
+            logger.error("force update index error", ex);
+        }
+        Utils.logMemorySize();
+        logger.info("force update index finish");
+    }
     /**
      * 本方法用于更新indexReader
      * indexReader只有当索引中有数据时才会更新成功
@@ -109,7 +149,7 @@ public final class IndexClient implements Closeable {
     private synchronized void updateIndexSearcher() {
         if (indexReader != null) {
             if (indexSearcher == null && searchThreadNum != 0) {//设置了searchThreadNum，且还未初始化indexSearcher
-                logger.info("initialize executorService for indexSearcher");
+                logger.trace("initialize executorService for indexSearcher");
                 searchThreadPool = Executors.newFixedThreadPool(searchThreadNum);
             }
             //每次更新都会执行
@@ -144,7 +184,7 @@ public final class IndexClient implements Closeable {
         }
     }
     /**
-     * 用于更新索引，此操作比较消耗资源
+     * used to update index, won't free memory out of JVM
      */
     public synchronized void updateIndex() {
         logger.info("start to update index");
@@ -152,9 +192,7 @@ public final class IndexClient implements Closeable {
         if (!readOnly) {//如果为读写客户端，则新建indexWriter
             updateIndexWriter();
         }
-        Utils.logMemorySize();
         updateIndexReader();
-        Utils.logMemorySize();
         updateIndexSearcher();
         Utils.logMemorySize();
         logger.info("update index finish");
@@ -185,17 +223,19 @@ public final class IndexClient implements Closeable {
 
 
     /**
-     * 从对应的field中根据query搜索数据,获取docID的集合
+     * search by query in the specified field and get the set of hit docID
      * @param field
      * @param query
      * @return
      */
     public Set<Integer> search(String field, String query) {
-        Set<Integer> docIDSet = new HashSet<>();
+        logger.info("start to search");
+        Utils.logMemorySize();
         if (indexSearcher == null) {
             logger.warn("this indexSearcher hasn't been initialized");
-            return docIDSet;//还未初始化，直接返回
+            return Collections.emptySet();
         }
+        Set<Integer> docIDSet = new HashSet<>();
         try {
             ScoreDoc[] scoreDocs = indexSearcher.search(new TermQuery(new Term(field, query)), maxHitNum).scoreDocs;
             for (ScoreDoc scoreDoc : scoreDocs) {
@@ -205,6 +245,8 @@ public final class IndexClient implements Closeable {
         }catch (IOException ex) {
             logger.error("IOException happen when search", ex);
         }
+        Utils.logMemorySize();
+        logger.info("search finish");
         return docIDSet;
     }
 
@@ -259,9 +301,9 @@ public final class IndexClient implements Closeable {
     }
 
     /**
-     * 将源客户端的文档直接写入目标客户端（不改变文档内的结构，如field等等）
-     * @param targetClient 目标写入的客户端
-     * @param docIDSet 源客户端中将要写到目标客户端的文档的索引编号
+     * directly write document from source index to target index and don't change the document format(such as field name and so on)
+     * @param targetClient
+     * @param docIDSet the set of docID which would be processed
      */
     public void write2TargetIndex(IndexClient targetClient, Set<Integer> docIDSet, int parallelNum) {
         logger.info("start to download");
@@ -272,14 +314,15 @@ public final class IndexClient implements Closeable {
         }
         ExecutorService service = Executors.newFixedThreadPool(parallelNum);
         BlockingDeque<Integer> queue = new LinkedBlockingDeque<>(parallelNum * parallelNum);
+        AtomicInteger downloadNum = new AtomicInteger(0);
         Runnable produceTask = () -> {
-            docIDSet.forEach(id -> {
+            for (int id : docIDSet) {
                 try {
                     queue.put(id);
                 } catch (InterruptedException ex) {
                     logger.error("interrupted in put id {} into queue", id);
                 }
-            });
+            }
             logger.trace("exit produce thread");
         };
         Runnable consumeTask = () -> {
@@ -287,10 +330,12 @@ public final class IndexClient implements Closeable {
                 try {
                     Integer id = queue.poll(parallelNum, TimeUnit.SECONDS);
                     if (id == null) {
-                        break;
+                        if (docIDSet.size() - downloadNum.get() < 100) break;
+                        continue;
                     }
                     Document doc = indexReader.document(id);
                     targetClient.indexWriter.addDocument(doc);
+                    downloadNum.incrementAndGet();
                 } catch (InterruptedException ex) {
                     logger.error("interrupted in load document and write it to index");
                 } catch (IOException ex) {
@@ -309,6 +354,7 @@ public final class IndexClient implements Closeable {
                 if (service.awaitTermination(parallelNum, TimeUnit.SECONDS)) {
                     break;
                 }
+                logger.info("have download {} documents", downloadNum.get());
             } catch (InterruptedException ex) {
                 logger.error("interrupted when wait for thread pool");
             }
@@ -347,11 +393,11 @@ public final class IndexClient implements Closeable {
         int matrixSize = 0;//store the total length of matrix
         int size = indexReader.numDocs();
         try{
-            Terms terms = MultiFields.getTerms(indexReader,field);
+            Terms terms = MultiFields.getTerms(indexReader, field);
             TermsEnum termsEnum = terms.iterator();
             while (termsEnum.next() != null){
                 String term = termsEnum.term().utf8ToString();
-                if((low * size) < termsEnum.docFreq() && termsEnum.docFreq() <= (up * size)){
+                if((low * size) < termsEnum.docFreq() && termsEnum.docFreq() <= (up * size)) {
                     //the current algorithm design wouldn't think about delete references in index, therefore don't prepare for deleting
                     PostingsEnum postingsEnum = termsEnum.postings(null, PostingsEnum.NONE);
                     int id = 0;

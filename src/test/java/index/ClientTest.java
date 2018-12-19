@@ -1,5 +1,6 @@
 package index;
 
+import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.common.index.IndexClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,4 +33,11 @@ public class ClientTest {
     System.out.println(client.getDocSize());
   }
 
+  @Test
+  void testDocSetMapMemory() {
+    System.out.println("record doc set map memory");
+    Utils.logMemorySize();
+    Map map = client.getDocSetMap("body", 0.02, 0.15);
+    Utils.logMemorySize();
+  }
 }

@@ -15,7 +15,7 @@ public final class Utils {
     private Utils() { }
     private static final Logger logger = LoggerFactory.getLogger(Utils.class);
     public static void logMemorySize() {
-        logger.trace("current memory size is {} G", (double)Runtime.getRuntime().totalMemory() / 1024 / 1024 /1024);
+        logger.info("current memory size is {} G", (double)Runtime.getRuntime().totalMemory() / 1024 / 1024 /1024);
     }
     /**
      * 获取数组中对应未知的值，当越界时返回空值或0值

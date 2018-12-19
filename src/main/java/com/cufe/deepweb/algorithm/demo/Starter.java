@@ -63,12 +63,17 @@ public class Starter {
             //在源索引中搜索
             Set<Integer> docIDSet = sourceClient.search(field, query);
             //去重
+            logger.info("start to dedu");
+            Utils.logMemorySize();
             docIDSet = docIDSet.stream().filter(id -> {
                 return dedu.add(id);
             }).collect(Collectors.toSet());
+            Utils.logMemorySize();
+            logger.info("dedu finish");
             logger.info("new doc size is {}", docIDSet.size());
             //写入索引
-            sourceClient.write2TargetIndex(targetClient, docIDSet, Runtime.getRuntime().availableProcessors() / 3);
+            sourceClient.write2TargetIndex(targetClient, docIDSet, Runtime.getRuntime().availableProcessors());
+            sourceClient.forceUpdateIndex();
             Utils.logMemorySize();
         }
         exit();
