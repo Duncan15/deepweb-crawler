@@ -1,5 +1,6 @@
 package com.cufe.deepweb.algorithm;
 
+import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.crawler.Constant;
 import com.google.common.base.Stopwatch;
 import org.slf4j.Logger;
@@ -79,6 +80,7 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
         snapshotSize = 0;
         termList = new ArrayList<>();
         df = new HashMap<>();
+        newMap = new HashMap<>();
         s = new HashSet<>();
     }
 
@@ -109,11 +111,14 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
      */
     private void buildMatrix() {
         //start to build matrix
+        logger.info("start to build matrix");
+        Utils.logMemorySize();
 
         termList.clear();
         Stopwatch stopwatch = Stopwatch.createStarted();//use to record the time cost in building matrix
         s.clear();
         df.clear();
+        newMap.clear();
         newMap = getDocSetMap(mainField,lowBound,upBound);//store each term's new docID set in set covering
 
         //remove the selected query in the candidate terms
@@ -129,6 +134,9 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
 
         buildTableCost = stopwatch.elapsed(TimeUnit.MILLISECONDS);
         snapshotSize = getDocSize();
+
+        Utils.logMemorySize();
+        logger.info("build matrix finish");
     }
 
     /**

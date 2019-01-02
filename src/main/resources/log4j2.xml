@@ -7,6 +7,11 @@
         <Console name="Console" target="SYSTEM_OUT" follow="true">
             <PatternLayout pattern="${LOG_PATTERN}"/>
         </Console>
+        <File name="logFile" fileName="dw.log">
+            <PatternLayout>
+                <Pattern>${LOG_PATTERN}</Pattern>
+            </PatternLayout>
+        </File>
     </Appenders>
     <Loggers>
         <!--过滤掉sql2o和hikari的一些无用的DEBUG信息-->
@@ -14,7 +19,8 @@
         <logger name="com.zaxxer.hikari" level="INFO"></logger>
         <logger name="com.gargoylesoftware.htmlunit" level="ERROR"></logger>
         <Root level="info">
-            <AppenderRef ref="Console"/>
+            <AppenderRef ref="logFile"/>
+            <!--<AppenderRef ref="Console"/>-->
         </Root>
     </Loggers>
 </Configuration>

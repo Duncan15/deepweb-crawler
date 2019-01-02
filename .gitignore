@@ -7,3 +7,4 @@ target/
 #miscella
 dependency-reduced-pom.xml
 crawler.iml
+*.log

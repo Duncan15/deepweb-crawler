@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -231,6 +232,7 @@ public final class IndexClient implements Closeable {
     public Set<Integer> search(String field, String query) {
         logger.info("start to search");
         Utils.logMemorySize();
+
         if (indexSearcher == null) {
             logger.warn("this indexSearcher hasn't been initialized");
             return Collections.emptySet();
@@ -245,6 +247,7 @@ public final class IndexClient implements Closeable {
         }catch (IOException ex) {
             logger.error("IOException happen when search", ex);
         }
+
         Utils.logMemorySize();
         logger.info("search finish");
         return docIDSet;
@@ -306,6 +309,7 @@ public final class IndexClient implements Closeable {
      * @param docIDSet the set of docID which would be processed
      */
     public void write2TargetIndex(IndexClient targetClient, Set<Integer> docIDSet, int parallelNum) {
+        logger.info("download num is {}", docIDSet.size());
         logger.info("start to download");
         Utils.logMemorySize();
         if (targetClient.readOnly || indexReader == null || targetClient.indexWriter == null) {
@@ -354,11 +358,12 @@ public final class IndexClient implements Closeable {
                 if (service.awaitTermination(parallelNum, TimeUnit.SECONDS)) {
                     break;
                 }
-                logger.info("have download {} documents", downloadNum.get());
+                logger.trace("have download {} documents", downloadNum.get());
             } catch (InterruptedException ex) {
                 logger.error("interrupted when wait for thread pool");
             }
         }
+
         Utils.logMemorySize();
         logger.info("download finish");
     }
@@ -377,25 +382,27 @@ public final class IndexClient implements Closeable {
     }
 
     /**
-     * 获取当前索引最近一次更新时对应field对应范围内的term-set(docId) map
+     * get current index's term-set(docId) map in the specified field between the specified DF range after the latest update
+     * note: this method view the index as a entirety
      * @param field
      * @param low
      * @param up
      * @return
      */
-    public Map<String, Set<Integer>> getDocSetMap(String field,double low,double up){
+    public Map<String, Set<Integer>> getDocSetMap2(String field,double low,double up) {
+        logger.info("start to get doc set map");
         Utils.logMemorySize();
+
         Map<String, Set<Integer>> docSetMap = new HashMap<>();
         if (indexReader == null) {
             logger.warn("this indexReader hasn't been initialized");
             return docSetMap;
         }
-        int matrixSize = 0;//store the total length of matrix
         int size = indexReader.numDocs();
         try{
             Terms terms = MultiFields.getTerms(indexReader, field);
             TermsEnum termsEnum = terms.iterator();
-            while (termsEnum.next() != null){
+            while (termsEnum.next() != null) {
                 String term = termsEnum.term().utf8ToString();
                 if((low * size) < termsEnum.docFreq() && termsEnum.docFreq() <= (up * size)) {
                     //the current algorithm design wouldn't think about delete references in index, therefore don't prepare for deleting
@@ -403,7 +410,6 @@ public final class IndexClient implements Closeable {
                     int id = 0;
                     Set<Integer> docSet = new HashSet<>();
                     while ((id = postingsEnum.nextDoc()) != DocIdSetIterator.NO_MORE_DOCS) {
-                        matrixSize++;
                         docSet.add(id);
                     }
                     docSetMap.put(term,docSet);
@@ -412,13 +418,106 @@ public final class IndexClient implements Closeable {
         }catch (IOException ex){
             logger.error("IOException in read lucene index", ex);
         }
-        logger.info("the matrix length is {}", matrixSize);
+
+        logger.info("map size is {}", docSetMap.size());
         Utils.logMemorySize();
+        logger.info("get doc set map finish");
         return docSetMap;
     }
 
     /**
-     * 搜集索引的相关信息
+     * get current index's term-set(docId) map in the specified field between the specified DF range after the latest update
+     * note: this method view the index as a set of some sub index
+     * @param field
+     * @param low
+     * @param up
+     * @return
+     */
+    public Map<String, Set<Integer>> getDocSetMap(String field,double low,double up) {
+        logger.info("start to get doc set map");
+        Utils.logMemorySize();
+
+        if (indexReader == null) {
+            logger.warn("this indexReader hasn't been initialized");
+            return Collections.emptyMap();
+        }
+        Map<String, Set<Integer>> docSetMap = new HashMap<>();
+        int size = indexReader.numDocs();
+
+        logger.info("start to get all the terms which fit the target bound range");
+        try{
+            Terms terms = MultiFields.getTerms(indexReader, field);
+            TermsEnum termsEnum = terms.iterator();
+            while (termsEnum.next() != null) {
+                String term = termsEnum.term().utf8ToString();
+                if((low * size) < termsEnum.docFreq() && termsEnum.docFreq() <= (up * size)) {
+                    docSetMap.put(term, new HashSet<>());
+                }
+            }
+        }catch (IOException ex){
+            logger.error("IOException in read lucene index", ex);
+        }
+        logger.info("get terms finish");
+
+        ExecutorService service = Executors.newFixedThreadPool(indexReader.leaves().size());//thread pool to operate the sub index
+        List<LeafReaderContext> leafList = indexReader.leaves();
+        logger.info("sub index size:{}", leafList.size());
+        List<Future> futureList = new ArrayList<>();
+        for (int i = 0 ; i < leafList.size() ; i ++) {
+            int curIndex = i;
+            futureList.add(service.submit(() -> {
+                LeafReaderContext ct = leafList.get(curIndex);
+                LeafReader reader = ct.reader();
+                try {
+                    Terms terms = reader.fields().terms(field);
+                    TermsEnum termsEnum = terms.iterator();
+                    while (termsEnum.next() != null) {
+                        String term = termsEnum.term().utf8ToString();
+
+                        //if the DF of current term is not between the target bound range
+                        if (!docSetMap.containsKey(term)) {
+                            continue;
+                        }
+
+                        PostingsEnum postingsEnum = termsEnum.postings(null, PostingsEnum.NONE);
+                        int id = 0;
+                        Set<Integer> tmpSet = new HashSet<>();
+                        while ((id = postingsEnum.nextDoc()) != DocIdSetIterator.NO_MORE_DOCS) {
+                            tmpSet.add(id);
+                        }
+                        Set<Integer> docSet = docSetMap.get(term);
+                        synchronized (docSet) {
+                            docSet.addAll(tmpSet);
+                        }
+                    }
+                } catch (IOException ex) {
+                    logger.error("IOException happen when read from sub index reader", ex);
+                }
+
+                return;
+            }));
+        }
+        service.shutdown();
+        logger.info("DF bound is between {} and {}", low * size, up * size);
+        while (futureList.size() > 0) {
+            for (int i = 0 ; i < futureList.size() ;) {
+                Future<Map<String, Set<Integer>>> f = futureList.get(i);
+                if (f.isDone()) {
+                    futureList.remove(i);
+                    Utils.logMemorySize();
+                    logger.info("least size of the list of future is {}", futureList.size());
+                    continue;
+                }
+                i ++;
+            }
+        }
+
+        Utils.logMemorySize();
+        logger.info("get doc set map finish");
+        return docSetMap;
+    }
+    /**
+     * get the metadata information of current index
      * @return size/fields/leaves
      */
     public Map<String, Object> getIndexInfo() {
@@ -523,5 +622,18 @@ public final class IndexClient implements Closeable {
 
             return new IndexClient(this);
         }
+    }
+    public static void main(String[] args) {
+        IndexClient client = new IndexClient.Builder(Paths.get("F:/experiment/Index6.6.1/Indexjieba21")).setReadOnly().build();
+        Map<String, Set<Integer>> map = client.getDocSetMap2("body", 0.02, 0.15);
+        System.out.println("doc set map size is " + map.size());
+        int total = 0;
+        for (Map.Entry<String, Set<Integer>> entry : map.entrySet()) {
+            total += entry.getValue().size();
+        }
+        System.out.println("len is " + total);
+        map.clear();
+        map = client.getDocSetMap("body", 0.02, 0.15);
+        System.out.println("len is " +map.size());
     }
 }

@@ -41,7 +41,7 @@ public abstract class AlgorithmBase {
     使用该算法时直接调用该方法，不必关心具体算法实现
      */
     public final String getNextQuery() {
-        logger.info("start to infer query by algorithm");
+        logger.info("start to infer query");
         Utils.logMemorySize();
 
         //if the query to get is not the first one
