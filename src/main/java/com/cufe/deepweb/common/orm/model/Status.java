@@ -1,12 +1,35 @@
 package com.cufe.deepweb.common.orm.model;
 
+/**
+ * record the history round information
+ * primary key is (webId, round, type)
+ */
 public class Status {
     private Long webId;
-    private Long statusId;//status表ID
-    private String round;//当前轮次
-    private String type;//类型
-    private Integer fLinkNum;//该轮成功爬取链接数量
-    private Integer sLinkNum;//该轮失败爬取链接数量
+    /**
+     * the unique id of status table
+     */
+    private Long statusId;
+
+    /**
+     * the round of current row corresponding to
+     */
+    private String round;
+
+    /**
+     * the record type: info or query
+     */
+    private String type;
+
+    /**
+     * the number of infoLink which is downloaded successfully in this round
+     */
+    private Integer fLinkNum;
+
+    /**
+     * the number of infoLink which is failed to download in this round
+     */
+    private Integer sLinkNum;
 
     public Long getWebId() {
         return webId;

@@ -2,82 +2,125 @@ package com.cufe.deepweb.common.orm.model;
 
 public class WebSite {
     /**
-     * 网站的唯一标示ID
+     * the unique ID of website
      */
     private long webId;
     /**
-     * 网站名称
+     * the name of website
+     * this column just for easy to distinct the website in front end
      */
     private String webName;
     /**
-     * 网站首页URL
+     * the URL of website's home page
+     * this column temperately no use
      */
     private String indexUrl;
+
     /**
-     * 搜索链接前缀（？之前部分）
+     * the prefix of search URL
+     * （the part before ?）
      */
     private String prefix;
     /**
-     * 关键词参数名称
+     * the keyword parameter name
      */
     private String paramQuery;
     /**
-     * 分页参数名称，如果分别有pageNum和pageSize，则把pageSize归入paramList
+     * the pageNum parameter name
+     * if there exists pageNum and pageSize, then append the pageSize parameter into paramList,
+     * because the pageSize parameter's value has no need to change in crawling
      */
     private String paramPage;
     /**
-     * 包含, 格式如下：
+     * include comma(,), following is the format:
      * startPageNum,pageInterval
      */
     private String startPageNum;
     /**
-     * 其他参数名称，以,分割
+     * the other parameters' name, divided by comma(,)
      */
     private String paramList;
     /**
-     * 其他参数值，以,分割
+     * the other parameters' value corresponding to the paramList, divided by comma(,)
      */
     private String paramValueList;
-    private String runningMode;
+
     /**
-     * 指定的下载线程数量
+     * this column temperately no use
+     */
+    private String runningMode;
+
+    /**
+     * the specified download thread number, default number is 5
      */
     private Integer threadNum;
-    private Integer timeout;
-    private String charset;
+
     /**
-     * 数据库保证以/结尾
+     * the specified timeout in HTTP communication
+     * this parameter's meaning is a little indistinct
+     * the reality behavior would't absolutely obey this timeout
+     * default value is 3000
+     */
+    private Integer timeout;
+
+    /**
+     * the specified charset of the crawled website
+     * this value is very important in crawling
+     * so in crawling the program would first to auto detect the website's charset
+     * only when can't find it, the program would use this value
+     */
+    private String charset;
+
+    /**
+     * the work directory of website,
+     * if the directory no exists, the program can't success to startup
+     * the program promise that when this value is got from database, it's end with /
      */
     private String workFile;
+
+
+
     /**
-     * 用户名输入框的Xpath
+     * the username input's Xpath
      */
     private String userParam;
+
     /**
-     * 密码输入框的Xpath
+     * the password input's Xpath
      */
     private String pwdParam;
 
     /**
-     * 提交按钮的Xpath
+     * the submit button's Xpath
      */
     private String submitXpath;
+
     /**
-     * 用户名
+     * the username for dynamic login
      */
     private String userName;
     /**
-     * 密码
+     * the password for dynamic login
      */
     private String password;
     /**
-     * 登录页面链接（如果此项不为空，则账号密码相关不能为空）
+     * the URL of login page
+     * if this URL is not null, then the userParam,pwdParam,submitXpath,userName,password can't be null
      */
     private String loginUrl;
 
-    private Long databaseSize;
-    private String driver;
-    private String usable;
+    /**
+     * this column temperately no use
+     */
+    private Integer databaseSize;
+
+
+    private Short driver;
+    private Short usable;
+
+    /**
+     * the createtime of this row
+     */
     private String createtime;
     private String creator;
 
@@ -233,27 +276,27 @@ public class WebSite {
         this.loginUrl = loginUrl;
     }
 
-    public Long getDatabaseSize() {
+    public Integer getDatabaseSize() {
         return databaseSize;
     }
 
-    public void setDatabaseSize(Long databaseSize) {
+    public void setDatabaseSize(int databaseSize) {
         this.databaseSize = databaseSize;
     }
 
-    public String getDriver() {
+    public short getDriver() {
         return driver;
     }
 
-    public void setDriver(String driver) {
+    public void setDriver(short driver) {
         this.driver = driver;
     }
 
-    public String getUsable() {
+    public short getUsable() {
         return usable;
     }
 
-    public void setUsable(String usable) {
+    public void setUsable(short usable) {
         this.usable = usable;
     }
 

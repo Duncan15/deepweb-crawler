@@ -38,43 +38,73 @@ import java.util.List;
 import java.util.concurrent.*;
 
 /**
- * 爬虫工具启动类
+ * the launcher class of crawler
+ * the crawler begins from here
  */
 public final class Launcher {
     private static Logger logger = LoggerFactory.getLogger(Launcher.class);
-    private static IndexClient indexClient;//索引客户端
-    private static Deduplicator dedu;//去重器
-    private static WebBrowser webBrowser;//web浏览器
-    private static CusHttpClient httpClient;//http客户端
-    private static BlockingDeque msgQueue;
-    private static final int queueSize = 10_000;
     /**
-     * msg备份文件文件名
+     * the index client for building local index
+     */
+    private static IndexClient indexClient;
+    /**
+     * the deduplicator for deduplicating the repeat infoLink
+     */
+    private static Deduplicator dedu;
+    /**
+     * the web browser for dealing with queryLink
+     */
+    private static WebBrowser webBrowser;
+    /**
+     * the HTTP client for downloading the page corresponding to the infoLink
+     */
+    private static CusHttpClient httpClient;
+    /**
+     * the message queue for mantain all the link when running
+     */
+    private static BlockingDeque msgQueue;
+    /**
+     * the file name of data file for storing message queue's left data when restarting or stopping
      */
     private static final String MSG_DATA_NAME = "msg.dat";
     private Launcher() { }
+
+    /**
+     * everything begin here
+     * @param args
+     */
     public static void main(final String[] args) {
+        //initialize the underline resource
         init(args);
+
+        //register the hook to clear resource when crawler restart or stop
         Runtime.getRuntime().addShutdownHook(new Exitor());
-        //初始化策略算法，该算法只会使用在producer线程中
-        AlgorithmBase alg = new LinearIncrementalAlgorithm.Builder(indexClient,dedu).build();
-        //初始化查询链接处理服务
+
+        //initialize the strategy algorithm, this algorithm would only be used in scheduler thread
+        AlgorithmBase alg = new LinearIncrementalAlgorithm.Builder(indexClient, dedu).build();
+
+        //initialize the service to deal with queryLinks
         QueryLinkService queryLinkService = new QueryLinkService(webBrowser, dedu);
-        //初始化信息链接处理服务
+
+        //initialize the service to deal with infoLinks
         InfoLinkService infoLinkService = new InfoLinkService(httpClient, indexClient);
 
-        //初始化线程
-        Scheduler producer = new Scheduler(alg, queryLinkService, infoLinkService, msgQueue);
-        producer.start();
+        //initialize the scheduler thread
+        Scheduler scheduler = new Scheduler(alg, queryLinkService, infoLinkService, msgQueue);
+
+        //when scheduler thread start to run, everything startup
+        scheduler.start();
     }
 
     /**
-     * 注:爬虫不做任何数据库的初始化插入操作，启动爬虫时应该保证数据库各项配置的完整性
-     *     0   webID
-     *     1   jdbcURL
-     *     2   userName
-     *     3   password
+     * @note: the crawler don't do some things about inserting initial data into database,
+     * when this program start to run, every configuration in database should be confirmed to be finished
+     * in other word, it should have a initialize step when the user finish to configure in the web's front end
      * @param args
+     *        [0] webID
+     *        [1] jdbcURL
+     *        [2] userName
+     *        [3] password
      */
     private static void init(final String[] args) {
         Options options = new Options();
@@ -82,28 +112,28 @@ public final class Launcher {
             .longOpt("web-id")
             .hasArg()
             .required()
-            .desc("指定的爬取网站ID")
+            .desc("the specified website ID")
             .build()
         );
         options.addOption(Option.builder("l")
             .longOpt("jdbc-url")
             .hasArg()
             .required()
-            .desc("指定的JDBC链接")
+            .desc("the specified JDBC URL")
             .build()
         );
         options.addOption(Option.builder("u")
             .longOpt("username")
             .hasArg()
             .required()
-            .desc("数据库用户名")
+            .desc("the specified database username")
             .build()
         );
         options.addOption(Option.builder("p")
             .longOpt("password")
             .hasArg()
             .required()
-            .desc("数据库密码")
+            .desc("the specified database password")
             .build()
         );
         CommandLineParser parser = new DefaultParser();
@@ -111,9 +141,10 @@ public final class Launcher {
         try {
             cmd = parser.parse(options, args);
         } catch (ParseException ex) {
-            logger.error("error happen when parse commandline args");
+            logger.error("error happen when parse commandline args", ex);
             System.exit(1);
         }
+
         //config mysql
         HikariConfig hikariConfig = new HikariConfig("/orm/hikari.properties");
         String webIDStr = cmd.getOptionValue("web-id");
@@ -121,7 +152,7 @@ public final class Launcher {
         String jdbcURL = cmd.getOptionValue("jdbc-url");
         String userName = cmd.getOptionValue("username");
         String password = cmd.getOptionValue("password");
-        logger.info("crawler start at {}", new Date().toString());
+        logger.info("crawler start");
         logger.info("configure cmd param with jdbcURL:{},userName:{},password:{}", jdbcURL, userName, password);
         hikariConfig.setJdbcUrl(jdbcURL);
         hikariConfig.setUsername(userName);
@@ -132,79 +163,82 @@ public final class Launcher {
         //config website info
         Sql2o sql2o = Orm.getSql2o();
         try (Connection conn=sql2o.open()) {
+            //there should have one row corresponding to the webID in database
             String sql = "select * from website where webId=:webID";
             Constant.webSite = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(WebSite.class);
+
+            //there should have one row corresponding to the webId in database
             sql = "select * from current where webId=:webID";
             Constant.current = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(Current.class);
+
+            //have no promise about this table
             sql = "select id, webId, patternName, xpath from pattern where webId=:webID";
             List<Pattern> patterns = conn.createQuery(sql).addParameter("webID", webID).executeAndFetch(Pattern.class);
             patterns.forEach(pattern -> {
                 if (Constant.FT_INDEX_FIELD.equals(pattern.getPatternName())) return;//跳过全文索引的pattern，因为全文索引在爬虫中默认执行
                 Constant.patternMap.put(pattern.getPatternName(),pattern.getXpath());
             });
-            sql = "select round from status where webId=:webID";
-            List<String> rounds = conn.createQuery(sql).addParameter("webID", Constant.webSite.getWebId()).executeScalarList(String.class);
-            for (String round : rounds) {//将round设置为数据库中的最大值
-                int ro = Integer.parseInt(round);
-                if (Constant.round < ro) {
-                    Constant.round = ro;
-                }
-            }
+
+            //set the round equal to the current table
+            Constant.round = Integer.parseInt(Constant.current.getRound());
         }
+
         if(Constant.webSite == null || Constant.current == null){
-            logger.error("webID所对应的webSite信息无法找到，程序退出");
+            logger.error("the website infomation corresponding to the webID can't be find，program exit");
             System.exit(1);
         }
-        //检测配置项
+
+        //detect the configuration
         String workFilePath = Constant.webSite.getWorkFile();
         if (StringUtils.isBlank(workFilePath)) {
-            logger.error("工作路径不能为空");
+            logger.error("the work directory can't be blank");
             System.exit(1);
         } else {
             File f = new File(workFilePath);
             if (!f.exists() || !f.isDirectory() || !f.canWrite()) {//如果文件不存在 or 如果不是文件夹 or 如果不可写
-                logger.error("工作路径必须是已存在的文件夹，且执行用户拥有写权限");
+                logger.error("the work file should be a existed directory，and the owner of this program should have right to write");
                 System.exit(1);
             }
         }
 
-        //配置消息队列
-        msgQueue = new LinkedBlockingDeque(queueSize);
+        //configure the message queue
+        msgQueue = new LinkedBlockingDeque(Constant.QUEUE_SIZE);
         File f = Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR, MSG_DATA_NAME).toFile();
         List<String> msgList = null;
-        //如果文件存在，将列表读入内存
+        //if message queue stored file exist, load the data into memory
         if (f.exists()) {
             logger.info("read msg from file {}", f.getAbsolutePath());
             try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(f))) {
                 msgList = (List<String>)inputStream.readObject();
+                logger.info("the left link num from last stop is {}", msgList.size());
             } catch (Exception ex) {
                 logger.error("Exception happen when read msg object file");
             } finally {
                 f.delete();
             }
         }
-        //将列表中的数据插入消息队列
+        //insert the data into message queue
         if (msgList != null) {
             msgList.forEach(link -> {
-                if (StringUtils.isNotBlank(link)) {//如果是有效链接
+                if (StringUtils.isNotBlank(link)) {//if this link is valid
                     msgQueue.offer(link);
                 }
             });
         }
 
-        //配置索引客户端
+        //configure the index client
         indexClient = new IndexClient.Builder(Paths.get(Constant.webSite.getWorkFile(),Constant.FT_INDEX_ADDR)).build();
-        //配置去重器
+        //configure the RAM md5 deduplicater
         dedu = new RAMMD5Dedutor(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
-        //配置模拟器
+        //configure the web brawser
         webBrowser = new HtmlUnitBrowser.Builder().build();
-        if (!StringUtils.isBlank(Constant.webSite.getLoginUrl())) {//如果有配置登录链接，则表示必须登录才能爬取
+        if (!StringUtils.isBlank(Constant.webSite.getLoginUrl())) {//if the login URL is not blank, first to confirm the login information is valid
             if (!webBrowser.login(Constant.webSite.getLoginUrl(),Constant.webSite.getUserName(),Constant.webSite.getPassword(),Constant.webSite.getUserParam(),Constant.webSite.getPwdParam(),Constant.webSite.getSubmitXpath())) {
-                logger.error("无法登录，请检查登录参数设置是否正确");
+                logger.error("detect the login information, but can't login, please check the configuration");
                 System.exit(1);
             }
         }
-        //配置http客户端
+        //configure the HTTP client
         httpClient = new ApacheClient.Builder()
                 .setCookieManager(((HtmlUnitBrowser)webBrowser).getCookieManager())
                 .build();

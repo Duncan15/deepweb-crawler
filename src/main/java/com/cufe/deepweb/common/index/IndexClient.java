@@ -370,7 +370,7 @@ public final class IndexClient implements Closeable {
 
 
     /**
-     * 获取当前索引最近一次更新时存在的文档数量
+     * get the document size at the last time to update index
      * @return
      */
     public int getDocSize(){
@@ -561,7 +561,7 @@ public final class IndexClient implements Closeable {
         en,cn
     }
     /**
-     * 构造器
+     * builder
      */
     public static class Builder {
         private Path sampleAddr;

@@ -12,36 +12,36 @@ public final class Constant {
     private Constant() { }
 
     /**
-     * 网站的基本配置信息
+     * the basic configuration of website
      */
     public static WebSite webSite;
     /**
-     * 网站的当前状态配置信息
+     * the current information of website
      */
     public static Current current;
     /**
-     * 当前爬虫所处轮次
+     * the round at which crawler currently stands
      */
     public static int round;
     /**
-     * 全文索引相对地址
+     * the relative address of fulltext index
      */
     public final static String FT_INDEX_ADDR="index/fulltext/";
     /**
-     * 下载的资源文件相对地址，不仅仅包括HTML
+     * the downloaded resource's relative address，not only includes HTML
      */
     public final static String HTML_ADDR = "html/";
     /**
-     * 重启信息的相对地址
+     * the relative address of data which is stored for restarting
      */
     public final static String DATA_ADDR = "data/";
     /**
-     * 全文索引的field name
+     * the field name of fulltext index
      */
     public final static String FT_INDEX_FIELD = "fulltext";
 
     /**
-     * 爬虫能识别的文本类型
+     * the document type which crawler can understand
      */
     public final static Set<String> docTypes = new HashSet<String>() {
         {
@@ -54,7 +54,7 @@ public final class Constant {
         }
     };
     /**
-     * 爬虫会建立索引的field和xpah对
+     * the field name and xpath map which crawler builds at startup
      */
     public final static Map<String, String> patternMap = new HashMap<String, String>() {
         {
@@ -63,17 +63,22 @@ public final class Constant {
     };
 
     /**
-     * status表的链接类型：信息链接
+     * the link type in status table：info link
      */
     public final static String STATUS_TYPE_INFO = "info";
     /**
-     * status表的链接类型：查询链接
+     * the link type in status table：query link
      */
     public final static String STATUS_TYPE_QUERY = "query";
     /**
-     * current表中的爬虫阶段状态
+     * the crawler status in current table
      */
     public final static String CURRENT_STATUS_INACTIVE = "inactive";
     public final static String CURRENT_STATUS_ACTIVE = "active";
     public final static String CURRENT_STATUS_DONE = "done";
+
+    /**
+     * the size of message queue for downloading data
+     */
+    public final static int QUEUE_SIZE = 10_000;
 }

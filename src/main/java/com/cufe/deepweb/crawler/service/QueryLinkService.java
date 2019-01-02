@@ -12,6 +12,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -126,15 +127,11 @@ public class QueryLinkService extends LinkService {
      * @param keyword 关键词
      * @return
      */
-    public List<String> getQueryLinks(String keyword) {
-        List<String> queryLinks = new ArrayList<>();
+    public QueryLinks getQueryLinks(String keyword) {
         int num = getTotalPageNum(keyword);
         logger.info("total page num is {}", num);
-        for (int i=1 ; i <= num ; i++) {
-            queryLinks.add(buildQueryLink(keyword, i));
-        }
-        this.totalLinkNum = queryLinks.size();
-        return queryLinks;
+        this.totalLinkNum = num;
+        return new QueryLinks(num, keyword);
     }
 
     /**
@@ -170,6 +167,35 @@ public class QueryLinkService extends LinkService {
             }
         }).collect(Collectors.toList());
         return links;
+    }
+
+    /**
+     * the generator of query link
+     */
+    public class QueryLinks {
+        /**
+         * all the query page's page number start at 1
+         */
+        private int counter = 1;
+        private int pageNum;
+        private String keyword;
+        private QueryLinks(int pageNum, String keyword) {
+            this.pageNum = pageNum;
+            this.keyword = keyword;
+        }
+
+        /**
+         * get next queryLink
+         * @return null if can't generate next query link
+         */
+        public synchronized String next() {
+            String ans = null;
+            if (counter <= pageNum) {
+                ans = buildQueryLink(keyword, counter);
+                counter++;
+            }
+            return ans;
+        }
     }
 
 }

@@ -1,17 +1,23 @@
 package com.cufe.deepweb.common.orm.model;
 
 /**
- * 索引Pattern
+ * the pattern for building index
  */
 public class Pattern {
-    private Long id;
-    private Long webId;
+    private long id;
+    private long webId;
+    /**
+     * the pattern name for showing in front end
+     * and this value would be used as the field name in building index
+     */
     private String patternName;
-    private String xpath;
 
     /**
-     * 唯一标示ID
+     * the xpath of this pattern
      */
+    private String xpath;
+
+
     public Long getId() {
         return id;
     }
@@ -20,9 +26,7 @@ public class Pattern {
         this.id = id;
     }
 
-    /**
-     * 对应的webID
-     */
+
     public Long getWebId() {
         return webId;
     }
@@ -31,9 +35,7 @@ public class Pattern {
         this.webId = webId;
     }
 
-    /**
-     * 索引fieldName
-     */
+
     public String getPatternName() {
         return patternName;
     }
@@ -42,9 +44,6 @@ public class Pattern {
         this.patternName = patternName;
     }
 
-    /**
-     * 索引内容对应的xpath
-     */
     public String getXpath() {
         return xpath;
     }

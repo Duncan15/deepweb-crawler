@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 主调度线程，主要工作是生产分页链接和把握爬虫状态
+ * main scheduler thread, be responsible for produce queryLinks and manage crawler status
  */
 public final class Scheduler extends Thread{
     private static Logger logger = LoggerFactory.getLogger(Scheduler.class);
@@ -34,7 +34,7 @@ public final class Scheduler extends Thread{
     private InfoLinkService infoLinkService;
     private BlockingDeque msgQueue;
     private Sql2o sql2o;
-    private ThreadPoolExecutor threadPool;
+    private ThreadFactory threadFactory;
     public Scheduler(AlgorithmBase algo, QueryLinkService queryLinkService, InfoLinkService infoLinkService, BlockingDeque msgQueue){
         super("producer_thread");
         this.algo = algo;
@@ -43,21 +43,13 @@ public final class Scheduler extends Thread{
         this.msgQueue = msgQueue;
         this.sql2o = Orm.getSql2o();
 
-        //配置下载线程池
-        ThreadFactory threadFactory = new ThreadFactoryBuilder()
+        //configure the download thread pool's threadFactory
+        threadFactory = new ThreadFactoryBuilder()
             .setUncaughtExceptionHandler((thread, exception) -> {
-                logger.error("消费线程出错", exception);
+                logger.error("error happen in consume thread", exception);
             })
             .setNameFormat("consume_thread_%s")
             .build();
-        threadPool = new ThreadPoolExecutor(
-            Constant.webSite.getThreadNum(),
-            Constant.webSite.getThreadNum(),
-            0,
-            TimeUnit.MILLISECONDS,
-            new LinkedBlockingDeque<>(),
-            threadFactory
-        );
 
     }
     @Override
@@ -65,122 +57,152 @@ public final class Scheduler extends Thread{
         logger.info("start the produce thread");
 
         while (this.isContinue()) {
-            //part1:处理数据库初始化
-            try (Connection conn = sql2o.open()) {//初始化current表中的对应行
-                String sql = "update current set M1status =:M1status, M2status =:M2status, M3status =:M3status, M4status =:M4status where webId =:webID";
+            //status1: deal with the database initialization
+            try (Connection conn = sql2o.open()) {
+                String sql;
+
+                //update the row corresponding to the webID in database's current table
+                sql = "update current set M1status =:M1status, M2status =:M2status, M3status =:M3status, M4status =:M4status, round =:round where webId =:webID";
                 conn.createQuery(sql)
                         .addParameter("M1status", Constant.CURRENT_STATUS_INACTIVE)
                         .addParameter("M2status",Constant.CURRENT_STATUS_INACTIVE)
                         .addParameter("M3status",Constant.CURRENT_STATUS_INACTIVE)
                         .addParameter("M4status",Constant.CURRENT_STATUS_INACTIVE)
+                        .addParameter("round", Constant.round + 1 + "")
                         .addParameter("webID",Constant.webSite.getWebId())
                         .executeUpdate();
 
-                //插入status表
-                sql = "update status set fLinkNum =:fLinkNum, sLinkNum =:sLinkNum where webId =:webID and type =:type";
-                int fLinkNum = infoLinkService.getFailedLinkNum();
-                conn.createQuery(sql)
-                    .addParameter("fLinkNum", fLinkNum)
-                    .addParameter("sLinkNum", infoLinkService.getTotalLinkNum() - fLinkNum)
-                    .addParameter("webID", Constant.webSite.getWebId())
-                    .addParameter("type", Constant.STATUS_TYPE_INFO)
-                    .executeUpdate();
-                fLinkNum = queryLinkService.getFailedLinkNum();
-                conn.createQuery(sql)
-                    .addParameter("fLinkNum", fLinkNum)
-                    .addParameter("sLinkNum", queryLinkService.getTotalLinkNum() - fLinkNum)
-                    .addParameter("webID", Constant.webSite.getWebId())
-                    .addParameter("type", Constant.STATUS_TYPE_QUERY)
-                    .executeUpdate();
+                this.fixStatus(0,1);
+                logger.info("start the M1status");
+
+
+                //when round is equal to zero, there is no need to update
+                if (Constant.round != 0) {
+                    //update the last round's fLinkNum.sLinkNum in database's status table
+                    sql = "update status set fLinkNum =:fLinkNum, sLinkNum =:sLinkNum where webId =:webID and type =:type and round=:round";
+                    int fLinkNum = infoLinkService.getFailedLinkNum();
+                    conn.createQuery(sql)
+                            .addParameter("fLinkNum", fLinkNum)
+                            .addParameter("sLinkNum", infoLinkService.getTotalLinkNum() - fLinkNum)
+                            .addParameter("webID", Constant.webSite.getWebId())
+                            .addParameter("type", Constant.STATUS_TYPE_INFO)
+                            .addParameter("round", Constant.round + "")
+                            .executeUpdate();
+                    fLinkNum = queryLinkService.getFailedLinkNum();
+                    conn.createQuery(sql)
+                            .addParameter("fLinkNum", fLinkNum)
+                            .addParameter("sLinkNum", queryLinkService.getTotalLinkNum() - fLinkNum)
+                            .addParameter("webID", Constant.webSite.getWebId())
+                            .addParameter("type", Constant.STATUS_TYPE_QUERY)
+                            .addParameter("round", Constant.round + "")
+                            .executeUpdate();
+                }
+
                 Constant.round++;//增加当前轮次标示
                 sql = "insert into status(webId,round,type,fLinkNum,sLinkNum)" +
                     "values(:webID,:round,:type,:fLinkNum,:sLinkNum)";
                 conn.createQuery(sql)
                     .addParameter("webID", Constant.webSite.getWebId())
-                    .addParameter("round", Constant.round+"")
+                    .addParameter("round", Constant.round + "")
                     .addParameter("type", Constant.STATUS_TYPE_INFO)
                     .addParameter("fLinkNum", 0)
                     .addParameter("sLinkNum", 0)
                     .executeUpdate();
                 conn.createQuery(sql)
                     .addParameter("webID", Constant.webSite.getWebId())
-                    .addParameter("round", Constant.round+"")
+                    .addParameter("round", Constant.round + "")
                     .addParameter("type", Constant.STATUS_TYPE_QUERY)
                     .addParameter("fLinkNum", 0)
                     .addParameter("sLinkNum", 0)
                     .executeUpdate();
+
             }
-            this.fixStatus(0,1);
-            logger.info("start the M1status");
 
 
             this.fixStatus(1,2);
             logger.info("start the M2status");
-            //part2:生成关键词阶段
+            //status2: generate the query term
             String curQuery = algo.getNextQuery();
             logger.info("this turn's query is {}",curQuery);
 
 
             this.fixStatus(2,3);
             logger.info("start the M3status");
-            //part3:确定分页链接
-            List<String> queryLinks = queryLinkService.getQueryLinks(curQuery);
-            //正在运行的任务集合
-            Set<Future> runSet = new HashSet<>();
-            runSet.add(threadPool.submit(() -> {
-                queryLinks.forEach(link -> {
-                    try {
-                        msgQueue.put(link);
-                    } catch (InterruptedException ex) {
-                        logger.error("InterruptedException happen when put queryLink into msgQueue",ex);
-                    }
+            //status3: get all the queryLinks
+            QueryLinkService.QueryLinks queryLinks = queryLinkService.getQueryLinks(curQuery);
 
-                });
-            }));
 
             this.fixStatus(3,4);
             logger.info("start the M4status");
-            //part4:下载链接
-            List runList = new ArrayList(Constant.webSite.getThreadNum());
-            do {
-                int runNum = threadPool.getActiveCount();
-                if (runNum < Constant.webSite.getThreadNum()) {
-                    runList.clear();
-                    msgQueue.drainTo(runList, Constant.webSite.getThreadNum() - runNum);
-                    runList.forEach(o -> {
-                        runSet.add(threadPool.submit(() -> {
-                            if (o instanceof String) {
-                                String link = (String)o;
-                                if (queryLinkService.isQueryLink(link)) {//如果是分页链接
-                                    this.consumeQueryLink(link);
-                                }else {//如果是数据链接
-                                    this.consumeInfoLink(link);
-                                }
-                            }
-                        }));
-                    });
+            ThreadPoolExecutor threadPool = new ThreadPoolExecutor(
+                    Constant.webSite.getThreadNum(),
+                    Constant.webSite.getThreadNum(),
+                    0,
+                    TimeUnit.MILLISECONDS,
+                    new LinkedBlockingDeque<>(),//set the size of thread queue to infinity
+                    threadFactory
+            );
+            for (int i = 0 ; i < Constant.webSite.getThreadNum() ; i++) {
+                threadPool.execute(() -> {
+                    while (true) {
 
+
+                        String link = (String)msgQueue.poll();//if here is not null, this is a info link
+                        if (link != null) {
+                            this.consumeInfoLink(link);
+                            continue;
+                        }
+
+                        //if can't get data from message queue, go to get query link from queryLink's generator
+                        link = queryLinks.next();
+                        if (link != null && queryLinkService.isQueryLink(link)) {
+                            this.consumeQueryLink(link);
+                            continue;
+                        }
+
+
+                        //if can't get info link from message queue and can't get query link from generator,
+                        //the thread exit
+                        //maybe in other thread would create new info links and push into message queue,
+                        //but these message in queue would be consumed by their create thread
+                        break;
+                    }
+                });
+            }
+            threadPool.shutdown();
+
+            //loop here until all the thread in thread pool exit
+            while (true) {
+                try {
+                    if (threadPool.awaitTermination(Constant.webSite.getThreadNum(), TimeUnit.SECONDS)) {
+                        break;
+                    }
+                } catch (InterruptedException ex) {
+                    logger.error("interrupted when wait for thread pool");
                 }
-            } while (Utils.isRun(runSet) || threadPool.getQueue().size() > 0 || msgQueue.size() > 0);
+            }
+
             this.fixStatus(4,0);
         }
         System.exit(0);
     }
 
     /**
-     * 检测是否继续爬取
-     * 检测规则为：最近10次爬取所获取的数据链接数量小于10
+     * detect whether to continue to crawl
+     * detect rule：the successful download number of  latest 10 round is lower than 10,
+     * if true , return false and stop to crawl
      * @return
      */
     private boolean isContinue() {
         List<Integer> sLinkNumList = null;
-        try (Connection conn = sql2o.open()) {//获取对应webID的最近10个成功爬取链接数
-            String sql = "select fLinkNum from status where webId=:webID and type=:type order by statusId desc limit 10";
+        try (Connection conn = sql2o.open()) {
+            //get the latest 10 round's successful download number
+            String sql = "select sLinkNum from status where webId=:webID and type=:type order by statusId desc limit 10";
             sLinkNumList = conn.createQuery(sql).addParameter("webID", Constant.webSite.getWebId())
                     .addParameter("type",Constant.STATUS_TYPE_INFO)
                     .executeScalarList(Integer.class);
         }
-        int totalNum = 0;//累计成功链接数
+        int totalNum = 0;//sum all the num
         if (!sLinkNumList.isEmpty()) {
             for (Integer each : sLinkNumList) {
                 totalNum += each;
