@@ -123,20 +123,20 @@ public final class HtmlUnitBrowser implements WebBrowser {
         try {
             client.getPage(URL);
             HtmlPage page = client.getPage(URL);
-            URL curURL = page.getUrl();//当前页面链接
+            URL curURL = page.getUrl();//the URL of current page
             List<HtmlAnchor> anchors = page.getAnchors();
-            logger.info("anchor size {}", anchors.size());
             for (HtmlAnchor anchor : anchors) {
-                String anchorURL = "";
+                String anchorURL;
                 String hrefAttr = anchor.getHrefAttribute().trim();
-                if ("".equals(hrefAttr)) continue;//如果href属性为空则跳过
-                if (!hrefAttr.startsWith("http")) {
-                    if (hrefAttr.startsWith(".") && hrefAttr.startsWith("/")) {
+                if ("".equals(hrefAttr)) continue;//if the value of href is blank, just jump next
+
+                if (!hrefAttr.startsWith("http")) {//if no start with http, this href is relative address or no use http protocol
+                    if (hrefAttr.startsWith(".") || hrefAttr.startsWith("/")) {//if start with . or /, this href is relative address
                         anchorURL = new URL(curURL, hrefAttr).toString();
-                    } else { //既不是http开头又不是相对路径，跳过
+                    } else { //no use http protocol, just jump next
                         continue;
                     }
-                } else {//如果http开头直接当成可用链接
+                } else {//if start with http, use this href directly
                     anchorURL = hrefAttr;
                 }
                 links.add(anchorURL);

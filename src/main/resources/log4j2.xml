@@ -19,8 +19,8 @@
         <logger name="com.zaxxer.hikari" level="INFO"></logger>
         <logger name="com.gargoylesoftware.htmlunit" level="ERROR"></logger>
         <Root level="info">
-            <AppenderRef ref="logFile"/>
-            <!--<AppenderRef ref="Console"/>-->
+            <!--<AppenderRef ref="logFile"/>-->
+            <AppenderRef ref="Console"/>
         </Root>
     </Loggers>
 </Configuration>

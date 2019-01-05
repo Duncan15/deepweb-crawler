@@ -43,7 +43,7 @@ public class QueryLinkService extends LinkService {
             String[] params = Constant.webSite.getParamList().split(",");
             String[] paramVs = Constant.webSite.getParamValueList().split(",");
             for (int i = 0 ; i < params.length ; i++) {
-                paramPairList.add(params[i] + "=" + paramVs[i]);
+                paramPairList.add(params[i] + "=" + paramVs[i]);//must add detect here
             }
         }
         String[] pgParams = Constant.webSite.getStartPageNum().split(",");
@@ -52,8 +52,9 @@ public class QueryLinkService extends LinkService {
         int pgV = (pageNum - 1) * numInterval + startNum;//生成的链接的分页参数值
         paramPairList.add(Constant.webSite.getParamPage() + "=" + pgV);
         if (!queryLink.endsWith("?")) {
-            queryLink += "?" + StringUtils.join(paramPairList,"&");
+            queryLink += "?";
         }
+        queryLink += StringUtils.join(paramPairList, "&");
 
         return queryLink;
     }
@@ -66,21 +67,21 @@ public class QueryLinkService extends LinkService {
     private int getTotalPageNum(String keyword) {
         int endNum = this.incrementNum(keyword);//指数递增获取第一个空页页码
         if (endNum == 1) return 0;
-        int startNum = endNum/2;
+        int startNum = endNum / 2;
         return getEndPageNum(startNum, endNum, keyword);
     }
     private int getEndPageNum(int startNum, int endNum, String keyword) {
         String endContent = browser.getPageContent(buildQueryLink(keyword,endNum)).get();
         while (startNum < endNum) {
-            int mid = (startNum + endNum)/2;
+            int mid = (startNum + endNum) / 2;
             String midContent = browser.getPageContent(buildQueryLink(keyword, mid)).get();
             logger.info("mid num is {}", mid);
-            if(isSimilarity(midContent,endContent)) {
-                endNum = mid - 1;
+            if(isSimilarity(midContent, endContent)) {
+                endNum = mid;
             } else {
                 startNum = mid;
-                if (endNum - startNum == 1) break;
             }
+            if (endNum - startNum == 1) break;
         }
         return startNum;
     }
@@ -91,11 +92,13 @@ public class QueryLinkService extends LinkService {
      */
     private int incrementNum(String keyword) {
         int cur = 1;
-        String preContent = browser.getPageContent(buildQueryLink(keyword, cur)).get(), curContent;
+        String testURL = buildQueryLink(keyword, cur);
+        String preContent = browser.getPageContent(testURL).get(), curContent;
         logger.info("increment page num to {}", cur);
         while (true) {
             cur *= 2;
-            curContent = browser.getPageContent(buildQueryLink(keyword, cur)).orElse("");
+            testURL = buildQueryLink(keyword, cur);
+            curContent = browser.getPageContent(testURL).orElse("");
             logger.info("increment page num to {}", cur);
             if (isSimilarity(preContent, curContent)) break; //如果两个页面相似，则都是空页
             preContent = curContent;
