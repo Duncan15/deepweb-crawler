@@ -33,4 +33,10 @@ public interface WebBrowser {
      * @return
      */
     List<String> getAllLinks(String URL);
+
+    /**
+     * clear resource which is assigned for current thread
+     * (clear thread local value)
+     */
+    void clearThreadResource();
 }

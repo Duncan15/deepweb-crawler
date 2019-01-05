@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * 用于处理查询链接相关的服务
+ * service used to deal with things on query link
  */
 public class QueryLinkService extends LinkService {
     private static final Logger logger = LoggerFactory.getLogger(QueryLinkService.class);
@@ -25,9 +25,11 @@ public class QueryLinkService extends LinkService {
 
 
     /**
-     * 生成查询链接(虽然频繁调用此方法会损耗性能，但从可维护的角度这点性能可以忽略)
-     * @param keyword 关键词
-     * @param pageNum 第几页,统一从1开始
+     * generate query link
+     * it seems that invoke this method frequently would affect the performance
+     * but in this method it's easy to maintain, so just ignore the small affect
+     * @param keyword
+     * @param pageNum note: start from 1
      * @return
      */
     private String buildQueryLink(String keyword, int pageNum) {
@@ -47,9 +49,9 @@ public class QueryLinkService extends LinkService {
             }
         }
         String[] pgParams = Constant.webSite.getStartPageNum().split(",");
-        int startNum = Integer.parseInt(pgParams[0]);//分页参数的初始值，有可能是1或者0
-        int numInterval = Integer.parseInt(pgParams[1]);//分页参数的递增间隔
-        int pgV = (pageNum - 1) * numInterval + startNum;//生成的链接的分页参数值
+        int startNum = Integer.parseInt(pgParams[0]);//the start number of pageNum，maybe 1 or 0
+        int numInterval = Integer.parseInt(pgParams[1]);//the interval number of different pageNum corresponding to the neighbour query link
+        int pgV = (pageNum - 1) * numInterval + startNum;//the final value occur in the query link
         paramPairList.add(Constant.webSite.getParamPage() + "=" + pgV);
         if (!queryLink.endsWith("?")) {
             queryLink += "?";
@@ -60,12 +62,12 @@ public class QueryLinkService extends LinkService {
     }
 
     /**
-     * 确定keyword所能获得的分页链接总数
+     * confirm the total number of query link corresponding to the specified keyword
      * @param keyword
      * @return
      */
     private int getTotalPageNum(String keyword) {
-        int endNum = this.incrementNum(keyword);//指数递增获取第一个空页页码
+        int endNum = this.incrementNum(keyword);//incremental to get the first empty page
         if (endNum == 1) return 0;
         int startNum = endNum / 2;
         return getEndPageNum(startNum, endNum, keyword);
@@ -86,7 +88,7 @@ public class QueryLinkService extends LinkService {
         return startNum;
     }
     /**
-     * 获取递增过程中第一个空页的页码
+     * incremental to get the first empty page number
      * @param keyword
      * @return
      */
@@ -100,25 +102,26 @@ public class QueryLinkService extends LinkService {
             testURL = buildQueryLink(keyword, cur);
             curContent = browser.getPageContent(testURL).orElse("");
             logger.info("increment page num to {}", cur);
-            if (isSimilarity(preContent, curContent)) break; //如果两个页面相似，则都是空页
+            if (isSimilarity(preContent, curContent)) break; //if current page is similar with the pre page, it seems that this two page are empty pages
             preContent = curContent;
         }
-        return cur/2;//返回第一个空页的页码
+        return cur/2;//return this first empty page number
     }
     /**
-     * 判断两个页页面是否相识（这里没有必要使用NLP的方法进行分词）
+     * judge that whether the two page are similar
+     * this method no use NLP method to judge
      * @param doc1
      * @param doc2
      * @return
      */
     private boolean isSimilarity(String doc1, String doc2) {
-        LevenshteinDistance distance = LevenshteinDistance.getDefaultInstance();//用于计算文本距离
+        LevenshteinDistance distance = LevenshteinDistance.getDefaultInstance();//used to compute text distance
         int gap = distance.apply(doc1.trim(), doc2.trim());
         return gap < 500;
     }
 
     /**
-     * QueryLinkService只依赖于WebBrowser
+     *
      * @param browser
      */
     public QueryLinkService(WebBrowser browser, Deduplicator dedu) {
@@ -126,8 +129,8 @@ public class QueryLinkService extends LinkService {
         this.dedu = dedu;
     }
     /**
-     * 获取关键词能拿到的所有链接
-     * @param keyword 关键词
+     * get all the query links corresponding to the keyword
+     * @param keyword
      * @return
      */
     public QueryLinks getQueryLinks(String keyword) {
@@ -138,7 +141,7 @@ public class QueryLinkService extends LinkService {
     }
 
     /**
-     * 判断链接是否属于分页链接
+     * judge whether the specified link is a query link or not
      * @param link
      * @return
      */
@@ -153,16 +156,16 @@ public class QueryLinkService extends LinkService {
     }
 
     /**
-     * 从queryLink指向的页面中获取信息链接
+     * get info links from the page pointed by the query link
      * @param queryLink
      * @return
      */
     public List<String> getInfoLinks(String queryLink) {
         List<String> links = browser.getAllLinks(queryLink);
-        if (links.size() == 0) {//记录失败的查询链接数量
+        if (links.size() == 0) {//record the number of failed query links
             this.failedLinkNum++;
         }
-        links = links.stream().filter(link -> {//去除链接中分页链接和重复链接
+        links = links.stream().filter(link -> {//remove the repeated links and query links
             if (link.startsWith(Constant.webSite.getPrefix())) {
                 return false;
             } else {
@@ -170,6 +173,11 @@ public class QueryLinkService extends LinkService {
             }
         }).collect(Collectors.toList());
         return links;
+    }
+
+    @Override
+    public void clearThreadResource() {
+        browser.clearThreadResource();
     }
 
     /**
@@ -198,6 +206,13 @@ public class QueryLinkService extends LinkService {
                 counter++;
             }
             return ans;
+        }
+
+        public int getCounter() {
+            return this.counter;
+        }
+        public int getPageNum() {
+            return this.pageNum;
         }
     }
 

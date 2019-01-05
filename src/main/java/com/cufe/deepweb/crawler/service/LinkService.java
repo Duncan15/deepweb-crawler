@@ -18,4 +18,10 @@ public abstract class LinkService {
         this.totalLinkNum = 0;
         return num;
     }
+
+    /**
+     * clear resource which is assigned for current thread
+     * (clear thread local value)
+     */
+    public abstract void clearThreadResource();
 }

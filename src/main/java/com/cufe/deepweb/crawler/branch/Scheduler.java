@@ -60,7 +60,7 @@ public final class Scheduler extends Thread{
             //status1: deal with the database initialization
             try (Connection conn = sql2o.open()) {
                 String sql;
-
+                Constant.round++;
                 //update the row corresponding to the webID in database's current table
                 sql = "update current set M1status =:M1status, M2status =:M2status, M3status =:M3status, M4status =:M4status, round =:round where webId =:webID";
                 conn.createQuery(sql)
@@ -68,37 +68,13 @@ public final class Scheduler extends Thread{
                         .addParameter("M2status",Constant.CURRENT_STATUS_INACTIVE)
                         .addParameter("M3status",Constant.CURRENT_STATUS_INACTIVE)
                         .addParameter("M4status",Constant.CURRENT_STATUS_INACTIVE)
-                        .addParameter("round", Constant.round + 1 + "")
+                        .addParameter("round", Constant.round + "")
                         .addParameter("webID",Constant.webSite.getWebId())
                         .executeUpdate();
 
                 this.fixStatus(0,1);
                 logger.info("start the M1status");
 
-
-                //when round is equal to zero, there is no need to update
-                if (Constant.round != 0) {
-                    //update the last round's fLinkNum.sLinkNum in database's status table
-                    sql = "update status set fLinkNum =:fLinkNum, sLinkNum =:sLinkNum where webId =:webID and type =:type and round=:round";
-                    int fLinkNum = infoLinkService.getFailedLinkNum();
-                    conn.createQuery(sql)
-                            .addParameter("fLinkNum", fLinkNum)
-                            .addParameter("sLinkNum", infoLinkService.getTotalLinkNum() - fLinkNum)
-                            .addParameter("webID", Constant.webSite.getWebId())
-                            .addParameter("type", Constant.STATUS_TYPE_INFO)
-                            .addParameter("round", Constant.round + "")
-                            .executeUpdate();
-                    fLinkNum = queryLinkService.getFailedLinkNum();
-                    conn.createQuery(sql)
-                            .addParameter("fLinkNum", fLinkNum)
-                            .addParameter("sLinkNum", queryLinkService.getTotalLinkNum() - fLinkNum)
-                            .addParameter("webID", Constant.webSite.getWebId())
-                            .addParameter("type", Constant.STATUS_TYPE_QUERY)
-                            .addParameter("round", Constant.round + "")
-                            .executeUpdate();
-                }
-
-                Constant.round++;//增加当前轮次标示
                 sql = "insert into status(webId,round,type,fLinkNum,sLinkNum)" +
                     "values(:webID,:round,:type,:fLinkNum,:sLinkNum)";
                 conn.createQuery(sql)
@@ -134,52 +110,95 @@ public final class Scheduler extends Thread{
 
             this.fixStatus(3,4);
             logger.info("start the M4status");
-            ThreadPoolExecutor threadPool = new ThreadPoolExecutor(
-                    Constant.webSite.getThreadNum(),
-                    Constant.webSite.getThreadNum(),
-                    0,
-                    TimeUnit.MILLISECONDS,
-                    new LinkedBlockingDeque<>(),//set the size of thread queue to infinity
-                    threadFactory
-            );
-            for (int i = 0 ; i < Constant.webSite.getThreadNum() ; i++) {
-                threadPool.execute(() -> {
-                    while (true) {
+
+            //only when query link number is bigger than zero, it's necessary to use the thread pool
+            if (queryLinks.getPageNum() > 0) {
+                ThreadPoolExecutor threadPool = new ThreadPoolExecutor(
+                        Constant.webSite.getThreadNum(),
+                        Constant.webSite.getThreadNum(),
+                        0,
+                        TimeUnit.MILLISECONDS,
+                        new LinkedBlockingDeque<>(),//set the size of thread queue to infinity
+                        threadFactory
+                );
+                for (int i = 0 ; i < Constant.webSite.getThreadNum() ; i++) {
+                    threadPool.execute(() -> {
+                        while (true) {
 
 
-                        String link = (String)msgQueue.poll();//if here is not null, this is a info link
-                        if (link != null) {
-                            this.consumeInfoLink(link);
-                            continue;
+                            String link = (String)msgQueue.poll();//if here is not null, this is a info link
+                            if (link != null) {
+                                this.consumeInfoLink(link);
+                                continue;
+                            }
+
+                            //if can't get data from message queue, go to get query link from queryLink's generator
+                            link = queryLinks.next();
+                            if (link != null && queryLinkService.isQueryLink(link)) {
+                                this.consumeQueryLink(link);
+                                continue;
+                            }
+
+
+                            //if can't get info link from message queue and can't get query link from generator,
+                            //the thread exit
+                            //maybe in other thread would create new info links and push into message queue,
+                            //but these message in queue would be consumed by their create thread
+                            logger.info("can't get query link, total page num is {}， current counter is {}", queryLinks.getPageNum(), queryLinks.getCounter());
+                            break;
                         }
-
-                        //if can't get data from message queue, go to get query link from queryLink's generator
-                        link = queryLinks.next();
-                        if (link != null && queryLinkService.isQueryLink(link)) {
-                            this.consumeQueryLink(link);
-                            continue;
-                        }
-
-
-                        //if can't get info link from message queue and can't get query link from generator,
-                        //the thread exit
-                        //maybe in other thread would create new info links and push into message queue,
-                        //but these message in queue would be consumed by their create thread
-                        break;
-                    }
-                });
-            }
-            threadPool.shutdown();
-
-            //loop here until all the thread in thread pool exit
-            while (true) {
-                try {
-                    if (threadPool.awaitTermination(Constant.webSite.getThreadNum(), TimeUnit.SECONDS)) {
-                        break;
-                    }
-                } catch (InterruptedException ex) {
-                    logger.error("interrupted when wait for thread pool");
+                        queryLinkService.clearThreadResource();
+                    });
                 }
+                threadPool.shutdown();
+
+                //loop here until all the thread in thread pool exit
+                while (true) {
+                    try {
+                        if (threadPool.awaitTermination(Constant.webSite.getThreadNum(), TimeUnit.SECONDS)) {
+                            break;
+                        }
+                    } catch (InterruptedException ex) {
+                        logger.error("interrupted when wait for thread pool");
+                    }
+                }
+            }
+
+
+            try (Connection conn = sql2o.open()) {
+                String sql = null;
+
+                //update the last round's fLinkNum and sLinkNum in database's status table
+                sql = "update status set fLinkNum =:fLinkNum, sLinkNum =:sLinkNum where webId =:webID and type =:type and round=:round";
+
+                //update the last round's fLinkNum and sLinkNum in database's status table
+                int fLinkNum = queryLinkService.getFailedLinkNum();
+                int sLinkNum = queryLinkService.getTotalLinkNum() - fLinkNum;
+                conn.createQuery(sql)
+                        .addParameter("fLinkNum", fLinkNum)
+                        .addParameter("sLinkNum", sLinkNum)
+                        .addParameter("webID", Constant.webSite.getWebId())
+                        .addParameter("type", Constant.STATUS_TYPE_QUERY)
+                        .addParameter("round", Constant.round + "")
+                        .executeUpdate();
+
+                fLinkNum = infoLinkService.getFailedLinkNum();
+                sLinkNum = infoLinkService.getTotalLinkNum() - fLinkNum;
+                conn.createQuery(sql)
+                        .addParameter("fLinkNum", fLinkNum)
+                        .addParameter("sLinkNum", sLinkNum)
+                        .addParameter("webID", Constant.webSite.getWebId())
+                        .addParameter("type", Constant.STATUS_TYPE_INFO)
+                        .addParameter("round", Constant.round + "")
+                        .executeUpdate();
+
+                //update current table's SampleData_sum by adding sLinkNum to it
+                sql = "update current set SampleData_sum = SampleData_sum +:sLinkNum where webId =:webID";
+                conn.createQuery(sql)
+                        .addParameter("sLinkNum", sLinkNum)
+                        .addParameter("webID", Constant.webSite.getWebId())
+                        .executeUpdate();
+
             }
 
             this.fixStatus(4,0);
@@ -215,7 +234,8 @@ public final class Scheduler extends Thread{
     }
 
     /**
-     * 修改current表阶段状态(这里并不是很追求速度，多次sql请求并无大碍)
+     * change the current status of current table
+     * here the performance is not the key point, so don't care the number of sql to be executed
      * @param pre 1-4
      * @param cur 1-4
      */
@@ -223,7 +243,7 @@ public final class Scheduler extends Thread{
         try (Connection conn = sql2o.open()) {
             if (1 <= pre && pre <= 4) {
                 String preStr = "M"+pre+"status";
-                //只在此处修改status的值即可
+                //only change the status value here
                 String sql = "update current set " + preStr +" =:MpreStatus, round=:round where webId =:webID";
                 conn.createQuery(sql)
                         .addParameter("MpreStatus",Constant.CURRENT_STATUS_DONE)
@@ -240,7 +260,8 @@ public final class Scheduler extends Thread{
                         .addParameter("webID", Constant.webSite.getWebId())
                         .executeUpdate();
             }
-            //获取当前最新的current表内容
+
+            //get the newest value from current table
             Constant.current = conn.createQuery("select * from current where webId=:webID")
                     .addParameter("webID",Constant.webSite.getWebId())
                     .executeAndFetchFirst(Current.class);
@@ -248,25 +269,30 @@ public final class Scheduler extends Thread{
     }
 
     /**
-     * 消费QueryLink（获取分页页面上的信息链接，重新存入消息队列）
+     * consume query link
+     * get info links from the page corresponding to the query link, and restore them into message queue
      * @param queryLink
      */
     private void consumeQueryLink(String queryLink) {
         List<String> infoLinks = queryLinkService.getInfoLinks(queryLink);
-        logger.info("consume query link {},get info link num {}", queryLink, infoLinks.size());
+        logger.trace("consume query link {}, get info link num {}", queryLink, infoLinks.size());
         infoLinks.forEach(infoLink -> {
-            if (!msgQueue.offer(infoLink)) {//如果不能存入消息队列，则直接在本线程进行消费
+            //if can't push info links into message queue
+            //maybe because the message queue is full(this situation is hard to happen, just possible)
+            //directly consume the info links in current thread
+            if (!msgQueue.offer(infoLink)) {
                 consumeInfoLink(infoLink);
             }
         });
     }
 
     /**
-     * 消费InfoLink（下载信息链接对应的页面，打成索引）
+     * consume info link
+     * download the page corresponding to the info link into directory, and build the page content into index
      * @param infoLink
      */
     private void consumeInfoLink(String infoLink) {
-        logger.info("consume info link {}", infoLink);
+        logger.trace("consume info link {}", infoLink);
         infoLinkService.downloadAndIndex(infoLink, infoLinkService.getFileAddr(infoLink));
     }
 

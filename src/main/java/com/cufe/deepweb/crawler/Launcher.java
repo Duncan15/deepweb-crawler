@@ -195,7 +195,9 @@ public final class Launcher {
             System.exit(1);
         } else {
             File f = new File(workFilePath);
-            if (!f.exists() || !f.isDirectory() || !f.canWrite()) {//如果文件不存在 or 如果不是文件夹 or 如果不可写
+
+            //if directory no exist or if this is not a directory or if this directory can be written by the user of crawler
+            if (!f.exists() || !f.isDirectory() || !f.canWrite()) {
                 logger.error("the work file should be a existed directory，and the owner of this program should have right to write");
                 System.exit(1);
             }
@@ -249,7 +251,8 @@ public final class Launcher {
         @Override
         public void run() {
             logger.info("start the exit thread");
-            //将msgQueue的内容写入文件
+
+            //write the content from message queue into file
             List<String> msgList = new ArrayList<>();
             msgQueue.forEach( link -> {
                 msgList.add((String) link);
@@ -266,7 +269,7 @@ public final class Launcher {
 
             try {
                 httpClient.close();
-                dedu.close();//数据保存
+                dedu.close();//dedu data save
                 indexClient.close();
             } catch (IOException ex) {
                 //nothing to do

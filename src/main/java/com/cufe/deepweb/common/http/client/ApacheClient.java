@@ -20,14 +20,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * 使用apache HttpClient实现
+ * the apache httpclient implementation
  */
-public class ApacheClient extends ThreadLocal<HttpContext> implements CusHttpClient {
+public class ApacheClient implements CusHttpClient {
     private static final Logger logger = LoggerFactory.getLogger(ApacheClient.class);
     private static List<String> userAgent = new ArrayList<String>(){
         {
@@ -39,14 +40,34 @@ public class ApacheClient extends ThreadLocal<HttpContext> implements CusHttpCli
         }
     };
     /**
-     * httpClient是线程安全的，因此可在多个线程中共用一个client
+     * httpClient is thread-safe
      */
     private CloseableHttpClient httpClient;
+
+    /**
+     * thread local value of http context
+     */
+    private ThreadLocal<HttpContext> httpContext = new ThreadLocal<HttpContext>() {
+        /**
+         * get the initial HttpContext in different thread
+         * override ThreadLocal
+         * @return
+         */
+        @Override
+        protected HttpContext initialValue() {
+            HttpContext context = new BasicHttpContext();
+            if (builder.cookieManager != null) {
+                context.setAttribute(HttpClientContext.COOKIE_STORE, new HtmlUnitCookieStore(builder.cookieManager));
+            }
+            return context;
+        }
+    };
+
     private PoolingHttpClientConnectionManager manager;
     private RequestConfig config;
     private Builder builder;
     private static String getUserAgent() {
-        return userAgent.get((int)(System.currentTimeMillis()%userAgent.size()));
+        return userAgent.get((int)(System.currentTimeMillis() % userAgent.size()));
     }
     private ApacheClient(Builder builder) {
         this.builder =builder;
@@ -64,32 +85,23 @@ public class ApacheClient extends ThreadLocal<HttpContext> implements CusHttpCli
             .build();
     }
 
-
-
     /**
-     * 获取各个线程中的初始化HttpContext
-     * override ThreadLocal
-     * @return
-     */
-    @Override
-    protected HttpContext initialValue() {
-        HttpContext context = new BasicHttpContext();
-        if (builder.cookieManager != null) {
-            context.setAttribute(HttpClientContext.COOKIE_STORE,new HtmlUnitCookieStore(builder.cookieManager));
-        }
-        return context;
-    }
-
-    /**
-     * 将URL的内容下载并转成string
+     * download the content corresponding to the URL and change it to a string
      * @param URL
      * @return
      */
     public Optional<String> getContent(String URL) {
-        HttpGet httpGet = new HttpGet(URL);
+        URI uri = null;
+        try {
+            uri = URI.create(URL);
+        } catch (IllegalArgumentException ex) {
+            logger.error("url error, url content is " + URL, ex);
+            return Optional.empty();
+        }
+        HttpGet httpGet = new HttpGet(uri);
         httpGet.setConfig(config);
         httpGet.setHeader("user-agent", getUserAgent());
-        try (CloseableHttpResponse response = httpClient.execute(httpGet,get())) {
+        try (CloseableHttpResponse response = httpClient.execute(httpGet, httpContext.get())) {
             if (response.getStatusLine().getStatusCode() >= 300) {
                 logger.error("HTTP response status code {}, reason phase: {}",response.getStatusLine().getStatusCode(),response.getStatusLine().getReasonPhrase());
             } else {
@@ -118,15 +130,15 @@ public class ApacheClient extends ThreadLocal<HttpContext> implements CusHttpCli
         private int maxTotal;
         private int defaultMaxPerRoute;
         /**
-         * 超时参数的设置值
+         * timeout parameter
          */
         private int timeout;
         /**
-         * 来自模拟器的cookieManager
+         * the cookieManager from browser
          */
         private CookieManager cookieManager;
         /**
-         * 设置总最大连接数量
+         * the max connection number
          * @param maxTotal
          * @return
          */
@@ -136,7 +148,7 @@ public class ApacheClient extends ThreadLocal<HttpContext> implements CusHttpCli
         }
 
         /**
-         * 设置单路由默认最大连接数
+         * the max connection number of a remote host
          * @param defaultMaxPerRoute
          * @return
          */

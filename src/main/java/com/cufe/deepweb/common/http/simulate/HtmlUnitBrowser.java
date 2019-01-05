@@ -44,8 +44,14 @@ public final class HtmlUnitBrowser implements WebBrowser {
             client.getOptions().setHistorySizeLimit(1);
             client.setAjaxController(new NicelyResynchronizingAjaxController());
             client.waitForBackgroundJavaScript(builder.timeout);
-            logger.info("create new webclient");
+            logger.trace("create new webclient");
+            client.close();
             return client;
+        }
+        @Override
+        public void remove() {
+            get().close();
+            super.remove();
         }
     };
     private HtmlUnitBrowser(Builder builder){
@@ -55,9 +61,7 @@ public final class HtmlUnitBrowser implements WebBrowser {
 
     }
 
-    /**
-     * override remove方法（未实现）
-     */
+
 
     /**
      * override WebBrowser的方法
@@ -143,8 +147,15 @@ public final class HtmlUnitBrowser implements WebBrowser {
             }
         }catch (IOException ex) {
             logger.error("IOException happen when get page content", ex);
+        } catch (NullPointerException ex) {
+            logger.error("NullPointerException happen when get page content", ex);
         }
         return links;
+    }
+
+    @Override
+    public void clearThreadResource() {
+        this.client.remove();
     }
 
     /**
