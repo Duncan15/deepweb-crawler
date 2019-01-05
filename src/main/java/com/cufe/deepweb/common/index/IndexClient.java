@@ -2,6 +2,7 @@ package com.cufe.deepweb.common.index;
 
 import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
 import com.cufe.deepweb.common.Utils;
+import org.apache.commons.codec.Charsets;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -15,8 +16,8 @@ import org.apache.lucene.store.FSDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -115,8 +116,8 @@ public final class IndexClient implements Closeable {
         logger.info("force update index finish");
     }
     /**
-     * 本方法用于更新indexReader
-     * indexReader只有当索引中有数据时才会更新成功
+     * used to update indexReader
+     * the update would be successfully only when there exists data in the index
      */
     private synchronized void updateIndexReader() {
         try {
@@ -125,10 +126,10 @@ public final class IndexClient implements Closeable {
                 return;
             }
 
-            if (indexReader == null) {//第一次新建indexReader
+            if (indexReader == null) {//the first time to initialize indexReader
                 logger.trace("initialize indexReader");
                 indexReader = DirectoryReader.open(indexDirectory);
-            } else {//更新indexReader
+            } else {//update indexReader
                 if (indexReader instanceof DirectoryReader) {
                     IndexReader ir = DirectoryReader.openIfChanged((DirectoryReader) indexReader);
                     if(ir != null){
@@ -145,15 +146,15 @@ public final class IndexClient implements Closeable {
     }
 
     /**
-     * 本方法用于更新indexSearcher
+     * used to update indexSearcher
      */
     private synchronized void updateIndexSearcher() {
         if (indexReader != null) {
-            if (indexSearcher == null && searchThreadNum != 0) {//设置了searchThreadNum，且还未初始化indexSearcher
+            if (indexSearcher == null && searchThreadNum != 0) {//if have set the searchThreadNum，and have never initialized the indexSearcher
                 logger.trace("initialize executorService for indexSearcher");
                 searchThreadPool = Executors.newFixedThreadPool(searchThreadNum);
             }
-            //每次更新都会执行
+            //initialize a new index searcher every time
             logger.trace("update indexSearcher");
             if (searchThreadNum == 0) {
                 indexSearcher = new IndexSearcher(indexReader);
@@ -165,17 +166,18 @@ public final class IndexClient implements Closeable {
 
 
     /**
-     * 本方法用于更新indexWriter
-     * 对indexWriter的更新会导致底层索引的改变
+     * used to upate indexWriter
+     * the update on indexWriter would cause the underline index to change
      */
     private synchronized void updateIndexWriter() {
         try {
-            //如果indexWriter已经存在
+            //if index writer has existed
             if (indexWriter != null) {
                 logger.trace("commit indexWriter");
                 indexWriter.commit();
                 return;
             }
+            //every time create a new index writer
             logger.trace("initialize indexWriter");
             IndexWriterConfig config = new IndexWriterConfig(analyzer);
             config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
@@ -201,14 +203,14 @@ public final class IndexClient implements Closeable {
 
 
     /**
-     * 将map中的k-v对打成索引
-     * indexWriter可多线程共享，无需考虑并发问题
+     * build the key-value pair from the specified map into index
+     * indexWriter is thread-safe under multi-thread environment
      * @param fieldContentPairs
      */
     public void addDocument(Map<String, String> fieldContentPairs) {
         if (readOnly) {
             logger.warn("this client is readOnly, no support to write");
-            return;//只读客户端，不可写
+            return;
         }
         if (fieldContentPairs.isEmpty()) return;
         Document doc = new Document();
@@ -254,18 +256,18 @@ public final class IndexClient implements Closeable {
     }
 
     /**
-     * load documents by the set of docID and add them into a list
-     * @param docIDSet
+     * load documents by the set of docID list and add them into a list
+     * @param docIDList
      * @return
      */
-    public List<Map<String, String>> loadDocuments(Set<Integer> docIDSet) {
+    public List<Map<String, String>> loadDocuments(List<Integer> docIDList) {
         Utils.logMemorySize();
         if (indexReader == null) {
             logger.warn("this indexReader hasn't been initialized");
             return Collections.emptyList();
         }
-        List<Map<String, String>> docList = new ArrayList<>(docIDSet.size());
-        docIDSet.forEach(id -> {
+        List<Map<String, String>> docList = new ArrayList<>(docIDList.size());
+        docIDList.forEach(id -> {
             try {
                 Map<String, String> doc = new HashMap<>();
                 Document document = indexReader.document(id);
@@ -279,18 +281,18 @@ public final class IndexClient implements Closeable {
         return docList;
     }
     /**
-     * 根据dicIDSet获取索引中field区域的内容
+     * load the specified field of documents by the list of docID into a list
      * @param field
-     * @param docIDSet
+     * @param docIDList
      * @return
      */
-    public Map<Integer, String> loadDocuments(String field, Set<Integer> docIDSet) {
+    public List<String> loadDocuments(String field, Set<Integer> docIDList) {
         if (indexReader == null) {
             logger.warn("this indexReader hasn't been initialized");
-            return Collections.emptyMap();
+            return Collections.emptyList();
         }
-        Map<Integer, String> docIDValueMap = new HashMap<>();
-        docIDSet.forEach(id -> {
+        List<String> contentList = new ArrayList<>();
+        docIDList.forEach(id -> {
             String v = "";
             try {
                 Document doc = indexReader.document(id, Collections.singleton(field));
@@ -298,9 +300,9 @@ public final class IndexClient implements Closeable {
             } catch (IOException ex) {
                 logger.error("IOException happen when read document, docID is {}",id);
             }
-            docIDValueMap.put(id, v);
+            contentList.add(v);
         });
-        return docIDValueMap;
+        return contentList;
     }
 
     /**
@@ -526,9 +528,9 @@ public final class IndexClient implements Closeable {
             logger.warn("this indexReader hasn't been initialized");
             return infoMap;
         }
-        //收集索引中的文档数量
+        //collect the document number in the index
         infoMap.put("size", indexReader.numDocs());
-        //收集索引中的field名称
+        //collect all the field name in the index
         Set<String> fieldSet = new HashSet<>();
         try {
             Fields fields = MultiFields.getFields(indexReader);
@@ -539,6 +541,37 @@ public final class IndexClient implements Closeable {
         infoMap.put("fields", fieldSet);
         infoMap.put("leaves", indexReader.leaves().size());
         return infoMap;
+    }
+
+    /**
+     * load the specified field of document in the index into the directory
+     * set the file name in the directory as docID.extension
+     * @param field
+     * @param dir
+     * @param extension the extension file name
+     * @param charset
+     */
+    public void loadFieldIntoDirectory(String field, Path dir, String extension, Charset charset) {
+        int num = this.getDocSize();
+        if(num == 0) {
+            return;
+        }
+        if (!extension.startsWith(".")) {
+            extension = "." +extension;
+        }
+        for (int i = 1 ; i <= num ; i++) {
+            try {
+                Document doc = indexReader.document(i, Collections.singleton(field));
+                String content = doc.get(field);
+                Path addr = dir.resolve(i + extension);
+                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(addr.toFile()), charset.name()));
+                bw.write(content);
+                bw.close();
+            } catch (IOException ex) {
+
+            }
+
+        }
     }
 
     @Override
@@ -557,7 +590,7 @@ public final class IndexClient implements Closeable {
         }
     }
 
-    public static enum AnalyzerTpye {
+    public enum AnalyzerTpye {
         en,cn
     }
     /**
@@ -574,8 +607,8 @@ public final class IndexClient implements Closeable {
         }
 
         /**
-         * 设置解析器
-         * @param type 解析器类型
+         * set the analyzer
+         * @param type analyzer type @AnalyzerTpye
          */
         public Builder setAnalyzer(AnalyzerTpye type){
             if (type == AnalyzerTpye.cn) {
@@ -587,7 +620,7 @@ public final class IndexClient implements Closeable {
         }
 
         /**
-         * 设置客户端为只读客户端
+         * set this client to a read-only client
          */
         public Builder setReadOnly() {
             this.readOnly = true;
@@ -595,7 +628,7 @@ public final class IndexClient implements Closeable {
         }
 
         /**
-         * 设置单条搜索最大击中数量
+         * set the maximum number of hit documents in a unique query
          * @param maxHitNum
          */
         public Builder setMaxHitNum(int maxHitNum) {
@@ -604,7 +637,7 @@ public final class IndexClient implements Closeable {
         }
 
         /**
-         * 设置搜索线程数量
+         * set the thread number used to search the index
          * @param searchThreadNum
          */
         public Builder setSearchThreadNum(int searchThreadNum) {
@@ -623,17 +656,9 @@ public final class IndexClient implements Closeable {
             return new IndexClient(this);
         }
     }
-    public static void main(String[] args) {
-        IndexClient client = new IndexClient.Builder(Paths.get("F:/experiment/Index6.6.1/Indexjieba21")).setReadOnly().build();
-        Map<String, Set<Integer>> map = client.getDocSetMap2("body", 0.02, 0.15);
-        System.out.println("doc set map size is " + map.size());
-        int total = 0;
-        for (Map.Entry<String, Set<Integer>> entry : map.entrySet()) {
-            total += entry.getValue().size();
-        }
-        System.out.println("len is " + total);
-        map.clear();
-        map = client.getDocSetMap("body", 0.02, 0.15);
-        System.out.println("len is " +map.size());
+    public static void main(String[] args) throws IOException {
+        IndexClient client = new IndexClient.Builder(Paths.get("G:/Indexjieba11")).setReadOnly().build();
+        client.loadFieldIntoDirectory("body", Paths.get("F:/html_file1/"), ".html", Charsets.UTF_8);
+        client.close();
     }
 }
