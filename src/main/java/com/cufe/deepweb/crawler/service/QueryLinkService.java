@@ -161,7 +161,8 @@ public class QueryLinkService extends LinkService {
      * @return
      */
     public List<String> getInfoLinks(String queryLink) {
-        List<String> links = browser.getAllLinks(queryLink);
+
+        List<String> links = browser.getAllLinks(queryLink, null);
         if (links.size() == 0) {//record the number of failed query links
             this.failedLinkNum++;
         }

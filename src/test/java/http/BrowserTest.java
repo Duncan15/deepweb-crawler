@@ -3,9 +3,15 @@ package http;
 import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.common.http.simulate.HtmlUnitBrowser;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import org.htmlcleaner.HtmlCleaner;
+import org.htmlcleaner.TagNode;
+import org.htmlcleaner.XPatherException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -19,14 +25,11 @@ public class BrowserTest {
     webBrowser = new HtmlUnitBrowser.Builder().build();
   }
   @Test
-  void testHtmlUnit() {
-    ExecutorService service = Executors.newFixedThreadPool(10);
-    Set<Future> runSet = new HashSet<>();
-    for (int i = 0 ; i < 10 ; i++) {
-      runSet.add(service.submit(() -> {
-        webBrowser.getAllLinks("http://s.zhaobiao.cn/s?queryword=%BC%A4&searchtype=zb&field=super&currentpage=101");
-      }));
-    }
-    while(Utils.isRun(runSet));
+  void testHtmlUnit() throws IOException, XPatherException {
+    WebClient webClient = new WebClient();
+    HtmlPage page = webClient.getPage("http://www.baidu.com");
+    HtmlCleaner cleaner = new HtmlCleaner();
+    Object[] os = cleaner.clean(page.asXml()).evaluateXPath("//body");
+    TagNode t = (TagNode)os[0];
   }
 }

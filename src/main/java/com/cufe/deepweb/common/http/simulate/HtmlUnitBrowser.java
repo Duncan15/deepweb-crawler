@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -120,12 +121,22 @@ public final class HtmlUnitBrowser implements WebBrowser {
 
     }
 
+    public List<String> getAllLinks(String URL, LinkCollector collector) {
+        WebClient client = this.client.get();
+        try {
+            HtmlPage page = client.getPage(URL);
+            return collector.collect(page.asXml(), page.getUrl());
+        } catch (Exception ex) {
+            logger.error("Exception happen when get page content", ex);
+            return Collections.emptyList();
+        }
+    }
+
     @Override
     public List<String> getAllLinks(String URL) {
         List<String> links = new ArrayList<>();
         WebClient client = this.client.get();
         try {
-            client.getPage(URL);
             HtmlPage page = client.getPage(URL);
             URL curURL = page.getUrl();//the URL of current page
             List<HtmlAnchor> anchors = page.getAnchors();

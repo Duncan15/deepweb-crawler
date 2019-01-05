@@ -28,8 +28,9 @@ public interface WebBrowser {
     Optional<String> getPageContent(String URL);
 
     /**
-     * 获取指定页面上的所有链接
+     * get the links from the specified page
      * @param URL
+     * @param collector the link collector which collect links from the page corresponding to the specified URL
      * @return
      */
     List<String> getAllLinks(String URL);
