@@ -110,7 +110,7 @@ public class ApacheClient implements CusHttpClient {
                 return Optional.ofNullable(EntityUtils.toString(entity,contentType.getCharset()));
             }
         }catch (IOException ex) {
-            logger.error("IOException in HTTP invoke", ex);
+            logger.error("IOException in HTTP invoke " + URL, ex);
         }
         return Optional.empty();
     }

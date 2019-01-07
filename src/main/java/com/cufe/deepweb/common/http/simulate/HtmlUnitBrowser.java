@@ -132,7 +132,7 @@ public final class HtmlUnitBrowser implements WebBrowser {
         }
     }
 
-    @Override
+    @Deprecated
     public List<String> getAllLinks(String URL) {
         List<String> links = new ArrayList<>();
         WebClient client = this.client.get();

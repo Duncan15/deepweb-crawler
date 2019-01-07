@@ -12,7 +12,7 @@ public abstract class LinkCollector {
     /**
      * collect the links fit this collector's demand
      * @param content
-     * @param URL the URL which could get this content
+     * @param url the URL which could get this content
      * @return
      */
     public abstract List<String> collect(String content, URL url);

@@ -1,18 +1,26 @@
 package com.cufe.deepweb.crawler.service;
 
 import com.cufe.deepweb.common.dedu.Deduplicator;
+import com.cufe.deepweb.common.http.simulate.LinkCollector;
 import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
+import org.htmlcleaner.HtmlCleaner;
+import org.htmlcleaner.TagNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -22,7 +30,10 @@ public class QueryLinkService extends LinkService {
     private static final Logger logger = LoggerFactory.getLogger(QueryLinkService.class);
     private WebBrowser browser;
     private Deduplicator dedu;
-
+    /**
+     * the link collector to collect info link
+     */
+    private LinkCollector collector;
 
     /**
      * generate query link
@@ -127,6 +138,7 @@ public class QueryLinkService extends LinkService {
     public QueryLinkService(WebBrowser browser, Deduplicator dedu) {
         this.browser = browser;
         this.dedu = dedu;
+        this.collector = new InfoLinkCollector();
     }
     /**
      * get all the query links corresponding to the keyword
@@ -162,7 +174,7 @@ public class QueryLinkService extends LinkService {
      */
     public List<String> getInfoLinks(String queryLink) {
 
-        List<String> links = browser.getAllLinks(queryLink, null);
+        List<String> links = browser.getAllLinks(queryLink, collector);
         if (links.size() == 0) {//record the number of failed query links
             this.failedLinkNum++;
         }
@@ -217,4 +229,49 @@ public class QueryLinkService extends LinkService {
         }
     }
 
+    /**
+     * InfoLinkCollector collect the info links from query page
+     */
+    class InfoLinkCollector extends LinkCollector {
+        /**
+         * thread-safe cleaner
+         */
+        private HtmlCleaner cleaner;
+        /**
+         * the pattern to recognize url
+         */
+        private Pattern pattern;
+        private static final String re = "(https?:/|\\.)?(/([\\w-]+(\\.)?)+)+(\\?(([\\w-]+(\\.)?)+=(([\\w-]+(\\.)?)+)?(&)?)+)?";
+        public InfoLinkCollector() {
+            this.cleaner = new HtmlCleaner();
+            this.pattern = Pattern.compile(re);
+        }
+        @Override
+        public List<String> collect(String content, URL url) {
+            List<String> links = new ArrayList<>();
+            TagNode rootNode = cleaner.clean(content);
+            TagNode[] nodes = rootNode.getElementsByName("a", true);
+            for (TagNode node : nodes) {
+                String href = node.getAttributeByName("href");
+                if (StringUtils.isNotBlank(href)) {
+                    Matcher m = pattern.matcher(href);
+                    if (m.lookingAt()) {//match the prefix of href, because sometimes the href is not format
+                        href = href.substring(0, m.end());
+                        if (href.startsWith(".") || href.startsWith("/")) {
+                            try {
+                                href = new URL(url, href).toString();
+                            } catch (MalformedURLException ex) {
+                                logger.error("url {} format error", href);
+                                //if happen format error, just jump over this href
+                                continue;
+                            }
+                        }
+                        links.add(href);
+                    }
+                }
+            }
+            return links;
+        }
+    }
 }
+

@@ -33,7 +33,7 @@ public interface WebBrowser {
      * @param collector the link collector which collect links from the page corresponding to the specified URL
      * @return
      */
-    List<String> getAllLinks(String URL);
+    List<String> getAllLinks(String URL, LinkCollector collector);
 
     /**
      * clear resource which is assigned for current thread

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,9 +28,13 @@ public class BrowserTest {
   @Test
   void testHtmlUnit() throws IOException, XPatherException {
     WebClient webClient = new WebClient();
-    HtmlPage page = webClient.getPage("http://www.baidu.com");
+    HtmlPage page = webClient.getPage("http://blog.cufercwc.cn");
     HtmlCleaner cleaner = new HtmlCleaner();
-    Object[] os = cleaner.clean(page.asXml()).evaluateXPath("//body");
-    TagNode t = (TagNode)os[0];
+    TagNode tagNode = cleaner.clean(page.asXml());
+    TagNode[] nodes = tagNode.getElementsByName("a", true);
+    for (TagNode node : nodes) {
+      Map<String, String> map = node.getAttributes();
+      System.out.println(map.get("href"));
+    }
   }
 }
