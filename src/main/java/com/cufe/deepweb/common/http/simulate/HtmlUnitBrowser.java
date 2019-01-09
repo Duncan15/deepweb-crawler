@@ -127,7 +127,7 @@ public final class HtmlUnitBrowser implements WebBrowser {
             HtmlPage page = client.getPage(URL);
             return collector.collect(page.asXml(), page.getUrl());
         } catch (Exception ex) {
-            logger.error("Exception happen when get page content", ex);
+            logger.error("Exception happen when get page content from {}", URL);
             return Collections.emptyList();
         }
     }

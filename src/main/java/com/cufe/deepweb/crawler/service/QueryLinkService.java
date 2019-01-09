@@ -17,6 +17,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -177,6 +178,7 @@ public class QueryLinkService extends LinkService {
         List<String> links = browser.getAllLinks(queryLink, collector);
         if (links.size() == 0) {//record the number of failed query links
             this.failedLinkNum++;
+            return Collections.emptyList();
         }
         links = links.stream().filter(link -> {//remove the repeated links and query links
             if (link.startsWith(Constant.webSite.getPrefix())) {
@@ -249,7 +251,13 @@ public class QueryLinkService extends LinkService {
         @Override
         public List<String> collect(String content, URL url) {
             List<String> links = new ArrayList<>();
-            TagNode rootNode = cleaner.clean(content);
+            TagNode rootNode = null;
+            try {
+                rootNode = cleaner.clean(content);
+            } catch (Exception ex) {
+                logger.error("exception happen when parse html content", ex);
+                return Collections.emptyList();
+            }
             TagNode[] nodes = rootNode.getElementsByName("a", true);
             for (TagNode node : nodes) {
                 String href = node.getAttributeByName("href");

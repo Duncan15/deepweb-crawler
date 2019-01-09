@@ -9,7 +9,7 @@ public class ReTest {
     @Test
     void testRE() {
         String re = "(https?:/|\\.)?(/([\\w-]+(\\.)?)+)+(\\?(([\\w-]+(\\.)?)+=(([\\w-]+(\\.)?)+)?(&)?)+)?";
-        String testString = "/www.baidu.com/sa?abc=fgkhj.html\t\n<a>";
+        String testString = "/";
         Pattern pattern = Pattern.compile(re);
         Matcher matcher = pattern.matcher(testString);
         System.out.println(matcher.lookingAt());

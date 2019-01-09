@@ -47,22 +47,29 @@ public class InfoLinkService extends LinkService {
 
     public Map<String, String> getFieldContentMap(String content) {
         Map<String, String> fieldContentMap = new HashMap<>();
-        Constant.patternMap.forEach((k, v) -> {
-            TagNode root = htmlCleaner.clean(content);//first to clean the html content
+        TagNode root = null;
+        try {
+            root = htmlCleaner.clean(content);//first to clean the html content
+        } catch (Exception ex) {
+            logger.error("exception happen when parse html content", ex);
+            return Collections.emptyMap();
+        }
+        for (Map.Entry<String, String> pattern : Constant.patternMap.entrySet()) {
             try {
-                Object[] objects = root.evaluateXPath(v);
+                Object[] objects = root.evaluateXPath(pattern.getValue());
                 List<String> strings = new ArrayList<>();
                 if (objects != null && objects.length != 0) {//if can find data by the xpath
                     for (Object o : objects) {
                         TagNode node = (TagNode)o;
                         strings.add(node.getText().toString());
                     }
-                    fieldContentMap.put(k,StringUtils.join(strings,"\t"));
+                    fieldContentMap.put(pattern.getKey(), StringUtils.join(strings,"\t"));
                 }
             } catch (XPatherException ex) {
-                logger.error("XpatherException happen when evaluate XPath for field "+k, ex);
+                logger.error("XpatherException happen when evaluate XPath for field " + pattern.getKey(), ex);
             }
-        });
+        }
+
 
         //if //body can evaluate the content from HTML, just build the HTML content into fulltext field
         if (StringUtils.isBlank(fieldContentMap.get(Constant.FT_INDEX_FIELD))) {

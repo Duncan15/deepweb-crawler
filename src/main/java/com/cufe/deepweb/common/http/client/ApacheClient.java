@@ -7,6 +7,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
@@ -20,7 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.ConnectException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -103,14 +106,21 @@ public class ApacheClient implements CusHttpClient {
         httpGet.setHeader("user-agent", getUserAgent());
         try (CloseableHttpResponse response = httpClient.execute(httpGet, httpContext.get())) {
             if (response.getStatusLine().getStatusCode() >= 300) {
-                logger.error("HTTP response status code {}, reason phase: {}",response.getStatusLine().getStatusCode(),response.getStatusLine().getReasonPhrase());
+                logger.error("HTTP response status code {}, reason phase: {}", response.getStatusLine().getStatusCode(), response.getStatusLine().getReasonPhrase());
             } else {
                 HttpEntity entity = response.getEntity();
                 ContentType contentType = ContentType.getOrDefault(entity);
-                return Optional.ofNullable(EntityUtils.toString(entity,contentType.getCharset()));
+                return Optional.ofNullable(EntityUtils.toString(entity, contentType.getCharset()));
             }
-        }catch (IOException ex) {
-            logger.error("IOException in HTTP invoke " + URL, ex);
+        }catch (Exception ex) {
+            //if ex is UnknownHostException, don't record it
+            if (ex instanceof IOException) {
+                return Optional.empty();
+            }
+            if (ex instanceof ConnectException) {
+                return Optional.empty();
+            }
+            logger.error("Exception in HTTP invoke " + URL, ex);
         }
         return Optional.empty();
     }

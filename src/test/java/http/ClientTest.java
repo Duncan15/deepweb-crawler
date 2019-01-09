@@ -13,6 +13,6 @@ public class ClientTest {
   }
   @Test
   void testClient() {
-    System.out.println(client.getContent("http://zb.zhaobiao.cn/bidding_v_22122045.html?q=produce&his=1").get());
+    System.out.println(client.getContent("https://www.scoot.co.uk/find/building-services-in-uk").get());
   }
 }

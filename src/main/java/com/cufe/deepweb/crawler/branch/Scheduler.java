@@ -153,10 +153,24 @@ public final class Scheduler extends Thread{
                 threadPool.shutdown();
 
                 //loop here until all the thread in thread pool exit
+                int stopCount = 3;//a flag to indicate whether to force stop the thread pool
                 while (true) {
                     try {
+                        //most of the situation, the thread pool would close after the following block, and jump out the while loop
                         if (threadPool.awaitTermination(Constant.webSite.getThreadNum(), TimeUnit.SECONDS)) {
                             break;
+                        }
+
+                        //but sometimes some thread would block in the net IO and wouldn't wake up
+                        //I also don't know why, but it did exist
+                        //so need to force close the thread pool in the following clauses
+                        if (threadPool.getActiveCount() < threadPool.getCorePoolSize() / 2) {
+                            logger.info("activeCount:{}, poolSize:{}", threadPool.getActiveCount(), threadPool.getCorePoolSize());
+                            stopCount--;
+                            if(stopCount <= 0) {
+                                threadPool.shutdownNow();
+                                break;
+                            }
                         }
                     } catch (InterruptedException ex) {
                         logger.error("interrupted when wait for thread pool");
@@ -275,6 +289,7 @@ public final class Scheduler extends Thread{
      */
     private void consumeQueryLink(String queryLink) {
         List<String> infoLinks = queryLinkService.getInfoLinks(queryLink);
+        if (infoLinks.size() == 0) return;
         logger.trace("consume query link {}, get info link num {}", queryLink, infoLinks.size());
         infoLinks.forEach(infoLink -> {
             //if can't push info links into message queue
