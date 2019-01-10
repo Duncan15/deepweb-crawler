@@ -46,7 +46,6 @@ public final class HtmlUnitBrowser implements WebBrowser {
             client.setAjaxController(new NicelyResynchronizingAjaxController());
             client.waitForBackgroundJavaScript(builder.timeout);
             logger.trace("create new webclient");
-            client.close();
             return client;
         }
         @Override

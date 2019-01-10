@@ -181,7 +181,7 @@ public class QueryLinkService extends LinkService {
             return Collections.emptyList();
         }
         links = links.stream().filter(link -> {//remove the repeated links and query links
-            if (link.startsWith(Constant.webSite.getPrefix())) {
+            if (link.startsWith(Constant.webSite.getPrefix()) || !link.contains("html")) {
                 return false;
             } else {
                 return dedu.add(link);

@@ -175,7 +175,7 @@ public final class Launcher {
             sql = "select id, webId, patternName, xpath from pattern where webId=:webID";
             List<Pattern> patterns = conn.createQuery(sql).addParameter("webID", webID).executeAndFetch(Pattern.class);
             patterns.forEach(pattern -> {
-                if (Constant.FT_INDEX_FIELD.equals(pattern.getPatternName())) return;//跳过全文索引的pattern，因为全文索引在爬虫中默认执行
+                if (Constant.FT_INDEX_FIELD.equals(pattern.getPatternName())) return;//jump over fulltext's pattern，because it's the default pattern
                 Constant.patternMap.put(pattern.getPatternName(),pattern.getXpath());
             });
 
