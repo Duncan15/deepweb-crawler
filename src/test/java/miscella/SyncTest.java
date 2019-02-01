@@ -21,4 +21,61 @@ public class SyncTest {
       });
     });
   }
+
+  private volatile boolean exit = false;
+  @Test
+  void testWaitNotify() {
+
+    Thread thread1 = new Thread() {
+      public void run() {
+        System.out.println(Thread.currentThread().getName() + "start");
+        synchronized (this) {
+          while (!exit) {
+            try {
+              this.wait();
+            } catch (InterruptedException ex) {
+              //ignored
+            }
+          }
+          System.out.println(Thread.currentThread().getName() + "exit");
+        }
+      }
+    };
+
+    Thread thread2 = new Thread() {
+      public void run() {
+        System.out.println(Thread.currentThread().getName() + "start");
+        synchronized (thread1) {
+          while (!exit) {
+            try {
+              thread1.wait();
+            } catch (InterruptedException ex) {
+              //ignored
+            }
+          }
+          System.out.println(Thread.currentThread().getName() + "exit");
+        }
+      }
+    };
+    Thread thread3 = new Thread() {
+      public void run() {
+        synchronized (thread1) {
+          System.out.println(Thread.currentThread().getName() + "start");
+          exit = true;
+          thread1.notifyAll();
+          System.out.println(Thread.currentThread().getName() + "exit");
+        }
+
+      }
+    };
+
+    thread1.start();
+    thread2.start();
+    try {
+      Thread.sleep(1000);
+    } catch (InterruptedException ex) {
+      //ignored
+    }
+    thread3.start();
+  }
 }

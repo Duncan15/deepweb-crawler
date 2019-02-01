@@ -16,10 +16,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -107,7 +105,11 @@ public class QueryLinkService extends LinkService {
     private int incrementNum(String keyword) {
         int cur = 1;
         String testURL = buildQueryLink(keyword, cur);
-        String preContent = browser.getPageContent(testURL).get(), curContent;
+
+        //the pre page's content
+        String preContent = browser.getPageContent(testURL).get();
+        //the current page's content
+        String curContent;
         logger.info("increment page num to {}", cur);
         while (true) {
             cur *= 2;
@@ -174,8 +176,8 @@ public class QueryLinkService extends LinkService {
      * @return
      */
     public List<String> getInfoLinks(String queryLink) {
-
-        List<String> links = browser.getAllLinks(queryLink, collector);
+        List<String> links = null;
+        links = browser.getAllLinks(queryLink, collector);
         if (links.size() == 0) {//record the number of failed query links
             this.failedLinkNum++;
             return Collections.emptyList();
@@ -192,13 +194,14 @@ public class QueryLinkService extends LinkService {
 
     @Override
     public void clearThreadResource() {
-        browser.clearThreadResource();
     }
 
     /**
      * the generator of query link
      */
     public class QueryLinks {
+        private final static int LIMIT = 5;
+        private AtomicInteger curConsumeNum = new AtomicInteger(0);
         /**
          * all the query page's page number start at 1
          */
@@ -215,6 +218,7 @@ public class QueryLinkService extends LinkService {
          * @return null if can't generate next query link
          */
         public synchronized String next() {
+
             String ans = null;
             if (counter <= pageNum) {
                 ans = buildQueryLink(keyword, counter);
@@ -222,6 +226,7 @@ public class QueryLinkService extends LinkService {
             }
             return ans;
         }
+
 
         public int getCounter() {
             return this.counter;

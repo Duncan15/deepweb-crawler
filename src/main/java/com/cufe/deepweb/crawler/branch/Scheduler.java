@@ -17,12 +17,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * main scheduler thread, be responsible for produce queryLinks and manage crawler status
@@ -121,6 +117,11 @@ public final class Scheduler extends Thread{
                         new LinkedBlockingDeque<>(),//set the size of thread queue to infinity
                         threadFactory
                 );
+
+                Semaphore semaphore = new Semaphore(5);
+
+//                AtomicInteger queryNum = new AtomicInteger(0);
+//                final int LIMIT = 5;
                 for (int i = 0 ; i < Constant.webSite.getThreadNum() ; i++) {
                     threadPool.execute(() -> {
                         while (true) {
@@ -132,12 +133,20 @@ public final class Scheduler extends Thread{
                                 continue;
                             }
 
-                            //if can't get data from message queue, go to get query link from queryLink's generator
+
+                            //limit the number of thread which has the right to consume query link
+                            if (!semaphore.tryAcquire()) {
+                                continue;
+                            }
+
+                            //if the number belows limit, go to get query link from queryLink's generator
                             link = queryLinks.next();
                             if (link != null && queryLinkService.isQueryLink(link)) {
                                 this.consumeQueryLink(link);
+                                semaphore.release();
                                 continue;
                             }
+                            semaphore.release();
 
 
                             //if can't get info link from message queue and can't get query link from generator,
@@ -147,7 +156,7 @@ public final class Scheduler extends Thread{
                             logger.info("can't get query link, total page num is {}， current counter is {}", queryLinks.getPageNum(), queryLinks.getCounter());
                             break;
                         }
-                        queryLinkService.clearThreadResource();
+
                     });
                 }
                 threadPool.shutdown();

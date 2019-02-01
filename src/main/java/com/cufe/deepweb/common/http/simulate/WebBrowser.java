@@ -35,9 +35,4 @@ public interface WebBrowser {
      */
     List<String> getAllLinks(String URL, LinkCollector collector);
 
-    /**
-     * clear resource which is assigned for current thread
-     * (clear thread local value)
-     */
-    void clearThreadResource();
 }

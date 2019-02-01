@@ -2,9 +2,13 @@ package http;
 
 import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.common.http.simulate.HtmlUnitBrowser;
+import com.cufe.deepweb.common.http.simulate.HtmlUnitFactory;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
+import com.gargoylesoftware.htmlunit.CookieManager;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.htmlcleaner.HtmlCleaner;
 import org.htmlcleaner.TagNode;
 import org.htmlcleaner.XPatherException;
@@ -23,7 +27,15 @@ public class BrowserTest {
   private static WebBrowser webBrowser;
   @BeforeAll
   static void init() {
-    webBrowser = new HtmlUnitBrowser.Builder().build();
+    //the global cookie manager
+    CookieManager cookieManager = new CookieManager();
+
+    //configure the web brawser
+    GenericObjectPoolConfig<WebClient> config = new GenericObjectPoolConfig<>();
+    //config.setBlockWhenExhausted(false);
+    //limit the maximum browser number to 5
+    config.setMaxTotal(5);
+    webBrowser = new HtmlUnitBrowser(new GenericObjectPool<WebClient>(new HtmlUnitFactory(cookieManager, 90_000), config));
   }
   @Test
   void testHtmlUnit() throws IOException, XPatherException {
