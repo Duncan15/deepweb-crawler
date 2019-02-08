@@ -35,4 +35,5 @@ public interface WebBrowser {
      */
     List<String> getAllLinks(String URL, LinkCollector collector);
 
+    void clearResource();
 }

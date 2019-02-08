@@ -32,7 +32,7 @@ public final class Scheduler extends Thread{
     private Sql2o sql2o;
     private ThreadFactory threadFactory;
     public Scheduler(AlgorithmBase algo, QueryLinkService queryLinkService, InfoLinkService infoLinkService, BlockingDeque msgQueue){
-        super("producer_thread");
+        super("scheduler_thread");
         this.algo = algo;
         this.queryLinkService = queryLinkService;
         this.infoLinkService = infoLinkService;
@@ -118,41 +118,50 @@ public final class Scheduler extends Thread{
                         threadFactory
                 );
 
-                Semaphore semaphore = new Semaphore(5);
+                AtomicInteger produceCounter = new AtomicInteger(0);
+                Runnable producer =() -> {
+                    String link = null;
+                    int tick = 100;
+                    while ((link = queryLinks.next()) != null) {
 
-//                AtomicInteger queryNum = new AtomicInteger(0);
-//                final int LIMIT = 5;
+                        //periodically close webclient to explicitly support gc
+                        if (tick <= 0) {
+                            queryLinkService.clearThreadResource();
+                            tick = 100;
+                        }
+                        try {
+                            if (queryLinkService.isQueryLink(link)) {
+                                logger.info(queryLinks.getCounter()+ "");
+                                consumeQueryLink(link);
+                                tick--;
+                            }
+                        } catch (Exception ex) {
+                            //ignored
+                        }
+                    }
+                    produceCounter.incrementAndGet();
+                    queryLinkService.clearThreadResource();
+                };
+                for (int i = 0 ; i < 5 ; i++) {
+                    new Thread(producer).start();
+                }
+
                 for (int i = 0 ; i < Constant.webSite.getThreadNum() ; i++) {
                     threadPool.execute(() -> {
                         while (true) {
 
-
-                            String link = (String)msgQueue.poll();//if here is not null, this is a info link
+                            //if here is not null, this is a info link
+                            String link = (String)msgQueue.poll();
                             if (link != null) {
                                 this.consumeInfoLink(link);
                                 continue;
                             }
-
-
-                            //limit the number of thread which has the right to consume query link
-                            if (!semaphore.tryAcquire()) {
+                            if (produceCounter.get() < 5) {
                                 continue;
                             }
 
-                            //if the number belows limit, go to get query link from queryLink's generator
-                            link = queryLinks.next();
-                            if (link != null && queryLinkService.isQueryLink(link)) {
-                                this.consumeQueryLink(link);
-                                semaphore.release();
-                                continue;
-                            }
-                            semaphore.release();
-
-
-                            //if can't get info link from message queue and can't get query link from generator,
+                            //if can't get info link from message queue and all the produce thread exit,
                             //the thread exit
-                            //maybe in other thread would create new info links and push into message queue,
-                            //but these message in queue would be consumed by their create thread
                             logger.info("can't get query link, total page num is {}， current counter is {}", queryLinks.getPageNum(), queryLinks.getCounter());
                             break;
                         }

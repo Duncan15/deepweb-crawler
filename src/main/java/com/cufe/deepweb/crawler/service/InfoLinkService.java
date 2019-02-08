@@ -54,6 +54,9 @@ public class InfoLinkService extends LinkService {
             logger.error("exception happen when parse html content", ex);
             return Collections.emptyMap();
         }
+        if (root == null) {
+            return Collections.emptyMap();
+        }
         for (Map.Entry<String, String> pattern : Constant.patternMap.entrySet()) {
             try {
                 Object[] objects = root.evaluateXPath(pattern.getValue());

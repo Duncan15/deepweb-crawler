@@ -2,7 +2,6 @@ package com.cufe.deepweb.crawler;
 
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
-import com.cufe.deepweb.common.http.simulate.HtmlUnitFactory;
 import com.cufe.deepweb.crawler.branch.Scheduler;
 import com.cufe.deepweb.common.http.client.ApacheClient;
 import com.cufe.deepweb.common.http.client.CusHttpClient;
@@ -18,9 +17,6 @@ import com.cufe.deepweb.common.dedu.RAMMD5Dedutor;
 import com.cufe.deepweb.common.orm.Orm;
 import com.cufe.deepweb.crawler.service.QueryLinkService;
 import com.gargoylesoftware.htmlunit.CookieManager;
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -28,8 +24,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sql2o.Connection;
@@ -38,7 +32,6 @@ import org.sql2o.Sql2o;
 import java.io.*;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -151,7 +144,6 @@ public final class Launcher {
         }
 
         //config mysql
-        HikariConfig hikariConfig = new HikariConfig("/orm/hikari.properties");
         String webIDStr = cmd.getOptionValue("web-id");
         int webID = Integer.parseInt(webIDStr);//webID
         String jdbcURL = cmd.getOptionValue("jdbc-url");
@@ -159,11 +151,8 @@ public final class Launcher {
         String password = cmd.getOptionValue("password");
         logger.info("crawler start");
         logger.info("configure cmd param with jdbcURL:{},userName:{},password:{}", jdbcURL, userName, password);
-        hikariConfig.setJdbcUrl(jdbcURL);
-        hikariConfig.setUsername(userName);
-        hikariConfig.setPassword(password);
-        HikariDataSource ds = new HikariDataSource(hikariConfig);
-        Orm.setSql2o(new Sql2o(ds));
+
+        Orm.setSql2o(new Sql2o(jdbcURL, userName, password));
 
         //config website info
         Sql2o sql2o = Orm.getSql2o();
@@ -240,13 +229,7 @@ public final class Launcher {
 
         //the global cookie manager
         CookieManager cookieManager = new CookieManager();
-
-        //configure the web brawser
-        GenericObjectPoolConfig<WebClient> config = new GenericObjectPoolConfig<>();
-        //config.setBlockWhenExhausted(false);
-        //limit the maximum browser number to 5
-        config.setMaxTotal(5);
-        webBrowser = new HtmlUnitBrowser(new GenericObjectPool<WebClient>(new HtmlUnitFactory(cookieManager, 90_000), config));
+        webBrowser = new HtmlUnitBrowser(cookieManager, 90_000);
 
         //if the login URL is not blank, first to confirm the login information is valid
         if (!StringUtils.isBlank(Constant.webSite.getLoginUrl())) {

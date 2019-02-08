@@ -194,6 +194,7 @@ public class QueryLinkService extends LinkService {
 
     @Override
     public void clearThreadResource() {
+        this.browser.clearResource();
     }
 
     /**

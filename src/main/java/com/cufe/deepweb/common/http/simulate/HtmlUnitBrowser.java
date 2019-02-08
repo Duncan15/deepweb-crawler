@@ -7,7 +7,6 @@ import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.pool2.ObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,35 +23,62 @@ public final class HtmlUnitBrowser implements WebBrowser {
         //close HtmlUnit log output
         LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
     }
-    private ObjectPool<WebClient> clientPool;//webclient pool
+    private int timeout;
+    private CookieManager cookieManager;
     private volatile boolean isLogin;
+    ThreadLocal<WebClient> threadClient = new ThreadLocal<WebClient>() {
+        @Override
+        protected WebClient initialValue() {
+            WebClient client = new WebClient(BrowserVersion.BEST_SUPPORTED);
+            client.setCookieManager(cookieManager);
+            client.getOptions().setCssEnabled(false);//headless browser no need to support css
+            client.getOptions().setDownloadImages(false);//headless browser no need to support download imgs
+            client.getOptions().setJavaScriptEnabled(true);
+            client.getOptions().setThrowExceptionOnFailingStatusCode(false);//wouldn't log when access error
+            client.getOptions().setThrowExceptionOnScriptError(false);//wouldn't log when js run error
+            client.getOptions().setTimeout(timeout);//set the timeout for browser to connect
+            client.getOptions().setDoNotTrackEnabled(true);
+            client.getOptions().setHistoryPageCacheLimit(1);//limit the cache number
+            client.getOptions().setHistorySizeLimit(1);
+            client.setAjaxController(new NicelyResynchronizingAjaxController());
+            client.setJavaScriptTimeout(timeout);
+            client.waitForBackgroundJavaScript(timeout);
+            return client;
+        }
 
+        @Override
+        public void remove() {
+            get().close();
+            super.remove();
+        }
+    };
     /**
      * initialize a new HtmlUnitBrowser
-     * @param pool
      */
-    public HtmlUnitBrowser(ObjectPool<WebClient> pool){
-        this.clientPool = pool;
-        this.isLogin = false;//cookieManager是否保留登录信息
+    public HtmlUnitBrowser(CookieManager cookieManager, int timeout){
+        this.timeout = timeout;
+        this.cookieManager = cookieManager;
+        this.isLogin = false;//if cookieManager has preserved the login information
 
     }
 
 
 
     /**
-     * override WebBrowser的方法
-     * @param loginURL 登录页面链接
-     * @param username 登录用户名
-     * @param password 登录密码
-     * @param usernameXpath 登录用户名输入框的xpath
-     * @param passwordXpath 登录密码输入框的xpath
+     * override WebBrowser's method
+     * @param loginURL login page URL
+     * @param username account name
+     * @param password login password
+     * @param usernameXpath the xpath of account input
+     * @param passwordXpath the xpath of password input
+     * @param submitXpath the xpath of submit button
      * @return
      */
     @Override
     public boolean login(String loginURL, String username, String password, String usernameXpath, String passwordXpath, String submitXpath) {
         WebClient client = null;
         try {
-            client = this.clientPool.borrowObject();
+            client = threadClient.get();
             HtmlTextInput userNameInput = null;//用户名输入框
             HtmlPasswordInput passwordInput = null;//密码输入框
             HtmlElement button = null;//登录按钮,最好不要限定为必须button
@@ -81,14 +107,6 @@ public final class HtmlUnitBrowser implements WebBrowser {
         } catch (Exception ex) {
             logger.error("Eception happen when get login page", ex);
             return false;
-        } finally {
-            try {
-                if (client != null) {
-                    this.clientPool.returnObject(client);
-                }
-            } catch (Exception ex2) {
-                //ignored
-            }
         }
     }
 
@@ -97,42 +115,25 @@ public final class HtmlUnitBrowser implements WebBrowser {
         WebClient client = null;
 
         try {
-            client = clientPool.borrowObject();
+            client = threadClient.get();
             HtmlPage page = client.getPage(URL);
             return Optional.ofNullable(page.getBody().asText());
         } catch (Exception ex) {
             logger.error("Exception happen when get page content", ex);
             return Optional.empty();
-        } finally {
-            try {
-                if (client != null) {
-                    this.clientPool.returnObject(client);
-                }
-            }catch (Exception ex) {
-                //ignored
-            }
         }
-
     }
 
     public List<String> getAllLinks(String URL, LinkCollector collector) {
         WebClient client = null;
 
         try {
-            client = this.clientPool.borrowObject();
+            client = threadClient.get();
             HtmlPage page = client.getPage(URL);
             return collector.collect(page.asXml(), page.getUrl());
         } catch (Exception ex) {
             logger.error("Exception happen when get page content from {}", URL);
             return Collections.emptyList();
-        } finally {
-            try {
-                if (client != null) {
-                    this.clientPool.returnObject(client);
-                }
-            } catch (Exception ex) {
-                //ignored
-            }
         }
     }
 
@@ -142,7 +143,7 @@ public final class HtmlUnitBrowser implements WebBrowser {
         WebClient client = null;
 
         try {
-            client = this.clientPool.borrowObject();
+            client = threadClient.get();
             HtmlPage page = client.getPage(URL);
             URL curURL = page.getUrl();//the URL of current page
             List<HtmlAnchor> anchors = page.getAnchors();
@@ -168,16 +169,17 @@ public final class HtmlUnitBrowser implements WebBrowser {
             logger.error("NullPointerException happen when get page content", ex);
         } catch (Exception ex) {
 
-        } finally {
-            try {
-                if (client != null) {
-                    this.clientPool.returnObject(client);
-                }
-            } catch (Exception ex) {
-                //ignored
-            }
         }
         return links;
     }
 
+    @Override
+    public void clearResource() {
+        threadClient.remove();
+
+    }
+
+    public static void main(String[] args) {
+
+    }
 }
