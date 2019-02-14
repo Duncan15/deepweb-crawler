@@ -79,7 +79,7 @@ public final class Launcher {
         Runtime.getRuntime().addShutdownHook(new Exitor());
 
         //initialize the strategy algorithm, this algorithm would only be used in scheduler thread
-        AlgorithmBase alg = new LinearIncrementalAlgorithm.Builder(indexClient, dedu).build();
+        AlgorithmBase alg = new LinearIncrementalAlgorithm.Builder(indexClient, dedu).setInitQuery("县长").build();
 
         //initialize the service to deal with queryLinks
         QueryLinkService queryLinkService = new QueryLinkService(webBrowser, dedu);
@@ -164,6 +164,21 @@ public final class Launcher {
             //there should have one row corresponding to the webId in database
             sql = "select * from current where webId=:webID";
             Constant.current = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(Current.class);
+            if (Constant.current == null) {
+                sql = "insert into current (webId, round, M1status, M2status, M3status, M4status, SampleData_sum)" +
+                        "values(:webID, :round, :M1status, :M2status, :M3status, :M4status, :SampleDataSum)";
+                conn.createQuery(sql).addParameter("webID", webID)
+                        .addParameter("round", "0")
+                        .addParameter("M1status", "inactive")
+                        .addParameter("M2status", "inactive")
+                        .addParameter("M3status", "inactive")
+                        .addParameter("M4status", "inactive")
+                        .addParameter("SampleDataSum", 0)
+                        .executeUpdate();
+                sql = "select * from current where webId=:webID";
+                Constant.current = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(Current.class);
+
+            }
 
             //have no promise about this table
             sql = "select id, webId, patternName, xpath from pattern where webId=:webID";

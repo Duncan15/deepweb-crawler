@@ -1,6 +1,7 @@
 package com.cufe.deepweb.crawler.branch;
 
 import com.cufe.deepweb.common.Utils;
+import com.cufe.deepweb.common.http.simulate.WebBrowser;
 import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.orm.model.Current;
 import com.cufe.deepweb.algorithm.AlgorithmBase;
@@ -8,15 +9,14 @@ import com.cufe.deepweb.common.orm.Orm;
 import com.cufe.deepweb.crawler.service.InfoLinkService;
 import com.cufe.deepweb.crawler.service.QueryLinkService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.ansj.domain.Term;
+import org.ansj.splitWord.analysis.ToAnalysis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sql2o.Connection;
 import org.sql2o.Sql2o;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -51,36 +51,91 @@ public final class Scheduler extends Thread{
     @Override
     public void run() {
         logger.info("start the produce thread");
-
+        if (this.init() == 0) {
+            System.exit(1);
+        }
         while (this.isContinue()) {
-            //status1: deal with the database initialization
-            try (Connection conn = sql2o.open()) {
-                String sql;
-                Constant.round++;
-                //update the row corresponding to the webID in database's current table
-                sql = "update current set M1status =:M1status, M2status =:M2status, M3status =:M3status, M4status =:M4status, round =:round where webId =:webID";
-                conn.createQuery(sql)
-                        .addParameter("M1status", Constant.CURRENT_STATUS_INACTIVE)
-                        .addParameter("M2status",Constant.CURRENT_STATUS_INACTIVE)
-                        .addParameter("M3status",Constant.CURRENT_STATUS_INACTIVE)
-                        .addParameter("M4status",Constant.CURRENT_STATUS_INACTIVE)
-                        .addParameter("round", Constant.round + "")
-                        .addParameter("webID",Constant.webSite.getWebId())
-                        .executeUpdate();
+            this.round();
+        }
+        System.exit(0);
+    }
 
-                this.fixStatus(0,1);
-                logger.info("start the M1status");
+    /**
+     * the initial method used to detect and use the initial query by accessing the search link,
+     * if can't access the search link without parameters, use the index.html of the target site inside.
+     * @return
+     */
+    private int init() {
+        logger.info("start initial process");
+        WebBrowser browser = this.queryLinkService.getWebBrowser();
 
-                sql = "insert into status(webId,round,type,fLinkNum,sLinkNum)" +
+        //firstly select the search link without parameters
+        Optional<String> contentOp = browser.getPageContent(Constant.webSite.getPrefix());
+        if(!contentOp.isPresent() || contentOp.get().trim().equals("")) {
+            //if can't get content from search link without parameters, use the index.html of the target site inside
+            contentOp = browser.getPageContent(Constant.webSite.getIndexUrl());
+            if(!contentOp.isPresent() || contentOp.get().trim().equals("")) return 0;
+        }
+        logger.trace("content is " +contentOp.get());
+        String[] terms = ToAnalysis.parse(contentOp.get()).toString().split(",");
+        Set<String> deduSet = new HashSet<>();
+        Random r = new Random();
+        for(int i = 0; i < terms.length; i++) {
+            String t = terms[r.nextInt(terms.length)];
+
+            //if this term has been used, jump
+            if(!deduSet.add(t)) {
+                i--;
+                continue;
+            }
+            logger.info("initial query is " + t);
+            algo.setInitQuery(t);
+            int num = this.round();
+            if(num != 0) {
+                logger.info("initiate success");
+                return num;
+            }
+        }
+        logger.info("initiate fail");
+        return 0;
+    }
+    /**
+     * a crawling round in the loop
+     * @return the downloaded document number of current round
+     */
+    private int round() {
+        int sLinkNum = 0;//record the return value
+
+        //status1: deal with the database initialization
+        try (Connection conn = sql2o.open()) {
+            String sql;
+            //if at the initial time, round = 0, increase it
+            //if restart from a stop task, give up the last round and increase the round number
+            Constant.round++;
+            //update the row corresponding to the webID in database's current table
+            sql = "update current set M1status =:M1status, M2status =:M2status, M3status =:M3status, M4status =:M4status, round =:round where webId =:webID";
+            conn.createQuery(sql)
+                    .addParameter("M1status", Constant.CURRENT_STATUS_INACTIVE)
+                    .addParameter("M2status",Constant.CURRENT_STATUS_INACTIVE)
+                    .addParameter("M3status",Constant.CURRENT_STATUS_INACTIVE)
+                    .addParameter("M4status",Constant.CURRENT_STATUS_INACTIVE)
+                    .addParameter("round", Constant.round + "")
+                    .addParameter("webID",Constant.webSite.getWebId())
+                    .executeUpdate();
+
+            this.fixStatus(0,1);
+            logger.info("start the M1status");
+
+            sql = "insert into status(webId,round,type,fLinkNum,sLinkNum)" +
                     "values(:webID,:round,:type,:fLinkNum,:sLinkNum)";
-                conn.createQuery(sql)
+            conn.createQuery(sql)
                     .addParameter("webID", Constant.webSite.getWebId())
                     .addParameter("round", Constant.round + "")
                     .addParameter("type", Constant.STATUS_TYPE_INFO)
                     .addParameter("fLinkNum", 0)
                     .addParameter("sLinkNum", 0)
                     .executeUpdate();
-                conn.createQuery(sql)
+            conn.createQuery(sql)
                     .addParameter("webID", Constant.webSite.getWebId())
                     .addParameter("round", Constant.round + "")
                     .addParameter("type", Constant.STATUS_TYPE_QUERY)
@@ -88,156 +143,154 @@ public final class Scheduler extends Thread{
                     .addParameter("sLinkNum", 0)
                     .executeUpdate();
 
-            }
-
-
-            this.fixStatus(1,2);
-            logger.info("start the M2status");
-            //status2: generate the query term
-            String curQuery = algo.getNextQuery();
-            logger.info("this turn's query is {}",curQuery);
-
-
-            this.fixStatus(2,3);
-            logger.info("start the M3status");
-            //status3: get all the queryLinks
-            QueryLinkService.QueryLinks queryLinks = queryLinkService.getQueryLinks(curQuery);
-
-
-            this.fixStatus(3,4);
-            logger.info("start the M4status");
-
-            //only when query link number is bigger than zero, it's necessary to use the thread pool
-            if (queryLinks.getPageNum() > 0) {
-                ThreadPoolExecutor threadPool = new ThreadPoolExecutor(
-                        Constant.webSite.getThreadNum(),
-                        Constant.webSite.getThreadNum(),
-                        0,
-                        TimeUnit.MILLISECONDS,
-                        new LinkedBlockingDeque<>(),//set the size of thread queue to infinity
-                        threadFactory
-                );
-
-                AtomicInteger produceCounter = new AtomicInteger(0);
-                Runnable producer =() -> {
-                    String link = null;
-                    int tick = 100;
-                    while ((link = queryLinks.next()) != null) {
-
-                        //periodically close webclient to explicitly support gc
-                        if (tick <= 0) {
-                            queryLinkService.clearThreadResource();
-                            tick = 100;
-                        }
-                        try {
-                            if (queryLinkService.isQueryLink(link)) {
-                                logger.info(queryLinks.getCounter()+ "");
-                                consumeQueryLink(link);
-                                tick--;
-                            }
-                        } catch (Exception ex) {
-                            //ignored
-                        }
-                    }
-                    produceCounter.incrementAndGet();
-                    queryLinkService.clearThreadResource();
-                };
-                for (int i = 0 ; i < 5 ; i++) {
-                    new Thread(producer).start();
-                }
-
-                for (int i = 0 ; i < Constant.webSite.getThreadNum() ; i++) {
-                    threadPool.execute(() -> {
-                        while (true) {
-
-                            //if here is not null, this is a info link
-                            String link = (String)msgQueue.poll();
-                            if (link != null) {
-                                this.consumeInfoLink(link);
-                                continue;
-                            }
-                            if (produceCounter.get() < 5) {
-                                continue;
-                            }
-
-                            //if can't get info link from message queue and all the produce thread exit,
-                            //the thread exit
-                            logger.info("can't get query link, total page num is {}， current counter is {}", queryLinks.getPageNum(), queryLinks.getCounter());
-                            break;
-                        }
-
-                    });
-                }
-                threadPool.shutdown();
-
-                //loop here until all the thread in thread pool exit
-                int stopCount = 3;//a flag to indicate whether to force stop the thread pool
-                while (true) {
-                    try {
-                        //most of the situation, the thread pool would close after the following block, and jump out the while loop
-                        if (threadPool.awaitTermination(Constant.webSite.getThreadNum(), TimeUnit.SECONDS)) {
-                            break;
-                        }
-
-                        //but sometimes some thread would block in the net IO and wouldn't wake up
-                        //I also don't know why, but it did exist
-                        //so need to force close the thread pool in the following clauses
-                        if (threadPool.getActiveCount() < threadPool.getCorePoolSize() / 2) {
-                            logger.info("activeCount:{}, poolSize:{}", threadPool.getActiveCount(), threadPool.getCorePoolSize());
-                            stopCount--;
-                            if(stopCount <= 0) {
-                                threadPool.shutdownNow();
-                                break;
-                            }
-                        }
-                    } catch (InterruptedException ex) {
-                        logger.error("interrupted when wait for thread pool");
-                    }
-                }
-            }
-
-
-            try (Connection conn = sql2o.open()) {
-                String sql = null;
-
-                //update the last round's fLinkNum and sLinkNum in database's status table
-                sql = "update status set fLinkNum =:fLinkNum, sLinkNum =:sLinkNum where webId =:webID and type =:type and round=:round";
-
-                //update the last round's fLinkNum and sLinkNum in database's status table
-                int fLinkNum = queryLinkService.getFailedLinkNum();
-                int sLinkNum = queryLinkService.getTotalLinkNum() - fLinkNum;
-                conn.createQuery(sql)
-                        .addParameter("fLinkNum", fLinkNum)
-                        .addParameter("sLinkNum", sLinkNum)
-                        .addParameter("webID", Constant.webSite.getWebId())
-                        .addParameter("type", Constant.STATUS_TYPE_QUERY)
-                        .addParameter("round", Constant.round + "")
-                        .executeUpdate();
-
-                fLinkNum = infoLinkService.getFailedLinkNum();
-                sLinkNum = infoLinkService.getTotalLinkNum() - fLinkNum;
-                conn.createQuery(sql)
-                        .addParameter("fLinkNum", fLinkNum)
-                        .addParameter("sLinkNum", sLinkNum)
-                        .addParameter("webID", Constant.webSite.getWebId())
-                        .addParameter("type", Constant.STATUS_TYPE_INFO)
-                        .addParameter("round", Constant.round + "")
-                        .executeUpdate();
-
-                //update current table's SampleData_sum by adding sLinkNum to it
-                sql = "update current set SampleData_sum = SampleData_sum +:sLinkNum where webId =:webID";
-                conn.createQuery(sql)
-                        .addParameter("sLinkNum", sLinkNum)
-                        .addParameter("webID", Constant.webSite.getWebId())
-                        .executeUpdate();
-
-            }
-
-            this.fixStatus(4,0);
         }
-        System.exit(0);
-    }
 
+        //status2
+        this.fixStatus(1,2);
+        logger.info("start the M2status");
+        //status2: generate the query term
+        String curQuery = algo.getNextQuery();
+        logger.info("this turn's query is {}",curQuery);
+
+        //status3
+        this.fixStatus(2,3);
+        logger.info("start the M3status");
+        //status3: get all the queryLinks
+        QueryLinkService.QueryLinks queryLinks = queryLinkService.getQueryLinks(curQuery);
+
+        //status4
+        this.fixStatus(3,4);
+        logger.info("start the M4status");
+
+        //only when query link number is bigger than zero, it's necessary to use the thread pool
+        if (queryLinks.getPageNum() > 0) {
+            ThreadPoolExecutor threadPool = new ThreadPoolExecutor(
+                    Constant.webSite.getThreadNum(),
+                    Constant.webSite.getThreadNum(),
+                    0,
+                    TimeUnit.MILLISECONDS,
+                    new LinkedBlockingDeque<>(),//set the size of thread queue to infinity
+                    threadFactory
+            );
+
+            AtomicInteger produceCounter = new AtomicInteger(0);
+            Runnable producer =() -> {
+                String link = null;
+                int tick = 100;
+                while ((link = queryLinks.next()) != null) {
+
+                    //periodically close webclient to explicitly support gc
+                    if (tick <= 0) {
+                        queryLinkService.clearThreadResource();
+                        tick = 100;
+                    }
+                    try {
+                        if (queryLinkService.isQueryLink(link)) {
+                            logger.info(queryLinks.getCounter()+ "");
+                            consumeQueryLink(link);
+                            tick--;
+                        }
+                    } catch (Exception ex) {
+                        //ignored
+                    }
+                }
+                produceCounter.incrementAndGet();
+                queryLinkService.clearThreadResource();
+            };
+            for (int i = 0 ; i < 5 ; i++) {
+                new Thread(producer).start();
+            }
+
+            for (int i = 0 ; i < Constant.webSite.getThreadNum() ; i++) {
+                threadPool.execute(() -> {
+                    while (true) {
+
+                        //if here is not null, this is a info link
+                        String link = (String)msgQueue.poll();
+                        if (link != null) {
+                            this.consumeInfoLink(link);
+                            continue;
+                        }
+                        if (produceCounter.get() < 5) {
+                            continue;
+                        }
+
+                        //if can't get info link from message queue and all the produce thread exit,
+                        //the thread exit
+                        logger.info("can't get query link, total page num is {}， current counter is {}", queryLinks.getPageNum(), queryLinks.getCounter());
+                        break;
+                    }
+
+                });
+            }
+            threadPool.shutdown();
+
+            //loop here until all the thread in thread pool exit
+            int stopCount = 3;//a flag to indicate whether to force stop the thread pool
+            while (true) {
+                try {
+                    //most of the situation, the thread pool would close after the following block, and jump out the while loop
+                    if (threadPool.awaitTermination(Constant.webSite.getThreadNum(), TimeUnit.SECONDS)) {
+                        break;
+                    }
+
+                    //but sometimes some thread would block in the net IO and wouldn't wake up
+                    //I also don't know why, but it did exist
+                    //so need to force close the thread pool in the following clauses
+                    if (threadPool.getActiveCount() < threadPool.getCorePoolSize() / 2) {
+                        logger.info("activeCount:{}, poolSize:{}", threadPool.getActiveCount(), threadPool.getCorePoolSize());
+                        stopCount--;
+                        if(stopCount <= 0) {
+                            threadPool.shutdownNow();
+                            break;
+                        }
+                    }
+                } catch (InterruptedException ex) {
+                    logger.error("interrupted when wait for thread pool");
+                }
+            }
+        }
+
+
+        try (Connection conn = sql2o.open()) {
+            String sql = null;
+
+            //update the last round's fLinkNum and sLinkNum in database's status table
+            sql = "update status set fLinkNum =:fLinkNum, sLinkNum =:sLinkNum where webId =:webID and type =:type and round=:round";
+
+            //update the last round's fLinkNum and sLinkNum in database's status table
+            int fLinkNum = queryLinkService.getFailedLinkNum();
+            sLinkNum = queryLinkService.getTotalLinkNum() - fLinkNum;
+            conn.createQuery(sql)
+                    .addParameter("fLinkNum", fLinkNum)
+                    .addParameter("sLinkNum", sLinkNum)
+                    .addParameter("webID", Constant.webSite.getWebId())
+                    .addParameter("type", Constant.STATUS_TYPE_QUERY)
+                    .addParameter("round", Constant.round + "")
+                    .executeUpdate();
+
+            fLinkNum = infoLinkService.getFailedLinkNum();
+            sLinkNum = infoLinkService.getTotalLinkNum() - fLinkNum;
+            conn.createQuery(sql)
+                    .addParameter("fLinkNum", fLinkNum)
+                    .addParameter("sLinkNum", sLinkNum)
+                    .addParameter("webID", Constant.webSite.getWebId())
+                    .addParameter("type", Constant.STATUS_TYPE_INFO)
+                    .addParameter("round", Constant.round + "")
+                    .executeUpdate();
+
+            //update current table's SampleData_sum by adding sLinkNum to it
+            sql = "update current set SampleData_sum = SampleData_sum +:sLinkNum where webId =:webID";
+            conn.createQuery(sql)
+                    .addParameter("sLinkNum", sLinkNum)
+                    .addParameter("webID", Constant.webSite.getWebId())
+                    .executeUpdate();
+
+        }
+
+        this.fixStatus(4,0);
+        return sLinkNum;
+    }
     /**
      * detect whether to continue to crawl
      * detect rule：the successful download number of  latest 10 round is lower than 10,

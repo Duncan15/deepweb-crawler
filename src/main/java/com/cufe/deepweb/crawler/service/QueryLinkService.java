@@ -4,6 +4,7 @@ import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.common.http.simulate.LinkCollector;
 import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
+import org.ansj.splitWord.analysis.ToAnalysis;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.htmlcleaner.HtmlCleaner;
@@ -123,16 +124,30 @@ public class QueryLinkService extends LinkService {
     }
     /**
      * judge that whether the two page are similar
-     * this method no use NLP method to judge
+     * this method use NLP method to judge
      * @param doc1
      * @param doc2
      * @return
      */
     private boolean isSimilarity(String doc1, String doc2) {
-        LevenshteinDistance distance = LevenshteinDistance.getDefaultInstance();//used to compute text distance
-        int gap = distance.apply(doc1.trim(), doc2.trim());
-        return gap < 500;
+        Set<String> result = new HashSet<>();
+        String[] page1 = ToAnalysis.parse(doc1).toString().split(",");
+        String[] page2 = ToAnalysis.parse(doc2).toString().split(",");
+        Set<String> set1 = new HashSet<>();
+        Set<String> set2 = new HashSet<>();
+        set1.addAll(Arrays.asList(page1));
+        set2.addAll(Arrays.asList(page2));
+        double or = 0;
+        result.addAll(set1);
+        result.retainAll(set2);
+        or = (double) result.size() / set1.size();
+        return or > 0.8;
     }
+//    private boolean isSimilarity(String doc1, String doc2) {
+//        LevenshteinDistance distance = LevenshteinDistance.getDefaultInstance();//used to compute text distance
+//        int gap = distance.apply(doc1.trim(), doc2.trim());
+//        return gap < 500;
+//    }
 
     /**
      *
@@ -183,13 +198,21 @@ public class QueryLinkService extends LinkService {
             return Collections.emptyList();
         }
         links = links.stream().filter(link -> {//remove the repeated links and query links
-            if (link.startsWith(Constant.webSite.getPrefix()) || !link.contains("html")) {
+            if (link.startsWith(Constant.webSite.getPrefix())) {
                 return false;
             } else {
                 return dedu.add(link);
             }
         }).collect(Collectors.toList());
         return links;
+    }
+
+    /**
+     * export the browser used by this service
+     * @return
+     */
+    public WebBrowser getWebBrowser() {
+        return this.browser;
     }
 
     @Override

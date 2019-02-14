@@ -26,6 +26,7 @@ public abstract class AlgorithmBase {
     for set initial query when algorithm initiates
      */
     public final void setInitQuery(final String init) {
+        qCount = 0;
         qList.clear();
         qList.add(init);
     }
