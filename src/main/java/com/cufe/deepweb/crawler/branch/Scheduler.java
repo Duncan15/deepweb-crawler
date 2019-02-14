@@ -79,7 +79,7 @@ public final class Scheduler extends Thread{
         logger.trace("content is " +contentOp.get());
         String[] terms = ToAnalysis.parse(contentOp.get()).toString().split(",");
         Set<String> deduSet = new HashSet<>();
-        Random r = new Random();
+        Random r = new Random(System.currentTimeMillis());
         for(int i = 0; i < terms.length; i++) {
             String t = terms[r.nextInt(terms.length)];
 
@@ -217,7 +217,7 @@ public final class Scheduler extends Thread{
 
                         //if can't get info link from message queue and all the produce thread exit,
                         //the thread exit
-                        logger.info("can't get query link, total page num is {}， current counter is {}", queryLinks.getPageNum(), queryLinks.getCounter());
+                        logger.trace("can't get query link, total page num is {}， current counter is {}", queryLinks.getPageNum(), queryLinks.getCounter());
                         break;
                     }
 
@@ -251,7 +251,6 @@ public final class Scheduler extends Thread{
             }
         }
 
-
         try (Connection conn = sql2o.open()) {
             String sql = null;
 
@@ -271,6 +270,7 @@ public final class Scheduler extends Thread{
 
             fLinkNum = infoLinkService.getFailedLinkNum();
             sLinkNum = infoLinkService.getTotalLinkNum() - fLinkNum;
+            sLinkNum = sLinkNum > 0 ? sLinkNum : 0;
             conn.createQuery(sql)
                     .addParameter("fLinkNum", fLinkNum)
                     .addParameter("sLinkNum", sLinkNum)

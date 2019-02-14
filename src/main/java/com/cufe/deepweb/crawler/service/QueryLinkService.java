@@ -88,7 +88,7 @@ public class QueryLinkService extends LinkService {
         while (startNum < endNum) {
             int mid = (startNum + endNum) / 2;
             String midContent = browser.getPageContent(buildQueryLink(keyword, mid)).get();
-            logger.info("mid num is {}", mid);
+            logger.trace("mid num is {}", mid);
             if(isSimilarity(midContent, endContent)) {
                 endNum = mid;
             } else {
@@ -116,7 +116,7 @@ public class QueryLinkService extends LinkService {
             cur *= 2;
             testURL = buildQueryLink(keyword, cur);
             curContent = browser.getPageContent(testURL).orElse("");
-            logger.info("increment page num to {}", cur);
+            logger.trace("increment page num to {}", cur);
             if (isSimilarity(preContent, curContent)) break; //if current page is similar with the pre page, it seems that this two page are empty pages
             preContent = curContent;
         }

@@ -1,7 +1,9 @@
 package com.cufe.deepweb.common.http.client;
 
+import com.cufe.deepweb.crawler.Constant;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import com.gargoylesoftware.htmlunit.httpclient.HtmlUnitCookieStore;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -24,6 +26,7 @@ import java.io.*;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -110,7 +113,13 @@ public class ApacheClient implements CusHttpClient {
             } else {
                 HttpEntity entity = response.getEntity();
                 ContentType contentType = ContentType.getOrDefault(entity);
-                return Optional.ofNullable(EntityUtils.toString(entity, contentType.getCharset()));
+
+                //if can't auto detect the charset from the response, set the charset to the value configured.
+                Charset charset = contentType.getCharset();
+                if(charset == null || StringUtils.isBlank(charset.name())) {
+                    charset = Charset.forName(Constant.webSite.getCharset());
+                }
+                return Optional.ofNullable(EntityUtils.toString(entity, charset));
             }
         }catch (Exception ex) {
             //if ex is UnknownHostException, don't record it

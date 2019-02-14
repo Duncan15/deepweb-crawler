@@ -109,7 +109,6 @@ public class InfoLinkService extends LinkService {
     public void  downloadAndIndex(String URL, String filePath) {
         Optional<String> contentOp = httpClient.getContent(URL);
         if (contentOp.isPresent()) {//if the target document get successfully
-
             //save the document into directory
             try {
                 Utils.save2File(contentOp.get(), filePath);
