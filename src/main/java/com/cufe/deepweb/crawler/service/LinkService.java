@@ -5,18 +5,23 @@ public abstract class LinkService {
     protected int failedLinkNum;
 
     /**
-     * 返回并重置
+     * return the link number of different status in current round
      * @return
      */
     public int getFailedLinkNum() {
-        int num = this.failedLinkNum;
-        this.failedLinkNum = 0;
-        return num;
+        return this.failedLinkNum;
     }
     public int getTotalLinkNum() {
-        int num = this.totalLinkNum;
+        return this.totalLinkNum;
+    }
+
+    /**
+     * reset the link number of different status to zero for recording new round's status
+     * this method should be invoked by the user of this service
+     */
+    public void reset() {
+        this.failedLinkNum = 0;
         this.totalLinkNum = 0;
-        return num;
     }
 
     /**

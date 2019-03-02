@@ -1,6 +1,5 @@
 package com.cufe.deepweb.crawler.branch;
 
-import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
 import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.orm.model.Current;
@@ -9,7 +8,6 @@ import com.cufe.deepweb.common.orm.Orm;
 import com.cufe.deepweb.crawler.service.InfoLinkService;
 import com.cufe.deepweb.crawler.service.QueryLinkService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.ansj.domain.Term;
 import org.ansj.splitWord.analysis.ToAnalysis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +29,11 @@ public final class Scheduler extends Thread{
     private BlockingDeque msgQueue;
     private Sql2o sql2o;
     private ThreadFactory threadFactory;
+
+    /**
+     * the status keeper, which is specified to maintain the status
+     */
+    private ReactiveStatusKeeper keeper;
     public Scheduler(AlgorithmBase algo, QueryLinkService queryLinkService, InfoLinkService infoLinkService, BlockingDeque msgQueue){
         super("scheduler_thread");
         this.algo = algo;
@@ -38,6 +41,7 @@ public final class Scheduler extends Thread{
         this.infoLinkService = infoLinkService;
         this.msgQueue = msgQueue;
         this.sql2o = Orm.getSql2o();
+        this.keeper = new ReactiveStatusKeeper();
 
         //configure the download thread pool's threadFactory
         threadFactory = new ThreadFactoryBuilder()
@@ -51,6 +55,7 @@ public final class Scheduler extends Thread{
     @Override
     public void run() {
         logger.info("start the produce thread");
+        keeper.start();//start the status keeper
         if(Constant.round == 0) {//when round = 0, it need to infer initial query
             if (this.init() == 0) {
                 System.exit(1);
@@ -110,61 +115,30 @@ public final class Scheduler extends Thread{
     private int round() {
         int sLinkNum = 0;//record the return value
 
+
         //status1: deal with the database initialization
-        try (Connection conn = sql2o.open()) {
-            String sql;
-            //if at the initial time, round = 0, increase it
-            //if restart from a stop task, give up the last round and increase the round number
-            Constant.round++;
-            //update the row corresponding to the webID in database's current table
-            sql = "update current set M1status =:M1status, M2status =:M2status, M3status =:M3status, M4status =:M4status, round =:round where webId =:webID";
-            conn.createQuery(sql)
-                    .addParameter("M1status", Constant.CURRENT_STATUS_INACTIVE)
-                    .addParameter("M2status",Constant.CURRENT_STATUS_INACTIVE)
-                    .addParameter("M3status",Constant.CURRENT_STATUS_INACTIVE)
-                    .addParameter("M4status",Constant.CURRENT_STATUS_INACTIVE)
-                    .addParameter("round", Constant.round + "")
-                    .addParameter("webID",Constant.webSite.getWebId())
-                    .executeUpdate();
+        //tag: round initiation
+        keeper.roundInit();
 
-            logger.info("start new round: {}", Constant.round);
-            this.fixStatus(0,1);
-            logger.info("start the M1status");
-
-            sql = "insert into status(webId,round,type,fLinkNum,sLinkNum)" +
-                    "values(:webID,:round,:type,:fLinkNum,:sLinkNum)";
-            conn.createQuery(sql)
-                    .addParameter("webID", Constant.webSite.getWebId())
-                    .addParameter("round", Constant.round + "")
-                    .addParameter("type", Constant.STATUS_TYPE_INFO)
-                    .addParameter("fLinkNum", 0)
-                    .addParameter("sLinkNum", 0)
-                    .executeUpdate();
-            conn.createQuery(sql)
-                    .addParameter("webID", Constant.webSite.getWebId())
-                    .addParameter("round", Constant.round + "")
-                    .addParameter("type", Constant.STATUS_TYPE_QUERY)
-                    .addParameter("fLinkNum", 0)
-                    .addParameter("sLinkNum", 0)
-                    .executeUpdate();
-
-        }
 
         //status2
-        this.fixStatus(1,2);
+        //tag: term inference
+        keeper.fixStatus(1,2);
         logger.info("start the M2status");
         //status2: generate the query term
         String curQuery = algo.getNextQuery();
         logger.info("this turn's query is {}",curQuery);
 
         //status3
-        this.fixStatus(2,3);
+        //tag: queryLink generation
+        keeper.fixStatus(2,3);
         logger.info("start the M3status");
         //status3: get all the queryLinks
         QueryLinkService.QueryLinks queryLinks = queryLinkService.getQueryLinks(curQuery);
 
         //status4
-        this.fixStatus(3,4);
+        //tag: infoLink download
+        keeper.fixStatus(3,4);
         logger.info("start the M4status");
 
         //only when query link number is bigger than zero, it's necessary to use the thread pool
@@ -255,45 +229,8 @@ public final class Scheduler extends Thread{
                 }
             }
         }
-
-        try (Connection conn = sql2o.open()) {
-            String sql = null;
-
-            //update the last round's fLinkNum and sLinkNum in database's status table
-            sql = "update status set fLinkNum =:fLinkNum, sLinkNum =:sLinkNum where webId =:webID and type =:type and round=:round";
-
-            //update the last round's fLinkNum and sLinkNum in database's status table
-            int fLinkNum = queryLinkService.getFailedLinkNum();
-            sLinkNum = queryLinkService.getTotalLinkNum() - fLinkNum;
-            conn.createQuery(sql)
-                    .addParameter("fLinkNum", fLinkNum)
-                    .addParameter("sLinkNum", sLinkNum)
-                    .addParameter("webID", Constant.webSite.getWebId())
-                    .addParameter("type", Constant.STATUS_TYPE_QUERY)
-                    .addParameter("round", Constant.round + "")
-                    .executeUpdate();
-
-            fLinkNum = infoLinkService.getFailedLinkNum();
-            sLinkNum = infoLinkService.getTotalLinkNum() - fLinkNum;
-            sLinkNum = sLinkNum > 0 ? sLinkNum : 0;
-            conn.createQuery(sql)
-                    .addParameter("fLinkNum", fLinkNum)
-                    .addParameter("sLinkNum", sLinkNum)
-                    .addParameter("webID", Constant.webSite.getWebId())
-                    .addParameter("type", Constant.STATUS_TYPE_INFO)
-                    .addParameter("round", Constant.round + "")
-                    .executeUpdate();
-
-            //update current table's SampleData_sum by adding sLinkNum to it
-            sql = "update current set SampleData_sum = SampleData_sum +:sLinkNum where webId =:webID";
-            conn.createQuery(sql)
-                    .addParameter("sLinkNum", sLinkNum)
-                    .addParameter("webID", Constant.webSite.getWebId())
-                    .executeUpdate();
-
-        }
-
-        this.fixStatus(4,0);
+        keeper.dynamicUpdate();
+        keeper.fixStatus(4,0);
         return sLinkNum;
     }
     /**
@@ -323,40 +260,6 @@ public final class Scheduler extends Thread{
         return true;
     }
 
-    /**
-     * change the current status of current table
-     * here the performance is not the key point, so don't care the number of sql to be executed
-     * @param pre 1-4
-     * @param cur 1-4
-     */
-    private void fixStatus(int pre, int cur) {
-        try (Connection conn = sql2o.open()) {
-            if (1 <= pre && pre <= 4) {
-                String preStr = "M"+pre+"status";
-                //only change the status value here
-                String sql = "update current set " + preStr +" =:MpreStatus, round=:round where webId =:webID";
-                conn.createQuery(sql)
-                        .addParameter("MpreStatus",Constant.CURRENT_STATUS_DONE)
-                        .addParameter("round", Constant.round+"")
-                        .addParameter("webID", Constant.webSite.getWebId())
-                        .executeUpdate();
-            }
-            if (1 <= cur && cur <= 4) {
-                String curStr = "M"+cur+"status";
-                String sql = "update current set " + curStr +" =:McurStatus, round=:round where webId =:webID";
-                conn.createQuery(sql)
-                        .addParameter("McurStatus",Constant.CURRENT_STATUS_ACTIVE)
-                        .addParameter("round", Constant.round+"")
-                        .addParameter("webID", Constant.webSite.getWebId())
-                        .executeUpdate();
-            }
-
-            //get the newest value from current table
-            Constant.current = conn.createQuery("select * from current where webId=:webID")
-                    .addParameter("webID",Constant.webSite.getWebId())
-                    .executeAndFetchFirst(Current.class);
-        }
-    }
 
     /**
      * consume query link
@@ -385,6 +288,168 @@ public final class Scheduler extends Thread{
     private void consumeInfoLink(String infoLink) {
         logger.trace("consume info link {}", infoLink);
         infoLinkService.downloadAndIndex(infoLink, infoLinkService.getFileAddr(infoLink));
+    }
+
+    /**
+     * ReactiveStatusKeeper is used to record some status which should be record instantaneously
+     */
+    private class ReactiveStatusKeeper extends Thread {
+        public ReactiveStatusKeeper() {
+            super("reactiveStatusKeeper");
+        }
+
+        /**
+         * status operations for initiating a new round
+         */
+        public synchronized void roundInit() {
+            try (Connection conn = sql2o.open()) {
+
+                String sql;
+                //if at the initial time, round = 0, increase it
+                //if restart from a stop task, give up the last round and increase the round number
+                Constant.round++;
+                infoLinkService.reset();
+                queryLinkService.reset();
+                lastFInfoLink = 0;
+                lastSInfoLink = 0;
+                //update the row corresponding to the webID in database's current table
+                sql = "update current set M1status =:M1status, M2status =:M2status, M3status =:M3status, M4status =:M4status, round =:round where webId =:webID";
+                conn.createQuery(sql)
+                        .addParameter("M1status", Constant.CURRENT_STATUS_INACTIVE)
+                        .addParameter("M2status",Constant.CURRENT_STATUS_INACTIVE)
+                        .addParameter("M3status",Constant.CURRENT_STATUS_INACTIVE)
+                        .addParameter("M4status",Constant.CURRENT_STATUS_INACTIVE)
+                        .addParameter("round", Constant.round + "")
+                        .addParameter("webID",Constant.webSite.getWebId())
+                        .executeUpdate();
+
+                logger.info("start new round: {}", Constant.round);
+                this.fixStatus(0,1);
+                logger.info("start the M1status");
+
+                sql = "insert into status(webId,round,type,fLinkNum,sLinkNum)" +
+                        "values(:webID,:round,:type,:fLinkNum,:sLinkNum)";
+                conn.createQuery(sql)
+                        .addParameter("webID", Constant.webSite.getWebId())
+                        .addParameter("round", Constant.round + "")
+                        .addParameter("type", Constant.STATUS_TYPE_INFO)
+                        .addParameter("fLinkNum", 0)
+                        .addParameter("sLinkNum", 0)
+                        .executeUpdate();
+                conn.createQuery(sql)
+                        .addParameter("webID", Constant.webSite.getWebId())
+                        .addParameter("round", Constant.round + "")
+                        .addParameter("type", Constant.STATUS_TYPE_QUERY)
+                        .addParameter("fLinkNum", 0)
+                        .addParameter("sLinkNum", 0)
+                        .executeUpdate();
+
+            }
+        }
+        /**
+         * change the current status of current table
+         * here the performance is not the key point, so don't care the number of sql to be executed
+         * @param pre 1-4
+         * @param cur 1-4
+         */
+        public void fixStatus(int pre, int cur) {
+            try (Connection conn = sql2o.open()) {
+                if (1 <= pre && pre <= 4) {
+                    String preStr = "M"+pre+"status";
+                    //only change the status value here
+                    String sql = "update current set " + preStr +" =:MpreStatus, round=:round where webId =:webID";
+                    conn.createQuery(sql)
+                            .addParameter("MpreStatus",Constant.CURRENT_STATUS_DONE)
+                            .addParameter("round", Constant.round+"")
+                            .addParameter("webID", Constant.webSite.getWebId())
+                            .executeUpdate();
+                }
+                if (1 <= cur && cur <= 4) {
+                    String curStr = "M"+cur+"status";
+                    String sql = "update current set " + curStr +" =:McurStatus, round=:round where webId =:webID";
+                    conn.createQuery(sql)
+                            .addParameter("McurStatus",Constant.CURRENT_STATUS_ACTIVE)
+                            .addParameter("round", Constant.round+"")
+                            .addParameter("webID", Constant.webSite.getWebId())
+                            .executeUpdate();
+                }
+
+                //get the newest value from current table
+                Constant.current = conn.createQuery("select * from current where webId=:webID")
+                        .addParameter("webID",Constant.webSite.getWebId())
+                        .executeAndFetchFirst(Current.class);
+            }
+        }
+
+        /**
+         * the number of different status's info link at the last update
+         */
+        private int lastSInfoLink = 0;
+        private int lastFInfoLink = 0;
+        /**
+         * status update operations for change the status in db dynamically, this method would be invoked by scheduler and current class
+         * @return
+         */
+        public synchronized int dynamicUpdate() {
+            int sLinkNum = 0;
+            try (Connection conn = sql2o.open()) {
+                String sql = null;
+
+                //update the last round's fLinkNum and sLinkNum in database's status table
+                sql = "update status set fLinkNum =:fLinkNum, sLinkNum =:sLinkNum where webId =:webID and type =:type and round=:round";
+
+                //update the last round's fLinkNum and sLinkNum in database's status table
+                int fLinkNum = queryLinkService.getFailedLinkNum();
+                sLinkNum = queryLinkService.getTotalLinkNum() - fLinkNum;
+                conn.createQuery(sql)
+                        .addParameter("fLinkNum", fLinkNum)
+                        .addParameter("sLinkNum", sLinkNum)
+                        .addParameter("webID", Constant.webSite.getWebId())
+                        .addParameter("type", Constant.STATUS_TYPE_QUERY)
+                        .addParameter("round", Constant.round + "")
+                        .executeUpdate();
+
+                fLinkNum = infoLinkService.getFailedLinkNum();
+                sLinkNum = infoLinkService.getTotalLinkNum() - fLinkNum;
+                sLinkNum = sLinkNum > 0 ? sLinkNum : 0;
+                conn.createQuery(sql)
+                        .addParameter("fLinkNum", fLinkNum)
+                        .addParameter("sLinkNum", sLinkNum)
+                        .addParameter("webID", Constant.webSite.getWebId())
+                        .addParameter("type", Constant.STATUS_TYPE_INFO)
+                        .addParameter("round", Constant.round + "")
+                        .executeUpdate();
+
+                //update current table's SampleData_sum by adding sLinkNum to it
+                sql = "update current set SampleData_sum = SampleData_sum +:sLinkNum where webId =:webID";
+
+                conn.createQuery(sql)
+                        .addParameter("sLinkNum", sLinkNum - lastSInfoLink)
+                        .addParameter("webID", Constant.webSite.getWebId())
+                        .executeUpdate();
+                lastSInfoLink = sLinkNum;
+                lastFInfoLink = fLinkNum;
+            }
+            return sLinkNum;
+        }
+
+
+        @Override
+        public void run() {
+            while (true) {
+                /**
+                 * record SampleData_sum in current table, fLinkNum and sLinkNum in status table instantaneously
+                 */
+                try {
+                    Thread.sleep(5_000);
+                } catch (InterruptedException ex) {
+                    //ignored
+                }
+                this.dynamicUpdate();
+                logger.info("update");
+
+            }
+        }
     }
 
 }
