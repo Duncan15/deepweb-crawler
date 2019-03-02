@@ -1,8 +1,6 @@
 package miscella;
 
 import org.junit.jupiter.api.Test;
-
-import java.net.URLEncoder;
 import java.nio.file.Paths;
 
 public class SyntaxTest {
@@ -12,6 +10,10 @@ public class SyntaxTest {
     }
     @Test
     void testEncode() throws Exception {
-        System.out.println(URLEncoder.encode("允", "GBK"));
+
+
+        Integer a = new Integer(2);
+        Integer b = new Integer(2);
+        System.out.println(a == b);
     }
 }

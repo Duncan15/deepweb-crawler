@@ -190,7 +190,7 @@ public final class IndexClient implements Closeable {
      * used to update index, won't free memory out of JVM
      */
     public synchronized void updateIndex() {
-        logger.info("start to update index");
+        logger.trace("start to update index");
         Utils.logMemorySize();
         if (!readOnly) {//如果为读写客户端，则新建indexWriter
             updateIndexWriter();
@@ -198,7 +198,7 @@ public final class IndexClient implements Closeable {
         updateIndexReader();
         updateIndexSearcher();
         Utils.logMemorySize();
-        logger.info("update index finish");
+        logger.trace("update index finish");
     }
 
 
@@ -436,7 +436,7 @@ public final class IndexClient implements Closeable {
      * @return
      */
     public Map<String, Set<Integer>> getDocSetMap(String field,double low,double up) {
-        logger.info("start to get doc set map");
+        logger.trace("start to get doc set map");
         Utils.logMemorySize();
 
         if (indexReader == null) {
@@ -446,7 +446,7 @@ public final class IndexClient implements Closeable {
         Map<String, Set<Integer>> docSetMap = new HashMap<>();
         int size = indexReader.numDocs();
 
-        logger.info("start to get all the terms which fit the target bound range");
+        logger.trace("start to get all the terms which fit the target bound range");
         try{
             Terms terms = MultiFields.getTerms(indexReader, field);
             TermsEnum termsEnum = terms.iterator();
@@ -459,11 +459,11 @@ public final class IndexClient implements Closeable {
         }catch (IOException ex){
             logger.error("IOException in read lucene index", ex);
         }
-        logger.info("get terms finish");
+        logger.trace("get terms finish");
 
         ExecutorService service = Executors.newFixedThreadPool(indexReader.leaves().size());//thread pool to operate the sub index
         List<LeafReaderContext> leafList = indexReader.leaves();
-        logger.info("sub index size:{}", leafList.size());
+        logger.trace("sub index size:{}", leafList.size());
         List<Future> futureList = new ArrayList<>();
         for (int i = 0 ; i < leafList.size() ; i ++) {
             int curIndex = i;
@@ -500,14 +500,14 @@ public final class IndexClient implements Closeable {
             }));
         }
         service.shutdown();
-        logger.info("DF bound is between {} and {}", low * size, up * size);
+        logger.trace("DF bound is between {} and {}", low * size, up * size);
         while (futureList.size() > 0) {
             for (int i = 0 ; i < futureList.size() ;) {
                 Future<Map<String, Set<Integer>>> f = futureList.get(i);
                 if (f.isDone()) {
                     futureList.remove(i);
                     Utils.logMemorySize();
-                    logger.info("least size of the list of future is {}", futureList.size());
+                    logger.trace("least size of the list of future is {}", futureList.size());
                     continue;
                 }
                 i ++;
@@ -515,7 +515,7 @@ public final class IndexClient implements Closeable {
         }
 
         Utils.logMemorySize();
-        logger.info("get doc set map finish");
+        logger.trace("get doc set map finish");
         return docSetMap;
     }
     /**

@@ -4,7 +4,7 @@
         <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%t] %l %m%n</Property>
     </Properties>
     <Appenders>
-        <Console name="Console" target="SYSTEM_OUT" follow="true">
+        <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="${LOG_PATTERN}"/>
         </Console>
         <File name="logFile" fileName="dw.log">

@@ -6,6 +6,8 @@ import com.cufe.deepweb.common.dedu.Deduplicator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 
 
@@ -37,13 +39,71 @@ public class LinearIncrementalAlgorithm extends SetCoverAlgorithm {
      */
     private int stepLen;
 
+    /**
+     * the name of data saving file for production mode
+     */
+    private static final String DATA_FILE = "qList.dat";
+
+    /**
+     * a path to remark whether run in production mode
+     * in production mode, when exit should save some information
+     */
+    private Path productPath;
+
     private Queue<Double> stepQueue;
     private LinearIncrementalAlgorithm(Builder builder) {
-        super(builder.mainField,builder.upBound,builder.lowBound,builder.threshold,builder.sendingCost);
+        super(builder.mainField, builder.upBound, builder.lowBound, builder.threshold, builder.sendingCost);
         stepLen = builder.stepLen;
         stepQueue = new ArrayDeque<>(stepLen);
         si = builder.indexClient;
         dedu = builder.deduplicator;
+        productPath = builder.productPath;
+        this.setInitQuery(builder.initQuery);
+        this.productInit();
+    }
+
+    /**
+     * do some initial operations for production mode
+     */
+    private void productInit() {
+        if (this.productPath != null) {
+            File f = this.productPath.resolve(DATA_FILE).toFile();
+            if(f.exists()) {
+                logger.info("start to read qList information from file {}", f.getAbsolutePath());
+                try(ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(f))) {
+                    List<String> qList = (List<String>) inputStream.readObject();
+                    this.setqList(qList);
+                    logger.info("the size of qList read from file is " + qList.size());
+                } catch (Exception ex) {
+                    logger.error("Exception happen when read qList object file");
+                } finally {
+                    logger.info("read qList information finish");
+                    f.delete();
+                }
+            }
+        }
+    }
+
+    /**
+     * do some information collecting operations
+     */
+    @Override
+    public void close() {
+        super.close();
+        if(this.productPath != null) {
+            System.out.println("start to store qList information");
+            File f = this.productPath.resolve(DATA_FILE).toFile();
+            if (f.exists()) {
+                System.out.println("the qList data saving file has existed, exit directly");
+                return;
+            }
+            try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(f))) {
+                outputStream.writeObject(this.getqList());
+            } catch (IOException ex) {
+                //ignored
+            }
+            System.out.println("store qList information finish");
+        }
     }
 
     @Override
@@ -108,6 +168,7 @@ public class LinearIncrementalAlgorithm extends SetCoverAlgorithm {
         private int sendingCost = 100;
 
         private String initQuery = "produce";
+        private Path productPath;
 
 
         public Builder(IndexClient client,Deduplicator dedu){
@@ -149,10 +210,15 @@ public class LinearIncrementalAlgorithm extends SetCoverAlgorithm {
             this.initQuery = initQuery;
             return this;
         }
+        public Builder setProductPath(Path productPath) {
+            this.productPath = productPath;
+            return this;
+        }
+
+
 
         public LinearIncrementalAlgorithm build(){
             LinearIncrementalAlgorithm algo = new LinearIncrementalAlgorithm(this);
-            algo.setInitQuery(initQuery);
             return algo;
         }
     }

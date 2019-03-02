@@ -111,7 +111,7 @@ public class QueryLinkService extends LinkService {
         String preContent = browser.getPageContent(testURL).get();
         //the current page's content
         String curContent;
-        logger.info("increment page num to {}", cur);
+        logger.trace("increment page num to {}", cur);
         while (true) {
             cur *= 2;
             testURL = buildQueryLink(keyword, cur);

@@ -30,6 +30,7 @@ import org.sql2o.Connection;
 import org.sql2o.Sql2o;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +66,8 @@ public final class Launcher {
      * the file name of data file for storing message queue's left data when restarting or stopping
      */
     private static final String MSG_DATA_NAME = "msg.dat";
+
+    private static AlgorithmBase alg;
     private Launcher() { }
 
     /**
@@ -79,7 +82,7 @@ public final class Launcher {
         Runtime.getRuntime().addShutdownHook(new Exitor());
 
         //initialize the strategy algorithm, this algorithm would only be used in scheduler thread
-        AlgorithmBase alg = new LinearIncrementalAlgorithm.Builder(indexClient, dedu).setInitQuery("县长").build();
+        alg = new LinearIncrementalAlgorithm.Builder(indexClient, dedu).setProductPath(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR)).build();
 
         //initialize the service to deal with queryLinks
         QueryLinkService queryLinkService = new QueryLinkService(webBrowser, dedu);
@@ -99,9 +102,9 @@ public final class Launcher {
      * when this program start to run, every configuration in database should be confirmed to be finished
      * in other word, it should have a initialize step when the user finish to configure in the web's front end
      * @param args
-     *        [0] webID
-     *        [1] jdbcURL
-     *        [2] userName
+     *        [0] web-id
+     *        [1] jdbc-url
+     *        [2] username
      *        [3] password
      */
     private static void init(final String[] args) {
@@ -203,6 +206,9 @@ public final class Launcher {
             logger.error("the work directory can't be blank");
             System.exit(1);
         } else {
+            //for compatible, just reset the workFile to workFile/webId, this change wouldn't change the configuration in db
+            Constant.webSite.setWorkFile(Paths.get(Constant.webSite.getWorkFile(), Constant.webSite.getWebId() + "").toString());
+            workFilePath = Constant.webSite.getWorkFile();
             File f = new File(workFilePath);
 
             //if directory no exist or if this is not a directory or if this directory can be written by the user of crawler
@@ -261,33 +267,47 @@ public final class Launcher {
 
     }
     private static class Exitor extends Thread {
-        private Logger logger = LoggerFactory.getLogger(Exitor.class);
         @Override
         public void run() {
-            logger.info("start the exit thread");
+            System.out.println("start the exit thread");
 
             //write the content from message queue into file
+            System.out.println("start to write the content from message queue into file");
             List<String> msgList = new ArrayList<>();
             msgQueue.forEach( link -> {
                 msgList.add((String) link);
             });
-            File f = Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR, MSG_DATA_NAME).toFile();
-            if (f.exists()) {
-                f.delete();
-            }
-            try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(f))) {
-                outputStream.writeObject(msgList);
-            } catch (IOException ex) {
-                logger.error("IOException happen when write msg object to file", ex);
+            System.out.println("the left link num in current round is " + msgList.size());
+            //if data directory no exists, invoke mkdirs
+            Path dataDirPath = Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR);
+            File dir = dataDirPath.toFile();
+            if (!dir.exists()) {
+                dir.mkdirs();
             }
 
+            //if data file exists, remove it
+            File dataFile = dataDirPath.resolve(MSG_DATA_NAME).toFile();
+            if (dataFile.exists()) {
+                dataFile.delete();
+            }
+
+            try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(dataFile))) {
+                outputStream.writeObject(msgList);
+            } catch (IOException ex) {
+                System.err.println("IOException happen when write msg object to file");
+            }
+            System.out.println("finish to write the message queue content");
+
+            System.out.println("start to close resource");
             try {
                 httpClient.close();
                 dedu.close();//dedu data save
+                alg.close();//qList data save
                 indexClient.close();
             } catch (IOException ex) {
                 //nothing to do
             }
+            System.out.println("finish to close resource");
 
         }
     }

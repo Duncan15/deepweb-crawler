@@ -26,6 +26,21 @@ public class Current {
      */
     private Integer SampleData_sum;
 
+    public Integer getRun() {
+        return run;
+    }
+
+    public void setRun(Integer run) {
+        this.run = run;
+    }
+
+    /**
+     * the running status of current crawler
+     * 0: no run
+     * 1: run
+     */
+    private Integer run;
+
 
     public Long getWebId() {
         return webId;

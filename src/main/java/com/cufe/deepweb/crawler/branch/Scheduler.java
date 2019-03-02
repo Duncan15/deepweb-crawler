@@ -51,9 +51,12 @@ public final class Scheduler extends Thread{
     @Override
     public void run() {
         logger.info("start the produce thread");
-        if (this.init() == 0) {
-            System.exit(1);
+        if(Constant.round == 0) {//when round = 0, it need to infer initial query
+            if (this.init() == 0) {
+                System.exit(1);
+            }
         }
+
         while (this.isContinue()) {
             this.round();
         }
@@ -82,9 +85,9 @@ public final class Scheduler extends Thread{
         Random r = new Random(System.currentTimeMillis());
         for(int i = 0; i < terms.length; i++) {
             String t = terms[r.nextInt(terms.length)];
-
-            //if this term has been used, jump
-            if(!deduSet.add(t)) {
+            t = t.trim();
+            //if this term has been used or this term is an empty string, jump
+            if(t.length() == 0 || !deduSet.add(t)) {
                 i--;
                 continue;
             }
@@ -95,6 +98,7 @@ public final class Scheduler extends Thread{
                 logger.info("initiate success");
                 return num;
             }
+            Constant.round = 0;
         }
         logger.info("initiate fail");
         return 0;
@@ -123,6 +127,7 @@ public final class Scheduler extends Thread{
                     .addParameter("webID",Constant.webSite.getWebId())
                     .executeUpdate();
 
+            logger.info("start new round: {}", Constant.round);
             this.fixStatus(0,1);
             logger.info("start the M1status");
 
@@ -186,7 +191,7 @@ public final class Scheduler extends Thread{
                     }
                     try {
                         if (queryLinkService.isQueryLink(link)) {
-                            logger.info(queryLinks.getCounter()+ "");
+                            logger.trace(queryLinks.getCounter()+ "");
                             consumeQueryLink(link);
                             tick--;
                         }

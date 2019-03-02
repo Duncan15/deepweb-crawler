@@ -119,7 +119,7 @@ public final class HtmlUnitBrowser implements WebBrowser {
             HtmlPage page = client.getPage(URL);
             return Optional.ofNullable(page.getBody().asText());
         } catch (Exception ex) {
-            logger.error("Exception happen when get page content", ex);
+            logger.error("Exception happen when get page content from" + URL, ex);
             return Optional.empty();
         }
     }

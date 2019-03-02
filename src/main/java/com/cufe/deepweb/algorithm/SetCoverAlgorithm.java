@@ -111,7 +111,7 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
      */
     private void buildMatrix() {
         //start to build matrix
-        logger.info("start to build matrix");
+        logger.trace("start to build matrix");
         Utils.logMemorySize();
 
         termList.clear();
