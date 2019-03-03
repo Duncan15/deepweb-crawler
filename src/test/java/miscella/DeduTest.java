@@ -4,9 +4,9 @@ import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.common.dedu.RAMDocIDDedutor;
 import com.cufe.deepweb.common.dedu.RAMMD5Dedutor;
+import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
 
-import javax.xml.bind.DatatypeConverter;
 
 import java.security.MessageDigest;
 
@@ -22,7 +22,7 @@ public class DeduTest {
   void testHash() throws Exception{
     MessageDigest md5 = MessageDigest.getInstance("MD5");
     byte[] ans = md5.digest("md5hhhh".getBytes());
-    System.out.println(DatatypeConverter.printHexBinary(ans));
+    System.out.println(Hex.encodeHexString(ans));
   }
   @Test
   void testRAMDocIDDedutorMemoryCost() {

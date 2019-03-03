@@ -81,9 +81,6 @@ public final class Launcher {
         //register the hook to clear resource when crawler restart or stop
         Runtime.getRuntime().addShutdownHook(new Exitor());
 
-        //initialize the strategy algorithm, this algorithm would only be used in scheduler thread
-        alg = new LinearIncrementalAlgorithm.Builder(indexClient, dedu).setProductPath(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR)).build();
-
         //initialize the service to deal with queryLinks
         QueryLinkService queryLinkService = new QueryLinkService(webBrowser, dedu);
 
@@ -243,14 +240,14 @@ public final class Launcher {
             });
         }
 
-        //configure the index client
+        //configure the index client to use ansj_seg analyzer
         indexClient = new IndexClient.Builder(Paths.get(Constant.webSite.getWorkFile(),Constant.FT_INDEX_ADDR)).setAnalyzer(IndexClient.AnalyzerTpye.cn).build();
         //configure the RAM md5 deduplicater
         dedu = new RAMMD5Dedutor(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
 
         //the global cookie manager
         CookieManager cookieManager = new CookieManager();
-        webBrowser = new HtmlUnitBrowser(cookieManager, 90_000);
+        webBrowser = new HtmlUnitBrowser(cookieManager, 60_000);
 
         //if the login URL is not blank, first to confirm the login information is valid
         if (!StringUtils.isBlank(Constant.webSite.getLoginUrl())) {
@@ -265,11 +262,34 @@ public final class Launcher {
                 .setCookieManager(cookieManager)
                 .build();
 
+        //initialize the strategy algorithm, this algorithm would only be used in scheduler thread
+        alg = new LinearIncrementalAlgorithm.Builder(indexClient, dedu).setProductPath(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR)).build();
+
+        //after initialize all the utility, set the current pid to db
+        try (Connection conn = sql2o.open()) {
+            long pid = ProcessHandle.current().pid();
+            String sql = "update current set run = :PID where webId = :webID";
+            conn.createQuery(sql)
+                    .addParameter("PID", pid)
+                    .addParameter("webID", Constant.webSite.getWebId())
+                    .executeUpdate();
+            logger.info("finish to set pid: {} into db", pid);
+        }
+
+
     }
     private static class Exitor extends Thread {
         @Override
         public void run() {
             System.out.println("start the exit thread");
+            //when process come to exit, set the current pid in db to 0
+            try (Connection conn = Orm.getSql2o().open()) {
+                String sql = "update current set run = 0 where webId = :webID";
+                conn.createQuery(sql)
+                        .addParameter("webID", Constant.webSite.getWebId())
+                        .executeUpdate();
+                System.out.println("finish to set pid in db to 0");
+            }
 
             //write the content from message queue into file
             System.out.println("start to write the content from message queue into file");
