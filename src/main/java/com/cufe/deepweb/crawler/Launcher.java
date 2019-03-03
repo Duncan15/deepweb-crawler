@@ -244,7 +244,7 @@ public final class Launcher {
         }
 
         //configure the index client
-        indexClient = new IndexClient.Builder(Paths.get(Constant.webSite.getWorkFile(),Constant.FT_INDEX_ADDR)).build();
+        indexClient = new IndexClient.Builder(Paths.get(Constant.webSite.getWorkFile(),Constant.FT_INDEX_ADDR)).setAnalyzer(IndexClient.AnalyzerTpye.cn).build();
         //configure the RAM md5 deduplicater
         dedu = new RAMMD5Dedutor(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
 

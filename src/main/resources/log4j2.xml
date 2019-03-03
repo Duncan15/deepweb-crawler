@@ -14,11 +14,9 @@
         </File>
     </Appenders>
     <Loggers>
-        <!--过滤掉sql2o和hikari的一些无用的DEBUG信息-->
-        <logger name="org.sql2o" level="INFO"></logger>
-        <logger name="com.zaxxer.hikari" level="INFO"></logger>
-        <logger name="com.gargoylesoftware.htmlunit" level="ERROR"></logger>
-        <Root level="info">
+        <logger name="org.ansj" level="info"></logger>
+        <logger name="com.cufe" level="info"></logger>
+        <Root level="warn">
             <!--<AppenderRef ref="logFile"/>-->
             <AppenderRef ref="Console"/>
         </Root>

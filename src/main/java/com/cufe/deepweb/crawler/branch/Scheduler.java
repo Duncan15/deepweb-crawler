@@ -8,7 +8,7 @@ import com.cufe.deepweb.common.orm.Orm;
 import com.cufe.deepweb.crawler.service.InfoLinkService;
 import com.cufe.deepweb.crawler.service.QueryLinkService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.ansj.splitWord.analysis.ToAnalysis;
+import org.ansj.splitWord.analysis.NlpAnalysis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sql2o.Connection;
@@ -85,12 +85,17 @@ public final class Scheduler extends Thread{
             if(!contentOp.isPresent() || contentOp.get().trim().equals("")) return 0;
         }
         logger.trace("content is " +contentOp.get());
-        String[] terms = ToAnalysis.parse(contentOp.get()).toString().split(",");
+        String[] terms = NlpAnalysis.parse(contentOp.get()).toString().split(",");
         Set<String> deduSet = new HashSet<>();
         Random r = new Random(System.currentTimeMillis());
         for(int i = 0; i < terms.length; i++) {
-            String t = terms[r.nextInt(terms.length)];
-            t = t.trim();
+            String t = terms[r.nextInt(terms.length)].trim();
+
+            //specified for ansj_seg split word
+            if(t.contains("/")) {
+                t = t.substring(0, t.indexOf("/"));
+            }
+
             //if this term has been used or this term is an empty string, jump
             if(t.length() == 0 || !deduSet.add(t)) {
                 i--;
@@ -229,7 +234,7 @@ public final class Scheduler extends Thread{
                 }
             }
         }
-        keeper.dynamicUpdate();
+        sLinkNum = keeper.dynamicUpdate();
         keeper.fixStatus(4,0);
         return sLinkNum;
     }
@@ -446,7 +451,7 @@ public final class Scheduler extends Thread{
                     //ignored
                 }
                 this.dynamicUpdate();
-                logger.info("update");
+                logger.trace("update");
 
             }
         }

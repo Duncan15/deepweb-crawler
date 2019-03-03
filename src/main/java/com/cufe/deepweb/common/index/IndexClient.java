@@ -1,10 +1,9 @@
 package com.cufe.deepweb.common.index;
 
-import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
 import com.cufe.deepweb.common.Utils;
+import org.ansj.lucene6.AnsjAnalyzer;
 import org.apache.commons.codec.Charsets;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -612,7 +611,7 @@ public final class IndexClient implements Closeable {
          */
         public Builder setAnalyzer(AnalyzerTpye type){
             if (type == AnalyzerTpye.cn) {
-                this.analyzer = new SmartChineseAnalyzer();
+                this.analyzer = new AnsjAnalyzer(AnsjAnalyzer.TYPE.nlp_ansj);
             } else if (type == AnalyzerTpye.en) {
                 this.analyzer = new StandardAnalyzer();
             }
