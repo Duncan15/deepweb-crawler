@@ -90,7 +90,6 @@ public final class Scheduler extends Thread{
         Random r = new Random(System.currentTimeMillis());
         for(int i = 0; i < terms.length; i++) {
             String t = terms[r.nextInt(terms.length)].trim();
-
             //specified for ansj_seg split word
             if(t.contains("/")) {
                 t = t.substring(0, t.indexOf("/"));

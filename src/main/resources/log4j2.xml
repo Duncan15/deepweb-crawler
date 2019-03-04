@@ -7,7 +7,7 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="${LOG_PATTERN}"/>
         </Console>
-        <File name="logFile" fileName="dw.log">
+        <File name="logFile" fileName="${log.filename}">
             <PatternLayout>
                 <Pattern>${LOG_PATTERN}</Pattern>
             </PatternLayout>
@@ -17,8 +17,8 @@
         <logger name="org.ansj" level="info"></logger>
         <logger name="com.cufe" level="info"></logger>
         <Root level="warn">
-            <!--<AppenderRef ref="logFile"/>-->
             <AppenderRef ref="Console"/>
+
         </Root>
     </Loggers>
 </Configuration>

@@ -7,6 +7,25 @@
     <artifactId>crawler</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <profiles>
+        <!--开发环境，默认激活-->
+        <profile>
+            <id>dev</id>
+            <properties>
+                <running.env>dev</running.env>
+            </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <!--生产环境-->
+        <profile>
+            <id>prd</id>
+            <properties>
+                <running.env>prd</running.env>
+            </properties>
+        </profile>
+    </profiles>
     <dependencies>
         <!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-core -->
         <dependency>
@@ -132,11 +151,13 @@
 
     </dependencies>
     <build>
+
         <plugins>
             <!--指定mvn编译器的Java版本-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
                 <configuration>
                     <source>1.9</source>
                     <target>1.9</target>
@@ -156,7 +177,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.cufe.deepweb.algorithm.demo.Starter</mainClass>
+                                    <mainClass>com.cufe.deepweb.crawler.Launcher</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
