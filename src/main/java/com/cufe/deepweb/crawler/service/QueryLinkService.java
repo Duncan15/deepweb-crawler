@@ -4,6 +4,7 @@ import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.common.http.simulate.LinkCollector;
 import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
+import org.ansj.splitWord.analysis.NlpAnalysis;
 import org.ansj.splitWord.analysis.ToAnalysis;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
@@ -131,8 +132,8 @@ public class QueryLinkService extends LinkService {
      */
     private boolean isSimilarity(String doc1, String doc2) {
         Set<String> result = new HashSet<>();
-        String[] page1 = ToAnalysis.parse(doc1).toString().split(",");
-        String[] page2 = ToAnalysis.parse(doc2).toString().split(",");
+        String[] page1 = NlpAnalysis.parse(doc1).toString().split(",");
+        String[] page2 = NlpAnalysis.parse(doc2).toString().split(",");
         Set<String> set1 = new HashSet<>();
         Set<String> set2 = new HashSet<>();
         set1.addAll(Arrays.asList(page1));
@@ -141,7 +142,8 @@ public class QueryLinkService extends LinkService {
         result.addAll(set1);
         result.retainAll(set2);
         or = (double) result.size() / set1.size();
-        return or > 0.8;
+        logger.trace("similarity is {}", or);
+        return or > 0.95;
     }
 //    private boolean isSimilarity(String doc1, String doc2) {
 //        LevenshteinDistance distance = LevenshteinDistance.getDefaultInstance();//used to compute text distance
@@ -180,7 +182,15 @@ public class QueryLinkService extends LinkService {
             return false;
         }
         if (link.startsWith(Constant.webSite.getPrefix())) {
-            return true;
+            String[] values = Constant.webSite.getParamValueList().split(",");
+            if(values.length == 0) {
+                return true;
+            }
+            for(String e : values) {
+                if(link.contains(e)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -197,13 +207,15 @@ public class QueryLinkService extends LinkService {
             this.failedLinkNum++;
             return Collections.emptyList();
         }
+        logger.trace("queryLink:{} infoLinks:{}", queryLink, Arrays.toString(links.toArray()));
         links = links.stream().filter(link -> {//remove the repeated links and query links
-            if (link.startsWith(Constant.webSite.getPrefix())) {
+            if (isQueryLink(link)) {
                 return false;
             } else {
                 return dedu.add(link);
             }
         }).collect(Collectors.toList());
+        logger.info("queryLink:{}, infoLinks after dedu:{}", queryLink, Arrays.toString(links.toArray()));
         return links;
     }
 
@@ -272,7 +284,7 @@ public class QueryLinkService extends LinkService {
          * the pattern to recognize url
          */
         private Pattern pattern;
-        private static final String re = "(https?:/|\\.)?(/([\\w-]+(\\.)?)+)+(\\?(([\\w-]+(\\.)?)+=(([\\w-]+(\\.)?)+)?(&)?)+)?";
+        private static final String re = "(https?:/|\\.)?(/([\\w-]+(\\.)?)+)+(\\?(([\\w-]+(\\.)?)+=((/?([\\w-]+|[\\u4e00-\\u9fa5]+)+(\\.)?)+)?(&)?)+)?";
         public InfoLinkCollector() {
             this.cleaner = new HtmlCleaner();
             this.pattern = Pattern.compile(re);

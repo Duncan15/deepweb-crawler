@@ -8,8 +8,8 @@ import java.util.regex.Pattern;
 public class ReTest {
     @Test
     void testRE() {
-        String re = "(https?:/|\\.)?(/([\\w-]+(\\.)?)+)+(\\?(([\\w-]+(\\.)?)+=(([\\w-]+(\\.)?)+)?(&)?)+)?";
-        String testString = "/";
+        String re = "(https?:/|\\.)?(/([\\w-]+(\\.)?)+)+(\\?(([\\w-]+(\\.)?)+=((/?([\\w-]+|[\\u4e00-\\u9fa5]+)+(\\.)?)+)?(&)?)+)?";
+        String testString = "http://www.caai.cn/index.php?title=科学abc&s=/home/article/search.html&p=1";
         Pattern pattern = Pattern.compile(re);
         Matcher matcher = pattern.matcher(testString);
         System.out.println(matcher.lookingAt());

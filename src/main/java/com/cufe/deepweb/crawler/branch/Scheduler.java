@@ -273,7 +273,6 @@ public final class Scheduler extends Thread{
     private void consumeQueryLink(String queryLink) {
         List<String> infoLinks = queryLinkService.getInfoLinks(queryLink);
         if (infoLinks.size() == 0) return;
-        logger.trace("consume query link {}, get info link num {}", queryLink, infoLinks.size());
         infoLinks.forEach(infoLink -> {
             //if can't push info links into message queue
             //maybe because the message queue is full(this situation is hard to happen, just possible)

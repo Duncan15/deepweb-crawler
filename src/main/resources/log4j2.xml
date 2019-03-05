@@ -7,11 +7,11 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="${LOG_PATTERN}"/>
         </Console>
-        <File name="logFile" fileName="${log.filename}">
-            <PatternLayout>
-                <Pattern>${LOG_PATTERN}</Pattern>
-            </PatternLayout>
-        </File>
+        <!--<File name="logFile" fileName="${log.filename}">-->
+            <!--<PatternLayout>-->
+                <!--<Pattern>${LOG_PATTERN}</Pattern>-->
+            <!--</PatternLayout>-->
+        <!--</File>-->
     </Appenders>
     <Loggers>
         <logger name="org.ansj" level="info"></logger>
