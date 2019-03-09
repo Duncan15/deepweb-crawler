@@ -148,8 +148,8 @@ public final class Scheduler extends Thread{
         //only when query link number is bigger than zero, it's necessary to use the thread pool
         if (queryLinks.getPageNum() > 0) {
             ThreadPoolExecutor threadPool = new ThreadPoolExecutor(
-                    Constant.webSite.getThreadNum(),
-                    Constant.webSite.getThreadNum(),
+                    Constant.extraConf.getThreadNum(),
+                    Constant.extraConf.getThreadNum(),
                     0,
                     TimeUnit.MILLISECONDS,
                     new LinkedBlockingDeque<>(),//set the size of thread queue to infinity
@@ -184,7 +184,7 @@ public final class Scheduler extends Thread{
                 new Thread(producer).start();
             }
 
-            for (int i = 0 ; i < Constant.webSite.getThreadNum() ; i++) {
+            for (int i = 0 ; i < Constant.extraConf.getThreadNum() ; i++) {
                 threadPool.execute(() -> {
                     while (true) {
 
@@ -213,7 +213,7 @@ public final class Scheduler extends Thread{
             while (true) {
                 try {
                     //most of the situation, the thread pool would close after the following block, and jump out the while loop
-                    if (threadPool.awaitTermination(Constant.webSite.getThreadNum(), TimeUnit.SECONDS)) {
+                    if (threadPool.awaitTermination(Constant.extraConf.getThreadNum(), TimeUnit.SECONDS)) {
                         break;
                     }
 

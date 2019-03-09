@@ -2,6 +2,9 @@ package miscella;
 
 import org.junit.jupiter.api.Test;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class SyntaxTest {
     @Test

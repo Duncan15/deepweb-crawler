@@ -46,7 +46,7 @@ public class QueryLinkService extends LinkService {
      */
     private String buildQueryLink(String keyword, int pageNum) {
         try {
-            keyword = URLEncoder.encode(keyword, Constant.webSite.getCharset());
+            keyword = URLEncoder.encode(keyword, Constant.extraConf.getCharset());
         } catch (UnsupportedEncodingException ex) {
 
         }

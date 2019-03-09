@@ -117,7 +117,7 @@ public class ApacheClient implements CusHttpClient {
                 //if can't auto detect the charset from the response, set the charset to the value configured.
                 Charset charset = contentType.getCharset();
                 if(charset == null || StringUtils.isBlank(charset.name())) {
-                    charset = Charset.forName(Constant.webSite.getCharset());
+                    charset = Charset.forName(Constant.extraConf.getCharset());
                 }
                 return Optional.ofNullable(EntityUtils.toString(entity, charset));
             }

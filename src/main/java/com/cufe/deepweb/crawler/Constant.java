@@ -1,6 +1,7 @@
 package com.cufe.deepweb.crawler;
 
 import com.cufe.deepweb.common.orm.model.Current;
+import com.cufe.deepweb.common.orm.model.ExtraConf;
 import com.cufe.deepweb.common.orm.model.WebSite;
 
 import java.util.HashMap;
@@ -15,6 +16,11 @@ public final class Constant {
      * the basic configuration of website
      */
     public static WebSite webSite;
+
+    /**
+     * the extra configuration of website
+     */
+    public static ExtraConf extraConf;
     /**
      * the current information of website
      */

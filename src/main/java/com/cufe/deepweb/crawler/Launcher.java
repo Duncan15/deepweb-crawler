@@ -2,6 +2,7 @@ package com.cufe.deepweb.crawler;
 
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
+import com.cufe.deepweb.common.orm.model.ExtraConf;
 import com.cufe.deepweb.crawler.branch.Scheduler;
 import com.cufe.deepweb.common.http.client.ApacheClient;
 import com.cufe.deepweb.common.http.client.CusHttpClient;
@@ -162,19 +163,22 @@ public final class Launcher {
             String sql = "select * from website where webId=:webID";
             Constant.webSite = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(WebSite.class);
 
-            //there should have one row corresponding to the webId in database
+            sql = "select * from extraConf where webId=:webID";
+            Constant.extraConf = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(ExtraConf.class);
+            if(Constant.extraConf == null) {
+                sql = "insert into extraConf(webId) values(:webID)";
+                conn.createQuery(sql).addParameter("webID", webID)
+                        .executeUpdate();
+                sql = "select * from extraConf where webId=:webID";
+                Constant.extraConf = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(ExtraConf.class);
+            }
+
             sql = "select * from current where webId=:webID";
             Constant.current = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(Current.class);
             if (Constant.current == null) {
-                sql = "insert into current (webId, round, M1status, M2status, M3status, M4status, SampleData_sum)" +
-                        "values(:webID, :round, :M1status, :M2status, :M3status, :M4status, :SampleDataSum)";
+                sql = "insert into current (webId)" +
+                        "values(:webID)";
                 conn.createQuery(sql).addParameter("webID", webID)
-                        .addParameter("round", "0")
-                        .addParameter("M1status", "inactive")
-                        .addParameter("M2status", "inactive")
-                        .addParameter("M3status", "inactive")
-                        .addParameter("M4status", "inactive")
-                        .addParameter("SampleDataSum", 0)
                         .executeUpdate();
                 sql = "select * from current where webId=:webID";
                 Constant.current = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(Current.class);
@@ -193,7 +197,7 @@ public final class Launcher {
             Constant.round = Integer.parseInt(Constant.current.getRound());
         }
 
-        if(Constant.webSite == null || Constant.current == null){
+        if(Constant.webSite == null){
             logger.error("the website infomation corresponding to the webID can't be find，program exit");
             System.exit(1);
         }
@@ -215,8 +219,6 @@ public final class Launcher {
                 System.exit(1);
             }
         }
-
-        System.setProperty("log.filename", Paths.get(workFilePath, "dw.log").toString());
 
 
         //configure the message queue
@@ -251,11 +253,11 @@ public final class Launcher {
 
         //the global cookie manager
         CookieManager cookieManager = new CookieManager();
-        webBrowser = new HtmlUnitBrowser(cookieManager, 60_000);
+        webBrowser = new HtmlUnitBrowser(cookieManager, Constant.extraConf.getTimeout());
 
         //if the login URL is not blank, first to confirm the login information is valid
-        if (!StringUtils.isBlank(Constant.webSite.getLoginUrl())) {
-            if (!webBrowser.login(Constant.webSite.getLoginUrl(),Constant.webSite.getUserName(),Constant.webSite.getPassword(),Constant.webSite.getUserParam(),Constant.webSite.getPwdParam(),Constant.webSite.getSubmitXpath())) {
+        if (!StringUtils.isBlank(Constant.extraConf.getLoginUrl())) {
+            if (!webBrowser.login(Constant.extraConf.getLoginUrl(),Constant.extraConf.getUserName(),Constant.extraConf.getPassword(),Constant.extraConf.getUserNameXpath(),Constant.extraConf.getPasswordXpath(),Constant.extraConf.getSubmitXpath())) {
                 logger.error("detect the login information, but can't login, please check the configuration");
                 System.exit(1);
             }
@@ -264,6 +266,7 @@ public final class Launcher {
         //configure the HTTP client
         httpClient = new ApacheClient.Builder()
                 .setCookieManager(cookieManager)
+                .setTimeout(Constant.extraConf.getTimeout())
                 .build();
 
         //initialize the strategy algorithm, this algorithm would only be used in scheduler thread
