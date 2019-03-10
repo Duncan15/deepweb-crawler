@@ -2,21 +2,18 @@ package com.cufe.deepweb.crawler;
 
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
-import com.cufe.deepweb.common.orm.model.ExtraConf;
+import com.cufe.deepweb.common.orm.model.*;
 import com.cufe.deepweb.crawler.branch.Scheduler;
 import com.cufe.deepweb.common.http.client.ApacheClient;
 import com.cufe.deepweb.common.http.client.CusHttpClient;
 import com.cufe.deepweb.common.http.simulate.HtmlUnitBrowser;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
 import com.cufe.deepweb.common.index.IndexClient;
-import com.cufe.deepweb.common.orm.model.Current;
-import com.cufe.deepweb.common.orm.model.Pattern;
-import com.cufe.deepweb.common.orm.model.WebSite;
 import com.cufe.deepweb.crawler.service.InfoLinkService;
 import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.common.dedu.RAMMD5Dedutor;
 import com.cufe.deepweb.common.orm.Orm;
-import com.cufe.deepweb.crawler.service.QueryLinkService;
+import com.cufe.deepweb.crawler.service.UrlBaseQueryLinkService;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -34,7 +31,6 @@ import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -84,13 +80,13 @@ public final class Launcher {
         Runtime.getRuntime().addShutdownHook(new Exitor());
 
         //initialize the service to deal with queryLinks
-        QueryLinkService queryLinkService = new QueryLinkService(webBrowser, dedu);
+        UrlBaseQueryLinkService urlBaseQueryLinkService = new UrlBaseQueryLinkService(webBrowser, dedu);
 
         //initialize the service to deal with infoLinks
         InfoLinkService infoLinkService = new InfoLinkService(httpClient, indexClient);
 
         //initialize the scheduler thread
-        Scheduler scheduler = new Scheduler(alg, queryLinkService, infoLinkService, msgQueue);
+        Scheduler scheduler = new Scheduler(alg, urlBaseQueryLinkService, infoLinkService, msgQueue);
 
         //when scheduler thread start to run, everything startup
         scheduler.start();
@@ -163,6 +159,18 @@ public final class Launcher {
             String sql = "select * from website where webId=:webID";
             Constant.webSite = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(WebSite.class);
 
+            if (Constant.webSite.getBase() == Constant.URL_BASED) {
+                sql = "select * from urlBaseConf where webId = :webID";
+                Constant.urlBaseConf = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(UrlBaseConf.class);
+            } else if (Constant.webSite.getBase() == Constant.API_BASED) {
+                sql = "select * from apiBaseConf where webId = :webID";
+                Constant.apiBaseConf = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(ApiBaseConf.class);
+            } else {
+                logger.error("the base value in website table is undefined, exit");
+                System.exit(1);
+            }
+
+            //if extraConf hasn't exist, create it
             sql = "select * from extraConf where webId=:webID";
             Constant.extraConf = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(ExtraConf.class);
             if(Constant.extraConf == null) {
@@ -173,6 +181,7 @@ public final class Launcher {
                 Constant.extraConf = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(ExtraConf.class);
             }
 
+            //if current hasn't exist, create it
             sql = "select * from current where webId=:webID";
             Constant.current = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(Current.class);
             if (Constant.current == null) {
@@ -197,12 +206,18 @@ public final class Launcher {
             Constant.round = Integer.parseInt(Constant.current.getRound());
         }
 
-        if(Constant.webSite == null){
-            logger.error("the website infomation corresponding to the webID can't be find，program exit");
+        //check the db initial result
+        if (Constant.webSite == null) {
+            logger.error("the website information corresponding to the webID can't be find，program exit");
+            System.exit(1);
+        }
+        if (Constant.apiBaseConf == null && Constant.urlBaseConf == null) {
+            logger.error("both urlBaseConf and apiBaseConf are not exist, exit");
             System.exit(1);
         }
 
-        //detect the configuration
+
+        //detect the validation of workFile
         String workFilePath = Constant.webSite.getWorkFile();
         if (StringUtils.isBlank(workFilePath)) {
             logger.error("the work directory can't be blank");

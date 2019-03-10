@@ -5,9 +5,7 @@ import com.cufe.deepweb.common.http.simulate.LinkCollector;
 import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
 import org.ansj.splitWord.analysis.NlpAnalysis;
-import org.ansj.splitWord.analysis.ToAnalysis;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.htmlcleaner.HtmlCleaner;
 import org.htmlcleaner.TagNode;
 import org.slf4j.Logger;
@@ -15,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
@@ -27,8 +24,8 @@ import java.util.stream.Collectors;
 /**
  * service used to deal with things on query link
  */
-public class QueryLinkService extends LinkService {
-    private static final Logger logger = LoggerFactory.getLogger(QueryLinkService.class);
+public class UrlBaseQueryLinkService extends LinkService {
+    private static final Logger logger = LoggerFactory.getLogger(UrlBaseQueryLinkService.class);
     private WebBrowser browser;
     private Deduplicator dedu;
     /**
@@ -48,23 +45,23 @@ public class QueryLinkService extends LinkService {
         try {
             keyword = URLEncoder.encode(keyword, Constant.extraConf.getCharset());
         } catch (UnsupportedEncodingException ex) {
-
+            //ignored
         }
-        String queryLink = Constant.webSite.getPrefix();
+        String queryLink = Constant.urlBaseConf.getPrefix();
         List<String> paramPairList = new ArrayList<>();
-        paramPairList.add(Constant.webSite.getParamQuery()+"="+keyword);
-        if (StringUtils.isNotBlank(Constant.webSite.getParamList()) && StringUtils.isNotBlank(Constant.webSite.getParamValueList())) {
-            String[] params = Constant.webSite.getParamList().split(",");
-            String[] paramVs = Constant.webSite.getParamValueList().split(",");
+        paramPairList.add(Constant.urlBaseConf.getParamQuery()+"="+keyword);
+        if (StringUtils.isNotBlank(Constant.urlBaseConf.getParamList()) && StringUtils.isNotBlank(Constant.urlBaseConf.getParamValueList())) {
+            String[] params = Constant.urlBaseConf.getParamList().split(",");
+            String[] paramVs = Constant.urlBaseConf.getParamValueList().split(",");
             for (int i = 0 ; i < params.length ; i++) {
                 paramPairList.add(params[i] + "=" + paramVs[i]);//must add detect here
             }
         }
-        String[] pgParams = Constant.webSite.getStartPageNum().split(",");
+        String[] pgParams = Constant.urlBaseConf.getStartPageNum().split(",");
         int startNum = Integer.parseInt(pgParams[0]);//the start number of pageNum，maybe 1 or 0
         int numInterval = Integer.parseInt(pgParams[1]);//the interval number of different pageNum corresponding to the neighbour query link
         int pgV = (pageNum - 1) * numInterval + startNum;//the final value occur in the query link
-        paramPairList.add(Constant.webSite.getParamPage() + "=" + pgV);
+        paramPairList.add(Constant.urlBaseConf.getParamPage() + "=" + pgV);
         if (!queryLink.endsWith("?")) {
             queryLink += "?";
         }
@@ -155,7 +152,7 @@ public class QueryLinkService extends LinkService {
      *
      * @param browser
      */
-    public QueryLinkService(WebBrowser browser, Deduplicator dedu) {
+    public UrlBaseQueryLinkService(WebBrowser browser, Deduplicator dedu) {
         this.browser = browser;
         this.dedu = dedu;
         this.collector = new InfoLinkCollector();
@@ -181,8 +178,8 @@ public class QueryLinkService extends LinkService {
         if (StringUtils.isBlank(link)) {
             return false;
         }
-        if (link.startsWith(Constant.webSite.getPrefix())) {
-            String[] values = Constant.webSite.getParamValueList().split(",");
+        if (link.startsWith(Constant.urlBaseConf.getPrefix())) {
+            String[] values = Constant.urlBaseConf.getParamValueList().split(",");
             if(values.length == 0) {
                 return true;
             }
@@ -215,7 +212,7 @@ public class QueryLinkService extends LinkService {
                 return dedu.add(link);
             }
         }).collect(Collectors.toList());
-        logger.info("queryLink:{}, infoLinks after dedu:{}", queryLink, Arrays.toString(links.toArray()));
+        logger.trace("queryLink:{}, infoLinks after dedu:{}", queryLink, Arrays.toString(links.toArray()));
         return links;
     }
 

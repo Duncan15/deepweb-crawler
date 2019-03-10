@@ -17,33 +17,12 @@ public class WebSite {
     private String indexUrl;
 
     /**
-     * the prefix of search URL
-     * （the part before ?）
+     * the work directory of website,
+     * if the directory no exists, the program can't success to startup
+     * the program promise that when this value is got from database, it's end with /
      */
-    private String prefix;
-    /**
-     * the keyword parameter name
-     */
-    private String paramQuery;
-    /**
-     * the pageNum parameter name
-     * if there exists pageNum and pageSize, then append the pageSize parameter into paramList,
-     * because the pageSize parameter's value has no need to change in crawling
-     */
-    private String paramPage;
-    /**
-     * include comma(,), following is the format:
-     * startPageNum,pageInterval
-     */
-    private String startPageNum;
-    /**
-     * the other parameters' name, divided by comma(,)
-     */
-    private String paramList;
-    /**
-     * the other parameters' value corresponding to the paramList, divided by comma(,)
-     */
-    private String paramValueList;
+    private String workFile;
+
 
     /**
      * this column temperately no use
@@ -52,14 +31,10 @@ public class WebSite {
 
 
     /**
-     * the work directory of website,
-     * if the directory no exists, the program can't success to startup
-     * the program promise that when this value is got from database, it's end with /
+     * 0:url based
+     * 1:api based
      */
-    private String workFile;
-
-
-
+    private Short base;
     private Short driver;
     private Short usable;
 
@@ -91,54 +66,6 @@ public class WebSite {
 
     public void setIndexUrl(String indexUrl) {
         this.indexUrl = indexUrl;
-    }
-
-    public String getPrefix() {
-        return prefix;
-    }
-
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
-    }
-
-    public String getParamQuery() {
-        return paramQuery;
-    }
-
-    public void setParamQuery(String paramQuery) {
-        this.paramQuery = paramQuery;
-    }
-
-    public String getParamPage() {
-        return paramPage;
-    }
-
-    public void setParamPage(String paramPage) {
-        this.paramPage = paramPage;
-    }
-
-    public String getStartPageNum() {
-        return startPageNum;
-    }
-
-    public void setStartPageNum(String startPageNum) {
-        this.startPageNum = startPageNum;
-    }
-
-    public String getParamList() {
-        return paramList;
-    }
-
-    public void setParamList(String paramList) {
-        this.paramList = paramList;
-    }
-
-    public String getParamValueList() {
-        return paramValueList;
-    }
-
-    public void setParamValueList(String paramValueList) {
-        this.paramValueList = paramValueList;
     }
 
     public String getRunningMode() {
@@ -187,6 +114,14 @@ public class WebSite {
 
     public void setCreator(String creator) {
         this.creator = creator;
+    }
+
+    public Short getBase() {
+        return base;
+    }
+
+    public void setBase(Short base) {
+        this.base = base;
     }
 
 }

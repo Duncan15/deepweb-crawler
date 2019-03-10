@@ -2,9 +2,7 @@ package miscella;
 
 import org.junit.jupiter.api.Test;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 public class SyntaxTest {
     @Test
@@ -13,8 +11,6 @@ public class SyntaxTest {
     }
     @Test
     void testEncode() throws Exception {
-
-
         Integer a = new Integer(2);
         Integer b = new Integer(2);
         System.out.println(a == b);

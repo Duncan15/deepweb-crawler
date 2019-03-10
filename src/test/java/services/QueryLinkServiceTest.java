@@ -4,9 +4,10 @@ import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.common.dedu.RAMMD5Dedutor;
 import com.cufe.deepweb.common.http.simulate.HtmlUnitBrowser;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
+import com.cufe.deepweb.common.orm.model.UrlBaseConf;
 import com.cufe.deepweb.common.orm.model.WebSite;
 import com.cufe.deepweb.crawler.Constant;
-import com.cufe.deepweb.crawler.service.QueryLinkService;
+import com.cufe.deepweb.crawler.service.UrlBaseQueryLinkService;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -15,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 public class QueryLinkServiceTest {
-    static QueryLinkService service;
+    static UrlBaseQueryLinkService service;
     @BeforeAll
     static void init() {
         Deduplicator dedu = new RAMMD5Dedutor();
@@ -23,9 +24,9 @@ public class QueryLinkServiceTest {
         CookieManager cookieManager = new CookieManager();
 
         WebBrowser browser = new HtmlUnitBrowser(cookieManager, 90_000);
-        service = new QueryLinkService(browser, dedu);
-        Constant.webSite = new WebSite();
-        Constant.webSite.setPrefix("http://121.194.104.120:8080/SogouT/Search?");
+        service = new UrlBaseQueryLinkService(browser, dedu);
+        Constant.urlBaseConf = new UrlBaseConf();
+        Constant.urlBaseConf.setPrefix("http://121.194.104.120:8080/SogouT/Search?");
     }
     @Test
     void testCollectLinks() {

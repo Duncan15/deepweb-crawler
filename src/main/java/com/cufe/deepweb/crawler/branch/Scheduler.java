@@ -6,7 +6,7 @@ import com.cufe.deepweb.common.orm.model.Current;
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.common.orm.Orm;
 import com.cufe.deepweb.crawler.service.InfoLinkService;
-import com.cufe.deepweb.crawler.service.QueryLinkService;
+import com.cufe.deepweb.crawler.service.UrlBaseQueryLinkService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.ansj.splitWord.analysis.NlpAnalysis;
 import org.slf4j.Logger;
@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class Scheduler extends Thread{
     private static Logger logger = LoggerFactory.getLogger(Scheduler.class);
     private AlgorithmBase algo;
-    private QueryLinkService queryLinkService;
+    private UrlBaseQueryLinkService queryLinkService;
     private InfoLinkService infoLinkService;
     private BlockingDeque msgQueue;
     private Sql2o sql2o;
@@ -34,7 +34,7 @@ public final class Scheduler extends Thread{
      * the status keeper, which is specified to maintain the status
      */
     private ReactiveStatusKeeper keeper;
-    public Scheduler(AlgorithmBase algo, QueryLinkService queryLinkService, InfoLinkService infoLinkService, BlockingDeque msgQueue){
+    public Scheduler(AlgorithmBase algo, UrlBaseQueryLinkService queryLinkService, InfoLinkService infoLinkService, BlockingDeque msgQueue){
         super("scheduler_thread");
         this.algo = algo;
         this.queryLinkService = queryLinkService;
@@ -77,8 +77,10 @@ public final class Scheduler extends Thread{
         logger.info("start initial process");
         WebBrowser browser = this.queryLinkService.getWebBrowser();
 
+        String prefix = Constant.urlBaseConf == null ? Constant.apiBaseConf.getPrefix() : Constant.urlBaseConf.getPrefix();
+
         //firstly select the search link without parameters
-        Optional<String> contentOp = browser.getPageContent(Constant.webSite.getPrefix());
+        Optional<String> contentOp = browser.getPageContent(prefix);
         if(!contentOp.isPresent() || contentOp.get().trim().equals("")) {
             //if can't get content from search link without parameters, use the index.html of the target site inside
             contentOp = browser.getPageContent(Constant.webSite.getIndexUrl());
@@ -138,7 +140,7 @@ public final class Scheduler extends Thread{
         keeper.fixStatus(2,3);
         logger.info("start the M3status");
         //status3: get all the queryLinks
-        QueryLinkService.QueryLinks queryLinks = queryLinkService.getQueryLinks(curQuery);
+        UrlBaseQueryLinkService.QueryLinks queryLinks = queryLinkService.getQueryLinks(curQuery);
 
         //status4
         //tag: infoLink download

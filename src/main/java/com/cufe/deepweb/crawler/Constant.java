@@ -1,8 +1,6 @@
 package com.cufe.deepweb.crawler;
 
-import com.cufe.deepweb.common.orm.model.Current;
-import com.cufe.deepweb.common.orm.model.ExtraConf;
-import com.cufe.deepweb.common.orm.model.WebSite;
+import com.cufe.deepweb.common.orm.model.*;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +14,10 @@ public final class Constant {
      * the basic configuration of website
      */
     public static WebSite webSite;
+
+    public static UrlBaseConf urlBaseConf;
+
+    public static ApiBaseConf apiBaseConf;
 
     /**
      * the extra configuration of website
@@ -87,4 +89,7 @@ public final class Constant {
      * the size of message queue for downloading data
      */
     public final static int QUEUE_SIZE = 10_000;
+
+    public final static short URL_BASED = 0;
+    public final static short API_BASED = 1;
 }
