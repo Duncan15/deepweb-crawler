@@ -4,7 +4,42 @@ public class ApiBaseConf {
 
     private long id;
     private long webId;
+    private String prefix;
 
+    private String inputXpath;
+    /**
+     * the address of search button，or an empty string if use keyboard enter
+     */
+    private String submitXpath;
+
+    /**
+     * the xpath used to locate the address of infoLink, if an empty string, execute the default operation of link collector
+     */
+    private String infoLinkXpath;
+
+    public String getInputXpath() {
+        return inputXpath;
+    }
+
+    public void setInputXpath(String inputXpath) {
+        this.inputXpath = inputXpath;
+    }
+
+    public String getInfoLinkXpath() {
+        return infoLinkXpath;
+    }
+
+    public void setInfoLinkXpath(String infoLinkXpath) {
+        this.infoLinkXpath = infoLinkXpath;
+    }
+
+    public String getSubmitXpath() {
+        return submitXpath;
+    }
+
+    public void setSubmitXpath(String submitXpath) {
+        this.submitXpath = submitXpath;
+    }
     public String getPrefix() {
         return prefix;
     }
@@ -13,7 +48,6 @@ public class ApiBaseConf {
         this.prefix = prefix;
     }
 
-    private String prefix;
     public long getId() {
         return id;
     }

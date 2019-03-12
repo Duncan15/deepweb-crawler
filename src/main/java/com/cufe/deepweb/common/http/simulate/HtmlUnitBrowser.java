@@ -1,10 +1,17 @@
 package com.cufe.deepweb.common.http.simulate;
 
+import com.cufe.deepweb.crawler.service.querys.query.ApiBasedQuery;
+import com.cufe.deepweb.crawler.service.querys.query.Query;
+import com.cufe.deepweb.crawler.service.querys.query.UrlBasedQuery;
+import com.cufe.deepweb.common.retry.RetryOperation;
+import com.cufe.deepweb.common.retry.Try;
+import com.cufe.deepweb.crawler.Constant;
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.*;
+import com.gargoylesoftware.htmlunit.javascript.host.event.KeyboardEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.LogFactory;
 import org.slf4j.Logger;
@@ -112,27 +119,29 @@ public final class HtmlUnitBrowser implements WebBrowser {
 
     @Override
     public Optional<String> getPageContent(String URL) {
-        WebClient client = null;
+        WebClient client = threadClient.get();
+        HtmlElement body = new Try<HtmlElement>(3).run(new RetryOperation<HtmlElement>() {
+            @Override
+            public HtmlElement execute() {
+                HtmlElement ans = null;
+                try {
+                    ans = ((HtmlPage)client.getPage(URL)).getBody();
+                } catch (Exception ex) {
+                    logger.error("Exception happen when get page content from" + URL, ex);
+                }
+                return ans;
+            }
+        });
+        return Optional.ofNullable(body.asText());
 
-        try {
-            client = threadClient.get();
-            HtmlPage page = client.getPage(URL);
-            return Optional.ofNullable(page.getBody().asText());
-        } catch (Exception ex) {
-            logger.error("Exception happen when get page content from" + URL, ex);
-            return Optional.empty();
-        }
     }
 
-    public List<String> getAllLinks(String URL, LinkCollector collector) {
-        WebClient client = null;
-
-        try {
-            client = threadClient.get();
-            HtmlPage page = client.getPage(URL);
-            return collector.collect(page.asXml(), page.getUrl());
-        } catch (Exception ex) {
-            logger.error("Exception happen when get page content from {}", URL);
+    public List<String> getAllLinks(Query query, LinkCollector collector) {
+        if (query instanceof UrlBasedQuery) {
+            return getLinksFromUrlBasedQuery((UrlBasedQuery) query, collector);
+        } else if (query instanceof ApiBasedQuery) {
+            return getLinksFromApiBasedQuery((ApiBasedQuery) query, collector);
+        } else {
             return Collections.emptyList();
         }
     }
@@ -179,6 +188,82 @@ public final class HtmlUnitBrowser implements WebBrowser {
 
     }
 
+    private List<String> getLinksFromUrlBasedQuery(UrlBasedQuery query, LinkCollector collector) {
+        String URL = query.getUrl();
+        WebClient client = threadClient.get();
+        HtmlPage page = retryGetPage(client, URL);
+        return collector.collect(page.asXml(), page.getUrl(), null);
+    }
+    private List<String> getLinksFromApiBasedQuery(ApiBasedQuery query, LinkCollector collector) {
+        WebClient client = threadClient.get();
+        HtmlPage page = retryGetPage(client, query.getUrl());
+
+        //if can't find the input, directly exist
+        if (StringUtils.isBlank(Constant.apiBaseConf.getInputXpath())) {
+            return Collections.emptyList();
+        }
+
+        HtmlTextInput input = null;//the keyword input
+        HtmlElement button = null;// the submit button
+        List inputList = page.getByXPath(Constant.apiBaseConf.getInputXpath());
+        if (!inputList.isEmpty()) {
+            input = (HtmlTextInput) inputList.get(0);
+            input.setText(query.getKeyword());
+        } else {
+            return Collections.emptyList();
+        }
+
+        if (StringUtils.isBlank(Constant.apiBaseConf.getSubmitXpath())) {//if submitXpath is a empty string, use the keyboard enter
+            page = (HtmlPage) input.type(KeyboardEvent.DOM_VK_RETURN);
+        } else {
+            List buttonList = page.getByXPath(Constant.apiBaseConf.getSubmitXpath());
+            if (!buttonList.isEmpty()) {
+                button = (HtmlElement) buttonList.get(0);
+                try {
+                    page = button.click();
+                } catch (IOException ex) {
+                    //ignored
+                }
+
+            } else {
+                return Collections.emptyList();
+            }
+        }
+        //try 5 times to wait .3 second each for filling the page.
+        List<String> links = null;
+        for (int i = 0; i < 5; i++) {
+            if ((links = collector.collect(page.asXml(), page.getUrl(), Constant.apiBaseConf.getInfoLinkXpath())).isEmpty()) {
+                synchronized (page) {
+                    try {
+                        page.wait(3_000);
+                    } catch (InterruptedException ex) {
+                        //ignored
+                    }
+                }
+            }
+            break;
+        }
+        return links;
+    }
+
+
+    private HtmlPage retryGetPage(WebClient client, String url) {
+        return new Try<HtmlPage>(3).run(new RetryOperation<HtmlPage>() {
+            @Override
+            public HtmlPage execute() {
+                HtmlPage ans = null;
+                try {
+                    ans = client.getPage(url);
+                    if(ans.getBody() == null) {
+                        ans = null;
+                    }
+                } catch (Exception ex) {
+                    logger.error("Exception happen when get page content from" + url, ex);
+                }
+                return ans;
+            }
+        });
+    }
     public static void main(String[] args) {
 
     }

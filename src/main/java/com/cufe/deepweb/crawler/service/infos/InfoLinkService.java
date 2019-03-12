@@ -1,10 +1,10 @@
-package com.cufe.deepweb.crawler.service;
+package com.cufe.deepweb.crawler.service.infos;
 
 import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.common.http.client.CusHttpClient;
 import com.cufe.deepweb.common.index.IndexClient;
-import com.cufe.deepweb.common.dedu.Deduplicator;
+import com.cufe.deepweb.crawler.service.LinkService;
 import org.apache.commons.lang3.StringUtils;
 import org.htmlcleaner.CleanerProperties;
 import org.htmlcleaner.HtmlCleaner;

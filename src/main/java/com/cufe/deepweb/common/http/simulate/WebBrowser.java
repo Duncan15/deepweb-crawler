@@ -1,6 +1,7 @@
 package com.cufe.deepweb.common.http.simulate;
 
-import java.io.Closeable;
+import com.cufe.deepweb.crawler.service.querys.query.Query;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -29,11 +30,11 @@ public interface WebBrowser {
 
     /**
      * get the links from the specified page
-     * @param URL
+     * @param query
      * @param collector the link collector which collect links from the page corresponding to the specified URL
      * @return
      */
-    List<String> getAllLinks(String URL, LinkCollector collector);
+    List<String> getAllLinks(Query query, LinkCollector collector);
 
     void clearResource();
 }

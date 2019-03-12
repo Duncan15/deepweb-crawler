@@ -5,10 +5,11 @@ import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.orm.model.Current;
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.common.orm.Orm;
-import com.cufe.deepweb.crawler.service.InfoLinkService;
-import com.cufe.deepweb.crawler.service.UrlBaseQueryLinkService;
+import com.cufe.deepweb.crawler.service.infos.InfoLinkService;
+import com.cufe.deepweb.crawler.service.querys.QueryLinkService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.ansj.splitWord.analysis.NlpAnalysis;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sql2o.Connection;
@@ -16,25 +17,24 @@ import org.sql2o.Sql2o;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * main scheduler thread, be responsible for produce queryLinks and manage crawler status
  */
-public final class Scheduler extends Thread{
+public abstract class Scheduler extends Thread{
     private static Logger logger = LoggerFactory.getLogger(Scheduler.class);
     private AlgorithmBase algo;
-    private UrlBaseQueryLinkService queryLinkService;
     private InfoLinkService infoLinkService;
-    private BlockingDeque msgQueue;
     private Sql2o sql2o;
-    private ThreadFactory threadFactory;
+    protected BlockingDeque msgQueue;
+    protected QueryLinkService queryLinkService;
+    protected ThreadFactory threadFactory;
 
     /**
      * the status keeper, which is specified to maintain the status
      */
     private ReactiveStatusKeeper keeper;
-    public Scheduler(AlgorithmBase algo, UrlBaseQueryLinkService queryLinkService, InfoLinkService infoLinkService, BlockingDeque msgQueue){
+    public Scheduler(AlgorithmBase algo, QueryLinkService queryLinkService, InfoLinkService infoLinkService, BlockingDeque msgQueue) {
         super("scheduler_thread");
         this.algo = algo;
         this.queryLinkService = queryLinkService;
@@ -84,8 +84,15 @@ public final class Scheduler extends Thread{
         if(!contentOp.isPresent() || contentOp.get().trim().equals("")) {
             //if can't get content from search link without parameters, use the index.html of the target site inside
             contentOp = browser.getPageContent(Constant.webSite.getIndexUrl());
-            if(!contentOp.isPresent() || contentOp.get().trim().equals("")) return 0;
+            if((!contentOp.isPresent() || contentOp.get().trim().equals("")) && !StringUtils.isBlank(Constant.extraConf.getLoginUrl())) {
+                contentOp = browser.getPageContent(Constant.extraConf.getLoginUrl());
+            }
         }
+
+        if (!contentOp.isPresent() || contentOp.get().trim().equals("")) {
+            return 0;
+        }
+
         logger.trace("content is " +contentOp.get());
         String[] terms = NlpAnalysis.parse(contentOp.get()).toString().split(",");
         Set<String> deduSet = new HashSet<>();
@@ -140,101 +147,14 @@ public final class Scheduler extends Thread{
         keeper.fixStatus(2,3);
         logger.info("start the M3status");
         //status3: get all the queryLinks
-        UrlBaseQueryLinkService.QueryLinks queryLinks = queryLinkService.getQueryLinks(curQuery);
+        status3(curQuery);
 
         //status4
         //tag: infoLink download
         keeper.fixStatus(3,4);
         logger.info("start the M4status");
 
-        //only when query link number is bigger than zero, it's necessary to use the thread pool
-        if (queryLinks.getPageNum() > 0) {
-            ThreadPoolExecutor threadPool = new ThreadPoolExecutor(
-                    Constant.extraConf.getThreadNum(),
-                    Constant.extraConf.getThreadNum(),
-                    0,
-                    TimeUnit.MILLISECONDS,
-                    new LinkedBlockingDeque<>(),//set the size of thread queue to infinity
-                    threadFactory
-            );
-
-            AtomicInteger produceCounter = new AtomicInteger(0);
-            Runnable producer =() -> {
-                String link = null;
-                int tick = 100;
-                while ((link = queryLinks.next()) != null) {
-
-                    //periodically close webclient to explicitly support gc
-                    if (tick <= 0) {
-                        queryLinkService.clearThreadResource();
-                        tick = 100;
-                    }
-                    try {
-                        if (queryLinkService.isQueryLink(link)) {
-                            logger.trace(queryLinks.getCounter()+ "");
-                            consumeQueryLink(link);
-                            tick--;
-                        }
-                    } catch (Exception ex) {
-                        //ignored
-                    }
-                }
-                produceCounter.incrementAndGet();
-                queryLinkService.clearThreadResource();
-            };
-            for (int i = 0 ; i < 5 ; i++) {
-                new Thread(producer).start();
-            }
-
-            for (int i = 0 ; i < Constant.extraConf.getThreadNum() ; i++) {
-                threadPool.execute(() -> {
-                    while (true) {
-
-                        //if here is not null, this is a info link
-                        String link = (String)msgQueue.poll();
-                        if (link != null) {
-                            this.consumeInfoLink(link);
-                            continue;
-                        }
-                        if (produceCounter.get() < 5) {
-                            continue;
-                        }
-
-                        //if can't get info link from message queue and all the produce thread exit,
-                        //the thread exit
-                        logger.trace("can't get query link, total page num is {}， current counter is {}", queryLinks.getPageNum(), queryLinks.getCounter());
-                        break;
-                    }
-
-                });
-            }
-            threadPool.shutdown();
-
-            //loop here until all the thread in thread pool exit
-            int stopCount = 3;//a flag to indicate whether to force stop the thread pool
-            while (true) {
-                try {
-                    //most of the situation, the thread pool would close after the following block, and jump out the while loop
-                    if (threadPool.awaitTermination(Constant.extraConf.getThreadNum(), TimeUnit.SECONDS)) {
-                        break;
-                    }
-
-                    //but sometimes some thread would block in the net IO and wouldn't wake up
-                    //I also don't know why, but it did exist
-                    //so need to force close the thread pool in the following clauses
-                    if (threadPool.getActiveCount() < threadPool.getCorePoolSize() / 2) {
-                        logger.info("activeCount:{}, poolSize:{}", threadPool.getActiveCount(), threadPool.getCorePoolSize());
-                        stopCount--;
-                        if(stopCount <= 0) {
-                            threadPool.shutdownNow();
-                            break;
-                        }
-                    }
-                } catch (InterruptedException ex) {
-                    logger.error("interrupted when wait for thread pool");
-                }
-            }
-        }
+        status4();
         sLinkNum = keeper.dynamicUpdate();
         keeper.fixStatus(4,0);
         return sLinkNum;
@@ -267,33 +187,10 @@ public final class Scheduler extends Thread{
     }
 
 
-    /**
-     * consume query link
-     * get info links from the page corresponding to the query link, and restore them into message queue
-     * @param queryLink
-     */
-    private void consumeQueryLink(String queryLink) {
-        List<String> infoLinks = queryLinkService.getInfoLinks(queryLink);
-        if (infoLinks.size() == 0) return;
-        infoLinks.forEach(infoLink -> {
-            //if can't push info links into message queue
-            //maybe because the message queue is full(this situation is hard to happen, just possible)
-            //directly consume the info links in current thread
-            if (!msgQueue.offer(infoLink)) {
-                consumeInfoLink(infoLink);
-            }
-        });
-    }
 
-    /**
-     * consume info link
-     * download the page corresponding to the info link into directory, and build the page content into index
-     * @param infoLink
-     */
-    private void consumeInfoLink(String infoLink) {
-        logger.trace("consume info link {}", infoLink);
-        infoLinkService.downloadAndIndex(infoLink, infoLinkService.getFileAddr(infoLink));
-    }
+    protected abstract void status3(String query);
+    protected abstract void status4();
+
 
     /**
      * ReactiveStatusKeeper is used to record some status which should be record instantaneously

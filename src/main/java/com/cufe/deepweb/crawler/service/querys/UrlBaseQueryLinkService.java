@@ -1,37 +1,34 @@
-package com.cufe.deepweb.crawler.service;
+package com.cufe.deepweb.crawler.service.querys;
 
 import com.cufe.deepweb.common.dedu.Deduplicator;
+import com.cufe.deepweb.crawler.service.querys.query.Query;
 import com.cufe.deepweb.common.http.simulate.LinkCollector;
 import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
 import org.ansj.splitWord.analysis.NlpAnalysis;
 import org.apache.commons.lang3.StringUtils;
-import org.htmlcleaner.HtmlCleaner;
-import org.htmlcleaner.TagNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
  * service used to deal with things on query link
  */
-public class UrlBaseQueryLinkService extends LinkService {
-    private static final Logger logger = LoggerFactory.getLogger(UrlBaseQueryLinkService.class);
-    private WebBrowser browser;
-    private Deduplicator dedu;
+public class UrlBaseQueryLinkService extends QueryLinkService {
+    private final Logger logger = LoggerFactory.getLogger(UrlBaseQueryLinkService.class);
+
     /**
-     * the link collector to collect info link
+     *
+     * @param browser
      */
-    private LinkCollector collector;
+    public UrlBaseQueryLinkService(WebBrowser browser, Deduplicator dedu) {
+        super(browser, dedu);
+        this.collector = new InfoLinkCollector();
+    }
 
     /**
      * generate query link
@@ -149,15 +146,6 @@ public class UrlBaseQueryLinkService extends LinkService {
 //    }
 
     /**
-     *
-     * @param browser
-     */
-    public UrlBaseQueryLinkService(WebBrowser browser, Deduplicator dedu) {
-        this.browser = browser;
-        this.dedu = dedu;
-        this.collector = new InfoLinkCollector();
-    }
-    /**
      * get all the query links corresponding to the keyword
      * @param keyword
      * @return
@@ -199,42 +187,21 @@ public class UrlBaseQueryLinkService extends LinkService {
      */
     public List<String> getInfoLinks(String queryLink) {
         List<String> links = null;
-        links = browser.getAllLinks(queryLink, collector);
+        links = browser.getAllLinks(Query.asUrlBased(queryLink), collector);
         if (links.size() == 0) {//record the number of failed query links
             this.failedLinkNum++;
             return Collections.emptyList();
         }
-        logger.trace("queryLink:{} infoLinks:{}", queryLink, Arrays.toString(links.toArray()));
-        links = links.stream().filter(link -> {//remove the repeated links and query links
-            if (isQueryLink(link)) {
-                return false;
-            } else {
-                return dedu.add(link);
-            }
-        }).collect(Collectors.toList());
         logger.trace("queryLink:{}, infoLinks after dedu:{}", queryLink, Arrays.toString(links.toArray()));
         return links;
     }
 
-    /**
-     * export the browser used by this service
-     * @return
-     */
-    public WebBrowser getWebBrowser() {
-        return this.browser;
-    }
 
-    @Override
-    public void clearThreadResource() {
-        this.browser.clearResource();
-    }
 
     /**
      * the generator of query link
      */
     public class QueryLinks {
-        private final static int LIMIT = 5;
-        private AtomicInteger curConsumeNum = new AtomicInteger(0);
         /**
          * all the query page's page number start at 1
          */
@@ -273,49 +240,19 @@ public class UrlBaseQueryLinkService extends LinkService {
      * InfoLinkCollector collect the info links from query page
      */
     class InfoLinkCollector extends LinkCollector {
-        /**
-         * thread-safe cleaner
-         */
-        private HtmlCleaner cleaner;
-        /**
-         * the pattern to recognize url
-         */
-        private Pattern pattern;
-        private static final String re = "(https?:/|\\.)?(/([\\w-]+(\\.)?)+)+(\\?(([\\w-]+(\\.)?)+=((/?([\\w-]+|[\\u4e00-\\u9fa5]+)+(\\.)?)+)?(&)?)+)?";
+
         public InfoLinkCollector() {
-            this.cleaner = new HtmlCleaner();
-            this.pattern = Pattern.compile(re);
+            super();
         }
         @Override
-        public List<String> collect(String content, URL url) {
-            List<String> links = new ArrayList<>();
-            TagNode rootNode = null;
-            try {
-                rootNode = cleaner.clean(content);
-            } catch (Exception ex) {
-                logger.error("exception happen when parse html content", ex);
-                return Collections.emptyList();
-            }
-            TagNode[] nodes = rootNode.getElementsByName("a", true);
-            for (TagNode node : nodes) {
-                String href = node.getAttributeByName("href");
-                if (StringUtils.isNotBlank(href)) {
-                    Matcher m = pattern.matcher(href);
-                    if (m.lookingAt()) {//match the prefix of href, because sometimes the href is not format
-                        href = href.substring(0, m.end());
-                        if (href.startsWith(".") || href.startsWith("/")) {
-                            try {
-                                href = new URL(url, href).toString();
-                            } catch (MalformedURLException ex) {
-                                logger.error("url {} format error", href);
-                                //if happen format error, just jump over this href
-                                continue;
-                            }
-                        }
-                        links.add(href);
-                    }
+        public List<String> filter(List<String> links) {
+            links = links.stream().filter(link -> {//remove the repeated links and query links
+                if (isQueryLink(link)) {
+                    return false;
+                } else {
+                    return dedu.add(link);
                 }
-            }
+            }).collect(Collectors.toList());
             return links;
         }
     }
