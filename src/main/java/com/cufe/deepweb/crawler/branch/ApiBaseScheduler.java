@@ -2,6 +2,7 @@ package com.cufe.deepweb.crawler.branch;
 
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.crawler.Constant;
+import com.cufe.deepweb.crawler.service.infos.info.Info;
 import com.cufe.deepweb.crawler.service.querys.ApiBaseQueryLinkService;
 import com.cufe.deepweb.crawler.service.infos.InfoLinkService;
 
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 public class ApiBaseScheduler extends Scheduler {
     private ApiBaseQueryLinkService queryLinkService;
     private InfoLinkService infoLinkService;
-    private List<String> infoLinks;
+    private List<Info> infos;
     public ApiBaseScheduler(AlgorithmBase algo, ApiBaseQueryLinkService apiBaseQueryLinkService, InfoLinkService infoLinkService, BlockingDeque msgQueue) {
         super(algo, apiBaseQueryLinkService, infoLinkService, msgQueue);
         this.queryLinkService = apiBaseQueryLinkService;
@@ -22,12 +23,12 @@ public class ApiBaseScheduler extends Scheduler {
     }
     @Override
     protected void status3(String query) {
-        infoLinks = queryLinkService.getInfoLinks(query);
+        infos = queryLinkService.getInfoLinks(query);
     }
 
     @Override
     protected void status4() {
-        if (infoLinks.isEmpty()) return;
+        if (infos.isEmpty()) return;
 
         //use CallerRunsPolicy to provide a simple feedback control mechanism
         ThreadPoolExecutor pool = new ThreadPoolExecutor(Constant.extraConf.getThreadNum(),
@@ -38,9 +39,9 @@ public class ApiBaseScheduler extends Scheduler {
                 threadFactory,
                 new ThreadPoolExecutor.CallerRunsPolicy()
         );
-        infoLinks.stream().forEach(link -> {
+        infos.stream().forEach(info -> {
             pool.execute(() -> {
-                infoLinkService.downloadAndIndex(link, infoLinkService.getFileAddr(link));
+                infoLinkService.downloadAndIndex(info, infoLinkService.getFileAddr(info.getUrl()));
             });
         });
 

@@ -5,7 +5,7 @@ public class ApiBasedQuery extends Query {
     private String inputXpath;
     private String submitXpath;
     private String keyword;
-    public ApiBasedQuery(String url, String inputXpath, String submitXpath, String keyword) {
+    ApiBasedQuery(String url, String inputXpath, String submitXpath, String keyword) {
         this.url = url;
         this.inputXpath = inputXpath;
         this.submitXpath =submitXpath;

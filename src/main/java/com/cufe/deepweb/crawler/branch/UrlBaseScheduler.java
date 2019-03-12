@@ -3,6 +3,7 @@ package com.cufe.deepweb.crawler.branch;
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.crawler.service.infos.InfoLinkService;
+import com.cufe.deepweb.crawler.service.infos.info.Info;
 import com.cufe.deepweb.crawler.service.querys.UrlBaseQueryLinkService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,9 +78,9 @@ public class UrlBaseScheduler extends Scheduler {
                     while (true) {
 
                         //if here is not null, this is a info link
-                        String link = (String) msgQueue.poll();
-                        if (link != null) {
-                            this.consumeInfoLink(link);
+                        Info info = (Info) msgQueue.poll();
+                        if (info != null) {
+                            this.consumeInfoLink(info);
                             continue;
                         }
                         if (produceCounter.get() < 5) {
@@ -135,8 +136,9 @@ public class UrlBaseScheduler extends Scheduler {
             //if can't push info links into message queue
             //maybe because the message queue is full(this situation is hard to happen, just possible)
             //directly consume the info links in current thread
-            if (!msgQueue.offer(infoLink)) {
-                consumeInfoLink(infoLink);
+            Info info = Info.link(infoLink);
+            if (!msgQueue.offer(info)) {
+                consumeInfoLink(info);
             }
         });
     }
@@ -144,10 +146,10 @@ public class UrlBaseScheduler extends Scheduler {
     /**
      * consume info link
      * download the page corresponding to the info link into directory, and build the page content into index
-     * @param infoLink
+     * @param info
      */
-    private void consumeInfoLink(String infoLink) {
-        logger.trace("consume info link {}", infoLink);
-        infoLinkService.downloadAndIndex(infoLink, infoLinkService.getFileAddr(infoLink));
+    private void consumeInfoLink(Info info) {
+        logger.trace("consume info link {}", info.getUrl());
+        infoLinkService.downloadAndIndex(info, infoLinkService.getFileAddr(info.getUrl()));
     }
 }

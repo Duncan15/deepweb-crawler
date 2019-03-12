@@ -1,5 +1,6 @@
 package com.cufe.deepweb.common.http.simulate;
 
+import com.cufe.deepweb.crawler.service.infos.info.Info;
 import com.cufe.deepweb.crawler.service.querys.query.ApiBasedQuery;
 import com.cufe.deepweb.crawler.service.querys.query.Query;
 import com.cufe.deepweb.crawler.service.querys.query.UrlBasedQuery;
@@ -136,7 +137,7 @@ public final class HtmlUnitBrowser implements WebBrowser {
 
     }
 
-    public List<String> getAllLinks(Query query, LinkCollector collector) {
+    public List<Info> getAllLinks(Query query, LinkCollector collector) {
         if (query instanceof UrlBasedQuery) {
             return getLinksFromUrlBasedQuery((UrlBasedQuery) query, collector);
         } else if (query instanceof ApiBasedQuery) {
@@ -188,13 +189,13 @@ public final class HtmlUnitBrowser implements WebBrowser {
 
     }
 
-    private List<String> getLinksFromUrlBasedQuery(UrlBasedQuery query, LinkCollector collector) {
+    private List<Info> getLinksFromUrlBasedQuery(UrlBasedQuery query, LinkCollector collector) {
         String URL = query.getUrl();
         WebClient client = threadClient.get();
         HtmlPage page = retryGetPage(client, URL);
-        return collector.collect(page.asXml(), page.getUrl(), null);
+        return collector.collect(page.asXml(), page.getUrl(), null, null);
     }
-    private List<String> getLinksFromApiBasedQuery(ApiBasedQuery query, LinkCollector collector) {
+    private List<Info> getLinksFromApiBasedQuery(ApiBasedQuery query, LinkCollector collector) {
         WebClient client = threadClient.get();
         HtmlPage page = retryGetPage(client, query.getUrl());
 
@@ -230,9 +231,9 @@ public final class HtmlUnitBrowser implements WebBrowser {
             }
         }
         //try 5 times to wait .3 second each for filling the page.
-        List<String> links = null;
+        List<Info> links = null;
         for (int i = 0; i < 5; i++) {
-            if ((links = collector.collect(page.asXml(), page.getUrl(), Constant.apiBaseConf.getInfoLinkXpath())).isEmpty()) {
+            if ((links = collector.collect(page.asXml(), page.getUrl(), Constant.apiBaseConf.getInfoLinkXpath(), Constant.apiBaseConf.getPayloadXpath())).isEmpty()) {
                 synchronized (page) {
                     try {
                         page.wait(3_000);

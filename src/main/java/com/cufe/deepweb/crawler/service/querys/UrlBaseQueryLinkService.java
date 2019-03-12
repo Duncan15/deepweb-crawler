@@ -1,6 +1,7 @@
 package com.cufe.deepweb.crawler.service.querys;
 
 import com.cufe.deepweb.common.dedu.Deduplicator;
+import com.cufe.deepweb.crawler.service.infos.info.Info;
 import com.cufe.deepweb.crawler.service.querys.query.Query;
 import com.cufe.deepweb.common.http.simulate.LinkCollector;
 import com.cufe.deepweb.crawler.Constant;
@@ -185,8 +186,8 @@ public class UrlBaseQueryLinkService extends QueryLinkService {
      * @param queryLink
      * @return
      */
-    public List<String> getInfoLinks(String queryLink) {
-        List<String> links = null;
+    public List<Info> getInfoLinks(String queryLink) {
+        List<Info> links = null;
         links = browser.getAllLinks(Query.asUrlBased(queryLink), collector);
         if (links.size() == 0) {//record the number of failed query links
             this.failedLinkNum++;
@@ -245,9 +246,9 @@ public class UrlBaseQueryLinkService extends QueryLinkService {
             super();
         }
         @Override
-        public List<String> filter(List<String> links) {
+        public List<Info> filter(List<Info> links) {
             links = links.stream().filter(link -> {//remove the repeated links and query links
-                if (isQueryLink(link)) {
+                if (isQueryLink(link.getUrl())) {
                     return false;
                 } else {
                     return dedu.add(link);

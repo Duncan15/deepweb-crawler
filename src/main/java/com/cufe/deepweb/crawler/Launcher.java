@@ -9,11 +9,11 @@ import com.cufe.deepweb.common.http.client.CusHttpClient;
 import com.cufe.deepweb.common.http.simulate.HtmlUnitBrowser;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
 import com.cufe.deepweb.common.index.IndexClient;
-import com.cufe.deepweb.crawler.service.InfoLinkService;
+import com.cufe.deepweb.crawler.service.infos.InfoLinkService;
 import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.common.dedu.RAMMD5Dedutor;
 import com.cufe.deepweb.common.orm.Orm;
-import com.cufe.deepweb.crawler.service.UrlBaseQueryLinkService;
+import com.cufe.deepweb.crawler.service.querys.UrlBaseQueryLinkService;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -244,7 +244,7 @@ public final class Launcher {
         if (f.exists()) {
             logger.info("read msg from file {}", f.getAbsolutePath());
             try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(f))) {
-                msgList = (List<String>)inputStream.readObject();
+                msgList = (List)inputStream.readObject();
                 logger.info("the left link num from last stop is {}", msgList.size());
             } catch (Exception ex) {
                 logger.error("Exception happen when read msg object file");
@@ -315,9 +315,9 @@ public final class Launcher {
 
             //write the content from message queue into file
             System.out.println("start to write the content from message queue into file");
-            List<String> msgList = new ArrayList<>();
+            List msgList = new ArrayList<>();
             msgQueue.forEach( link -> {
-                msgList.add((String) link);
+                msgList.add(link);
             });
             System.out.println("the left link num in current round is " + msgList.size());
             //if data directory no exists, invoke mkdirs

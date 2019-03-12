@@ -5,6 +5,7 @@ import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.common.http.client.CusHttpClient;
 import com.cufe.deepweb.common.index.IndexClient;
 import com.cufe.deepweb.crawler.service.LinkService;
+import com.cufe.deepweb.crawler.service.infos.info.Info;
 import org.apache.commons.lang3.StringUtils;
 import org.htmlcleaner.CleanerProperties;
 import org.htmlcleaner.HtmlCleaner;
@@ -45,7 +46,7 @@ public class InfoLinkService extends LinkService {
         count = new AtomicInteger(0);
     }
 
-    public Map<String, String> getFieldContentMap(String content) {
+    private Map<String, String> getFieldContentMap(String content) {
         Map<String, String> fieldContentMap = new HashMap<>();
         TagNode root = null;
         try {
@@ -103,11 +104,11 @@ public class InfoLinkService extends LinkService {
     }
     /**
      * download the target document and build into index
-     * @param URL
+     * @param info
      * @param filePath
      */
-    public void  downloadAndIndex(String URL, String filePath) {
-        Optional<String> contentOp = httpClient.getContent(URL);
+    public void  downloadAndIndex(Info info, String filePath) {
+        Optional<String> contentOp = httpClient.getContent(info.getUrl());
         if (contentOp.isPresent()) {//if the target document get successfully
             //save the document into directory
             try {

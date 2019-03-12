@@ -1,6 +1,7 @@
 package com.cufe.deepweb.crawler.service.querys;
 
 import com.cufe.deepweb.common.dedu.Deduplicator;
+import com.cufe.deepweb.crawler.service.infos.info.Info;
 import com.cufe.deepweb.crawler.service.querys.query.ApiBasedQuery;
 import com.cufe.deepweb.crawler.service.querys.query.Query;
 import com.cufe.deepweb.common.http.simulate.LinkCollector;
@@ -22,9 +23,9 @@ public class ApiBaseQueryLinkService extends QueryLinkService {
     private ApiBasedQuery buildQuery(String keyword) {
         return Query.asApiBased(Constant.apiBaseConf.getPrefix(), Constant.apiBaseConf.getInputXpath(), Constant.apiBaseConf.getSubmitXpath(), keyword);
     }
-    public List<String> getInfoLinks(String keyword) {
+    public List<Info> getInfoLinks(String keyword) {
         ApiBasedQuery query = buildQuery(keyword);
-        List<String> links = browser.getAllLinks(query, collector);
+        List<Info> links = browser.getAllLinks(query, collector);
         if (links.size() == 0) {
             this.failedLinkNum++;
             return Collections.emptyList();
@@ -36,7 +37,7 @@ public class ApiBaseQueryLinkService extends QueryLinkService {
     class InfoLinkCollector extends LinkCollector {
         //TODO: should implement in detail
         @Override
-        public List<String> filter(List<String> links) {
+        public List<Info> filter(List<Info> links) {
             return links;
         }
     }

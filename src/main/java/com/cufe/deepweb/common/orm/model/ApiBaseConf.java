@@ -17,6 +17,8 @@ public class ApiBaseConf {
      */
     private String infoLinkXpath;
 
+    private String payloadXpath;
+
     public String getInputXpath() {
         return inputXpath;
     }
@@ -63,5 +65,13 @@ public class ApiBaseConf {
 
     public void setWebId(long webId) {
         this.webId = webId;
+    }
+
+    public String getPayloadXpath() {
+        return payloadXpath;
+    }
+
+    public void setPayloadXpath(String payloadXpath) {
+        this.payloadXpath = payloadXpath;
     }
 }
