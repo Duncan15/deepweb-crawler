@@ -7,7 +7,8 @@ import com.cufe.deepweb.common.http.simulate.WebBrowser;
 import com.cufe.deepweb.common.orm.model.UrlBaseConf;
 import com.cufe.deepweb.common.orm.model.WebSite;
 import com.cufe.deepweb.crawler.Constant;
-import com.cufe.deepweb.crawler.service.UrlBaseQueryLinkService;
+import com.cufe.deepweb.crawler.service.infos.info.Info;
+import com.cufe.deepweb.crawler.service.querys.UrlBaseQueryLinkService;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,9 +31,9 @@ public class QueryLinkServiceTest {
     }
     @Test
     void testCollectLinks() {
-        List<String> links = service.getInfoLinks("http://121.194.104.120:8080/SogouT/Search?keyword=produce&Submit=Search&curpage=279");
-        for (String e : links) {
-            System.out.println(e);
+        List<Info> links = service.getInfoLinks("http://121.194.104.120:8080/SogouT/Search?keyword=produce&Submit=Search&curpage=279");
+        for (Info e : links) {
+            System.out.println(e.getUrl());
         }
     }
     @AfterAll

@@ -1,10 +1,11 @@
 package com.cufe.deepweb.common.http.client;
 
+import com.cufe.deepweb.common.http.client.resp.RespContent;
 import com.cufe.deepweb.crawler.Constant;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import com.gargoylesoftware.htmlunit.httpclient.HtmlUnitCookieStore;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntity;
+import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -91,26 +92,54 @@ public class ApacheClient implements CusHttpClient {
             .build();
     }
 
+
     /**
-     * download the content corresponding to the URL and change it to a string
+     * check whether the response has attachments
+     * if have, return the attached file name
+     * or return Optional.empty()
+     * @param response
+     * @return
+     */
+    private static Optional<String> chechAttachment(HttpResponse response) {
+        Header header = response.getFirstHeader("Content-Disposition");
+        if (header != null) {
+            HeaderElement[] elements = header.getElements();
+            for (HeaderElement element : elements) {
+                NameValuePair pair = null;
+                if ((pair = element.getParameterByName("filename")) != null) {
+
+                    String fileName = pair.getValue();
+                    return Optional.ofNullable(fileName);
+
+                }
+            }
+        }
+        return Optional.empty();
+    }
+    /**
+     * download the content corresponding to the URL
      * @param URL
      * @return
      */
-    public Optional<String> getContent(String URL) {
+    public RespContent getContent(String URL) {
         URI uri = null;
         try {
             uri = URI.create(URL);
         } catch (IllegalArgumentException ex) {
             logger.error("url error, url content is " + URL, ex);
-            return Optional.empty();
+            return null;
         }
         HttpGet httpGet = new HttpGet(uri);
         httpGet.setConfig(config);
         httpGet.setHeader("user-agent", getUserAgent());
         try (CloseableHttpResponse response = httpClient.execute(httpGet, httpContext.get())) {
             if (response.getStatusLine().getStatusCode() >= 300) {
-                logger.error("HTTP response status code {}, reason phase: {}", response.getStatusLine().getStatusCode(), response.getStatusLine().getReasonPhrase());
+                logger.error("HTTP response: {} {}", response.getStatusLine().getStatusCode(), response.getStatusLine().getReasonPhrase());
             } else {
+                Optional<String> fileNameOp;
+                if ((fileNameOp = chechAttachment(response)).isPresent()) {
+                    return RespContent.asStream(fileNameOp.get(), response.getEntity().getContent());
+                }
                 HttpEntity entity = response.getEntity();
                 ContentType contentType = ContentType.getOrDefault(entity);
 
@@ -119,19 +148,19 @@ public class ApacheClient implements CusHttpClient {
                 if(charset == null || StringUtils.isBlank(charset.name())) {
                     charset = Charset.forName(Constant.extraConf.getCharset());
                 }
-                return Optional.ofNullable(EntityUtils.toString(entity, charset));
+                return RespContent.asString(EntityUtils.toString(entity, charset));
             }
         }catch (Exception ex) {
             //if ex is UnknownHostException, don't record it
             if (ex instanceof IOException) {
-                return Optional.empty();
+                return null;
             }
             if (ex instanceof ConnectException) {
-                return Optional.empty();
+                return null;
             }
             logger.error("Exception in HTTP invoke " + URL, ex);
         }
-        return Optional.empty();
+        return null;
     }
 
     @Override

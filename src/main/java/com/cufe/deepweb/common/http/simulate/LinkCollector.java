@@ -75,11 +75,12 @@ public abstract class LinkCollector {
         //resolve all the relative address to absolute address
         links.stream().forEach(link -> {
             link.fixUrl(url);
+
         });
 
 
         logger.trace("queryLink:{} infoLinks:{}", url.toString(), Arrays.toString(links.toArray()));
-        return filter(links);
+        return privateOp(links);
     }
 
     public List<Info> collectByXpath(TagNode root, String infoLinkXpath, String payloadXpath) {
@@ -130,6 +131,6 @@ public abstract class LinkCollector {
         return links;
     }
 
-    public abstract List<Info> filter(List<Info> links);
+    public abstract List<Info> privateOp(List<Info> links);
 
 }

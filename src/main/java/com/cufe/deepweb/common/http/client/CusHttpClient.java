@@ -1,5 +1,7 @@
 package com.cufe.deepweb.common.http.client;
 
+import com.cufe.deepweb.common.http.client.resp.RespContent;
+
 import java.io.Closeable;
 import java.util.Optional;
 
@@ -8,11 +10,13 @@ import java.util.Optional;
  */
 public interface CusHttpClient extends Closeable {
     /**
-     * 将URL的内容返回
+     * return the content from the url,
+     * return a string or a inputStream
+     * if the return value contains a stream, after consuming it, must close it
      * @param URL
      * @return
      */
-    Optional<String> getContent(String URL);
+    RespContent getContent(String URL);
 
 
 }

@@ -41,7 +41,7 @@ public class ApiBaseScheduler extends Scheduler {
         );
         infos.stream().forEach(info -> {
             pool.execute(() -> {
-                infoLinkService.downloadAndIndex(info, infoLinkService.getFileAddr(info.getUrl()));
+                infoLinkService.downloadAndIndex(info);
             });
         });
 

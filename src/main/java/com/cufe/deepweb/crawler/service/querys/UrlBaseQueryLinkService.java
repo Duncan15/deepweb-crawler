@@ -246,7 +246,7 @@ public class UrlBaseQueryLinkService extends QueryLinkService {
             super();
         }
         @Override
-        public List<Info> filter(List<Info> links) {
+        public List<Info> privateOp(List<Info> links) {
             links = links.stream().filter(link -> {//remove the repeated links and query links
                 if (isQueryLink(link.getUrl())) {
                     return false;

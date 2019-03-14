@@ -3,16 +3,19 @@ package com.cufe.deepweb.crawler;
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
 import com.cufe.deepweb.common.orm.model.*;
+import com.cufe.deepweb.crawler.branch.ApiBaseScheduler;
 import com.cufe.deepweb.crawler.branch.Scheduler;
 import com.cufe.deepweb.common.http.client.ApacheClient;
 import com.cufe.deepweb.common.http.client.CusHttpClient;
 import com.cufe.deepweb.common.http.simulate.HtmlUnitBrowser;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
 import com.cufe.deepweb.common.index.IndexClient;
+import com.cufe.deepweb.crawler.branch.UrlBaseScheduler;
 import com.cufe.deepweb.crawler.service.infos.InfoLinkService;
 import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.common.dedu.RAMMD5Dedutor;
 import com.cufe.deepweb.common.orm.Orm;
+import com.cufe.deepweb.crawler.service.querys.ApiBaseQueryLinkService;
 import com.cufe.deepweb.crawler.service.querys.UrlBaseQueryLinkService;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import org.apache.commons.cli.CommandLine;
@@ -79,14 +82,21 @@ public final class Launcher {
         //register the hook to clear resource when crawler restart or stop
         Runtime.getRuntime().addShutdownHook(new Exitor());
 
-        //initialize the service to deal with queryLinks
-        UrlBaseQueryLinkService urlBaseQueryLinkService = new UrlBaseQueryLinkService(webBrowser, dedu);
-
         //initialize the service to deal with infoLinks
         InfoLinkService infoLinkService = new InfoLinkService(httpClient, indexClient);
 
+        Scheduler scheduler;
+        //initialize the service to deal with queryLinks
         //initialize the scheduler thread
-        Scheduler scheduler = new Scheduler(alg, urlBaseQueryLinkService, infoLinkService, msgQueue);
+        if (Constant.urlBaseConf != null) {
+            UrlBaseQueryLinkService urlBaseQueryLinkService = new UrlBaseQueryLinkService(webBrowser, dedu);
+            scheduler = new UrlBaseScheduler(alg, urlBaseQueryLinkService, infoLinkService, msgQueue);
+        } else {
+            ApiBaseQueryLinkService apiBaseQueryLinkService = new ApiBaseQueryLinkService(webBrowser, dedu);
+            scheduler = new ApiBaseScheduler(alg, apiBaseQueryLinkService, infoLinkService, msgQueue);
+        }
+
+
 
         //when scheduler thread start to run, everything startup
         scheduler.start();

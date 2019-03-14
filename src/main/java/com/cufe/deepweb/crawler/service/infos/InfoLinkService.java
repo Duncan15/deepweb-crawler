@@ -1,5 +1,8 @@
 package com.cufe.deepweb.crawler.service.infos;
 
+import com.cufe.deepweb.common.http.client.resp.RespContent;
+import com.cufe.deepweb.common.http.client.resp.RespStreamContent;
+import com.cufe.deepweb.common.http.client.resp.RespStringContent;
 import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.common.http.client.CusHttpClient;
@@ -81,47 +84,62 @@ public class InfoLinkService extends LinkService {
         }
         return fieldContentMap;
     }
-    public String getFileAddr(String infoLink) {
+    private String getFileAddr(String link, boolean generateFileName) {
         Path p = Paths.get(Constant.webSite.getWorkFile(),Constant.HTML_ADDR,Constant.current.getRound());
         File f = p.toFile();
-
+        String newFilePath = null;
         //if the path of f no exist, create it
         if (!f.exists()) {
             f.mkdirs();
         }
-        String ext = ".html";//the default extension is .html
-        if (infoLink.contains(".")) {
-            ext = infoLink.substring(infoLink.lastIndexOf("."));
+        if (generateFileName) {
+            String ext = ".html";//the default extension is .html
+            if (link.contains(".")) {
+                ext = link.substring(link.lastIndexOf("."));
 
-            //if the document's extension is not in the range of this crawler's define, just change it to html
-            if (!Constant.docTypes.contains(ext)) {
-                ext = ".html";
+                //if the document's extension is not in the range of this crawler's define, just change it to html
+                if (!Constant.docTypes.contains(ext)) {
+                    ext = ".html";
+                }
             }
+            newFilePath = p.resolve(count.getAndIncrement() + ext).toString();
+        } else {
+            newFilePath = p.resolve(link).toString();
         }
-        String newFilePath = p.resolve(count.getAndIncrement() + ext).toString();
+
         totalLinkNum++;
         return newFilePath;
     }
+
     /**
      * download the target document and build into index
      * @param info
-     * @param filePath
      */
-    public void  downloadAndIndex(Info info, String filePath) {
-        Optional<String> contentOp = httpClient.getContent(info.getUrl());
-        if (contentOp.isPresent()) {//if the target document get successfully
-            //save the document into directory
+    public void  downloadAndIndex(Info info) {
+        RespContent content = httpClient.getContent(info.getUrl());
+        Map<String ,String> map = info.getPayload() == null ? new HashMap<>() : info.getPayload();
+        //save the document into directory if the return value contains a string
+        //or save the attachment into a file if the return value contains an inputStream
+        if (content instanceof RespStringContent) {//if the target document get successfully
+            RespStringContent respStringContent = (RespStringContent) content;
             try {
-                Utils.save2File(contentOp.get(), filePath);
+                Utils.save2File(respStringContent.getContent(), getFileAddr(info.getUrl(), true));
+            } catch (IOException ex) {
+                logger.error("IOException in save content to file", ex);
+            }
+            map.putAll(getFieldContentMap((respStringContent.getContent())));
+        } else if (content instanceof RespStringContent) {
+            RespStreamContent respStreamContent = (RespStreamContent) content;
+            try {
+                Utils.save2File(respStreamContent.getStream(), getFileAddr(respStreamContent.getFileName(), false));
             } catch (IOException ex) {
                 logger.error("IOException in save content to file", ex);
             }
 
-            //build the document content into index
-            indexClient.addDocument(getFieldContentMap(contentOp.get()));
         } else {
             failedLinkNum++;
         }
+        indexClient.addDocument(map);
     }
 
     @Override

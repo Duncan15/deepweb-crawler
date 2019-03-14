@@ -30,17 +30,6 @@ public class Info implements Serializable {
         return url;
     }
 
-    public void fixUrl(URL url) {
-        if (this.url.startsWith(".") || this.url.startsWith("/")) {
-            try {
-                this.url = new URL(url, this.url).toString();
-            } catch (MalformedURLException ex) {
-                logger.error("url {} format error", this.url);
-                //if happen format error, just jump over this href
-            }
-        };
-    }
-
     public Map<String, String> getPayload() {
         return Collections.unmodifiableMap(this.payload);
     }
@@ -54,6 +43,17 @@ public class Info implements Serializable {
             this.payload = new HashMap<>();
         }
         this.payload.put(field, content);
+        return this;
+    }
+    public Info fixUrl(URL url) {
+        if (this.url.startsWith(".") || this.url.startsWith("/")) {
+            try {
+                this.url = new URL(url, this.url).toString();
+            } catch (MalformedURLException ex) {
+                logger.error("url {} format error", this.url);
+                //if happen format error, just jump over this href
+            }
+        }
         return this;
     }
 }

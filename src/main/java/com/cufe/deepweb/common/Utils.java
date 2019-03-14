@@ -1,12 +1,10 @@
 package com.cufe.deepweb.common;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.*;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -40,6 +38,12 @@ public final class Utils {
             writer.write(content);
         }
     }
+    public static void save2File(InputStream stream, String filePath) throws IOException {
+        try (BufferedOutputStream bf = new BufferedOutputStream(new FileOutputStream(filePath))) {
+            IOUtils.copy(stream, bf);
+        }
+    }
+
     /**
      * 判断集合内任务是否运行完毕，同时对运行完毕的任务进行清理
      * @param runSet

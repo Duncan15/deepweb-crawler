@@ -13,6 +13,6 @@ public class ClientTest {
   }
   @Test
   void testClient() {
-    System.out.println(client.getContent("https://www.scoot.co.uk/find/building-services-in-uk").get());
+    System.out.println(client.getContent("https://www.scoot.co.uk/find/building-services-in-uk"));
   }
 }

@@ -11,6 +11,7 @@ public class SyntaxTest {
     }
     @Test
     void testEncode() throws Exception {
+
         Integer a = new Integer(2);
         Integer b = new Integer(2);
         System.out.println(a == b);

@@ -130,13 +130,12 @@ public class UrlBaseScheduler extends Scheduler {
      * @param queryLink
      */
     private void consumeQueryLink(String queryLink) {
-        List<String> infoLinks = queryLinkService.getInfoLinks(queryLink);
-        if (infoLinks.size() == 0) return;
-        infoLinks.forEach(infoLink -> {
+        List<Info> infos = queryLinkService.getInfoLinks(queryLink);
+        if (infos.size() == 0) return;
+        infos.forEach(info -> {
             //if can't push info links into message queue
             //maybe because the message queue is full(this situation is hard to happen, just possible)
             //directly consume the info links in current thread
-            Info info = Info.link(infoLink);
             if (!msgQueue.offer(info)) {
                 consumeInfoLink(info);
             }
@@ -150,6 +149,6 @@ public class UrlBaseScheduler extends Scheduler {
      */
     private void consumeInfoLink(Info info) {
         logger.trace("consume info link {}", info.getUrl());
-        infoLinkService.downloadAndIndex(info, infoLinkService.getFileAddr(info.getUrl()));
+        infoLinkService.downloadAndIndex(info);
     }
 }

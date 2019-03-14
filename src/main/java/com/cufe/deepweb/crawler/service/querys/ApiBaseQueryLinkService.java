@@ -37,7 +37,7 @@ public class ApiBaseQueryLinkService extends QueryLinkService {
     class InfoLinkCollector extends LinkCollector {
         //TODO: should implement in detail
         @Override
-        public List<Info> filter(List<Info> links) {
+        public List<Info> privateOp(List<Info> links) {
             return links;
         }
     }
