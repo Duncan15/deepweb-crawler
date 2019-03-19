@@ -134,7 +134,7 @@ public class ApacheClient implements CusHttpClient {
         httpGet.setHeader("user-agent", getUserAgent());
         try (CloseableHttpResponse response = httpClient.execute(httpGet, httpContext.get())) {
             if (response.getStatusLine().getStatusCode() >= 300) {
-                logger.error("HTTP response: {} {}", response.getStatusLine().getStatusCode(), response.getStatusLine().getReasonPhrase());
+                logger.error("URL:{} , HTTP response: {} {}", URL, response.getStatusLine().getStatusCode(), response.getStatusLine().getReasonPhrase());
             } else {
                 Optional<String> fileNameOp;
                 if ((fileNameOp = chechAttachment(response)).isPresent()) {

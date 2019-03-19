@@ -31,7 +31,7 @@ public class Info implements Serializable {
     }
 
     public Map<String, String> getPayload() {
-        return Collections.unmodifiableMap(this.payload);
+        return this.payload;
     }
 
     public static Info link(String link) {

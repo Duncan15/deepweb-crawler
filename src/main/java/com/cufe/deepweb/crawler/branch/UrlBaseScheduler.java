@@ -64,6 +64,7 @@ public class UrlBaseScheduler extends Scheduler {
                         }
                     } catch (Exception ex) {
                         //ignored
+                        logger.error("runtime exception happen", ex);
                     }
                 }
                 produceCounter.incrementAndGet();

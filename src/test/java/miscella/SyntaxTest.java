@@ -16,4 +16,16 @@ public class SyntaxTest {
         Integer b = new Integer(2);
         System.out.println(a == b);
     }
+    @Test void testAlg() {
+        Scanner sc = new Scanner(System.in);
+        List<Integer> list = new ArrayList<>();
+        while (sc.hasNext()) {
+            list.add(sc.nextInt());
+        }
+        Collections.sort(list);
+        Integer[] a = list.toArray(new Integer[0]);
+        List<String> l = new ArrayList<>();
+        l.toArray(new String[0]);
+
+    }
 }

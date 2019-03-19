@@ -448,6 +448,7 @@ public final class IndexClient implements Closeable {
         logger.trace("start to get all the terms which fit the target bound range");
         try{
             Terms terms = MultiFields.getTerms(indexReader, field);
+            if (terms == null) return Collections.emptyMap();
             TermsEnum termsEnum = terms.iterator();
             while (termsEnum.next() != null) {
                 String term = termsEnum.term().utf8ToString();

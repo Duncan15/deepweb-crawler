@@ -251,7 +251,7 @@ public class UrlBaseQueryLinkService extends QueryLinkService {
                 if (isQueryLink(link.getUrl())) {
                     return false;
                 } else {
-                    return dedu.add(link);
+                    return dedu.add(link.getUrl());
                 }
             }).collect(Collectors.toList());
             return links;

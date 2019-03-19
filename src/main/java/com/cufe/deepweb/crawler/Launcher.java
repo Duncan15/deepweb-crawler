@@ -15,6 +15,7 @@ import com.cufe.deepweb.crawler.service.infos.InfoLinkService;
 import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.common.dedu.RAMMD5Dedutor;
 import com.cufe.deepweb.common.orm.Orm;
+import com.cufe.deepweb.crawler.service.infos.info.Info;
 import com.cufe.deepweb.crawler.service.querys.ApiBaseQueryLinkService;
 import com.cufe.deepweb.crawler.service.querys.UrlBaseQueryLinkService;
 import com.gargoylesoftware.htmlunit.CookieManager;
@@ -249,7 +250,7 @@ public final class Launcher {
         //configure the message queue
         msgQueue = new LinkedBlockingDeque(Constant.QUEUE_SIZE);
         File f = Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR, MSG_DATA_NAME).toFile();
-        List<String> msgList = null;
+        List<Info> msgList = null;
         //if message queue stored file exist, load the data into memory
         if (f.exists()) {
             logger.info("read msg from file {}", f.getAbsolutePath());
@@ -265,9 +266,7 @@ public final class Launcher {
         //insert the data into message queue
         if (msgList != null) {
             msgList.forEach(link -> {
-                if (StringUtils.isNotBlank(link)) {//if this link is valid
-                    msgQueue.offer(link);
-                }
+                msgQueue.offer(link);
             });
         }
 

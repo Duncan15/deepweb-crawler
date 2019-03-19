@@ -251,15 +251,11 @@ public final class HtmlUnitBrowser implements WebBrowser {
     private HtmlPage retryGetPage(WebClient client, String url) {
         return new Try<HtmlPage>(3).run(new RetryOperation<HtmlPage>() {
             @Override
-            public HtmlPage execute() {
+            public HtmlPage execute() throws Exception {
                 HtmlPage ans = null;
-                try {
-                    ans = client.getPage(url);
-                    if(ans.getBody() == null) {
-                        ans = null;
-                    }
-                } catch (Exception ex) {
-                    logger.error("Exception happen when get page content from" + url, ex);
+                ans = client.getPage(url);
+                if(ans.getBody() == null) {
+                    ans = null;
                 }
                 return ans;
             }

@@ -38,16 +38,6 @@ public abstract class LinkCollector {
         this.pattern = Pattern.compile(re);
     }
 
-    private String buildLink(String href, URL url) {
-        if (StringUtils.isNotBlank(href)) {
-            Matcher m = pattern.matcher(href);
-            if (m.lookingAt()) {//match the prefix of href, because sometimes the href is not format
-                href = href.substring(0, m.end());
-                return href;
-            }
-        }
-        return null;
-    }
 
     /**
      * collect the links fit this collector's demand
@@ -80,7 +70,8 @@ public abstract class LinkCollector {
 
 
         logger.trace("queryLink:{} infoLinks:{}", url.toString(), Arrays.toString(links.toArray()));
-        return privateOp(links);
+        links = privateOp(links);
+        return links;
     }
 
     public List<Info> collectByXpath(TagNode root, String infoLinkXpath, String payloadXpath) {
