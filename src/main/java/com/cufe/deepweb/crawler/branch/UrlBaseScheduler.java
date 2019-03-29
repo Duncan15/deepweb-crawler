@@ -33,17 +33,18 @@ public class UrlBaseScheduler extends Scheduler {
     }
 
     @Override
-    protected void status4() {
+    protected ThreadPoolExecutor status4() {
+        ThreadPoolExecutor pool = new ThreadPoolExecutor(
+                Constant.extraConf.getThreadNum(),
+                Constant.extraConf.getThreadNum(),
+                0,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingDeque<>(),//set the size of thread queue to infinity
+                threadFactory
+        );
+
         //only when query link number is bigger than zero, it's necessary to use the thread pool
         if (queryLinks.getPageNum() > 0) {
-            ThreadPoolExecutor threadPool = new ThreadPoolExecutor(
-                    Constant.extraConf.getThreadNum(),
-                    Constant.extraConf.getThreadNum(),
-                    0,
-                    TimeUnit.MILLISECONDS,
-                    new LinkedBlockingDeque<>(),//set the size of thread queue to infinity
-                    threadFactory
-            );
 
             AtomicInteger produceCounter = new AtomicInteger(0);
             Runnable producer =() -> {
@@ -75,7 +76,7 @@ public class UrlBaseScheduler extends Scheduler {
             }
 
             for (int i = 0 ; i < Constant.extraConf.getThreadNum() ; i++) {
-                threadPool.execute(() -> {
+                pool.execute(() -> {
                     while (true) {
 
                         //if here is not null, this is a info link
@@ -96,33 +97,8 @@ public class UrlBaseScheduler extends Scheduler {
 
                 });
             }
-            threadPool.shutdown();
-
-            //loop here until all the thread in thread pool exit
-            int stopCount = 3;//a flag to indicate whether to force stop the thread pool
-            while (true) {
-                try {
-                    //most of the situation, the thread pool would close after the following block, and jump out the while loop
-                    if (threadPool.awaitTermination(Constant.extraConf.getThreadNum(), TimeUnit.SECONDS)) {
-                        break;
-                    }
-
-                    //but sometimes some thread would block in the net IO and wouldn't wake up
-                    //I also don't know why, but it did exist
-                    //so need to force close the thread pool in the following clauses
-                    if (threadPool.getActiveCount() < threadPool.getCorePoolSize() / 2) {
-                        logger.info("activeCount:{}, poolSize:{}", threadPool.getActiveCount(), threadPool.getCorePoolSize());
-                        stopCount--;
-                        if(stopCount <= 0) {
-                            threadPool.shutdownNow();
-                            break;
-                        }
-                    }
-                } catch (InterruptedException ex) {
-                    logger.error("interrupted when wait for thread pool");
-                }
-            }
         }
+        return pool;
     }
 
     /**

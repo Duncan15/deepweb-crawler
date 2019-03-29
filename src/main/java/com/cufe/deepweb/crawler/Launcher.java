@@ -244,7 +244,7 @@ public final class Launcher {
 
             //if directory no exist or if this is not a directory or if this directory can be written by the user of crawler
             if (!f.exists() || !f.isDirectory() || !f.canWrite()) {
-                logger.error("the work file should be a existed directory，and the owner of this program should have right to write");
+                logger.error("the work file:{} should be a existed directory，and the owner of this program should have right to write", workFilePath);
                 System.exit(1);
             }
         }

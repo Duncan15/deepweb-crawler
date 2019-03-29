@@ -46,7 +46,7 @@ public abstract class LinkCollector {
      * @return
      */
     public List<Info> collect(String content, URL url, String infoLinkXpath, String payloadXpath) {
-        logger.info("search result content:{} for url:{}", content, url.toString());
+        logger.trace("search result content:{} for url:{}", content, url.toString());
         List<Info> links = null;
         TagNode rootNode = null;
         try {
@@ -78,26 +78,24 @@ public abstract class LinkCollector {
     public List<Info> collectByXpath(TagNode root, String infoLinkXpath, String payloadXpath) {
         List<Info> links = new ArrayList<>();
         String[] slices = payloadXpath.split(",");//0:xpath 1:attribute
-        String payloadName = null;
-        if (slices.length >= 2) {
-            payloadName = slices[1];
-        }
         try {
             Object[] is = root.evaluateXPath(infoLinkXpath);
-            Object[] ps = root.evaluateXPath(payloadXpath);
+            Object[] ps = root.evaluateXPath(slices[0]);
             int len = is.length > ps.length ? ps.length : is.length;
             for (int i = 0; i < len; i ++) {
                 TagNode node = (TagNode) is[i];
                 String href = node.getAttributeByName("href");
+
                 node = (TagNode) ps[i];
                 String payload = "";
-                if (payloadName == null) {
-                    Map<String, String> attributes = node.getAttributes();
+                Map<String, String> attributes = node.getAttributes();
+                for (int j = 1; j < slices.length; j++) {//if have pointed some attribute name, just collect them
+                    payload += attributes.get(slices[j]);
+                }
+                if (slices.length == 1) {//if haven't specified any attribute name, just collect all of them
                     for (Map.Entry<String, String> attribute : attributes.entrySet()) {
                         payload += attribute.getValue();
                     }
-                } else {
-                    payload = node.getAttributeByName(payloadName);
                 }
                 links.add(Info.link(href).addPayLoad(Constant.FT_INDEX_FIELD, payload));
             }

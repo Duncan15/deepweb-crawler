@@ -81,13 +81,13 @@ public abstract class Scheduler extends Thread{
 
         //firstly select the search link without parameters
         Optional<String> contentOp = browser.getPageContent(prefix);
-        logger.info("select the search page to generate initial query");
+        logger.info("select the search page:{} to generate initial query", prefix);
         if(!contentOp.isPresent() || contentOp.get().trim().equals("")) {
-            logger.info("can't get the search page, select the index page to generate initial query");
+            logger.info("can't get the search page, select the index page:{} to generate initial query", Constant.webSite.getIndexUrl());
             //if can't get content from search link without parameters, use the index.html of the target site inside
             contentOp = browser.getPageContent(Constant.webSite.getIndexUrl());
             if((!contentOp.isPresent() || contentOp.get().trim().equals("")) && !StringUtils.isBlank(Constant.extraConf.getLoginUrl())) {
-                logger.info("can't get the index page, select the login page to generate initial query");
+                logger.info("can't get the index page, select the login page:{} to generate initial query", Constant.extraConf.getLoginUrl());
                 contentOp = browser.getPageContent(Constant.extraConf.getLoginUrl());
             }
         }
@@ -158,7 +158,33 @@ public abstract class Scheduler extends Thread{
         keeper.fixStatus(3,4);
         logger.info("start the M4status");
 
-        status4();
+        ThreadPoolExecutor threadPool = status4();
+        threadPool.shutdown();
+
+        //loop here until all the thread in thread pool exit
+        int stopCount = 3;//a flag to indicate whether to force stop the thread pool
+        while (true) {
+            try {
+                //most of the situation, the thread pool would close after the following block, and jump out the while loop
+                if (threadPool.awaitTermination(Constant.extraConf.getThreadNum(), TimeUnit.SECONDS)) {
+                    break;
+                }
+
+                //but sometimes some thread would block in the net IO and wouldn't wake up
+                //I also don't know why, but it did exist
+                //so need to force close the thread pool in the following clauses
+                if (threadPool.getActiveCount() < threadPool.getCorePoolSize() / 2) {
+                    logger.info("activeCount:{}, poolSize:{}", threadPool.getActiveCount(), threadPool.getCorePoolSize());
+                    stopCount--;
+                    if(stopCount <= 0) {
+                        threadPool.shutdownNow();
+                        break;
+                    }
+                }
+            } catch (InterruptedException ex) {
+                logger.error("interrupted when wait for thread pool");
+            }
+        }
         sLinkNum = keeper.dynamicUpdate();
         keeper.fixStatus(4,0);
         return sLinkNum;
@@ -193,7 +219,7 @@ public abstract class Scheduler extends Thread{
 
 
     protected abstract void status3(String query);
-    protected abstract void status4();
+    protected abstract ThreadPoolExecutor status4();
 
 
     /**

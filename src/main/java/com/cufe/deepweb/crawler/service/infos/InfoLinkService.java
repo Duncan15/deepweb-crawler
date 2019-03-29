@@ -128,7 +128,7 @@ public class InfoLinkService extends LinkService {
                 logger.error("IOException in save content to file", ex);
             }
             map.putAll(getFieldContentMap((respStringContent.getContent())));
-        } else if (content instanceof RespStringContent) {
+        } else if (content instanceof RespStreamContent) {
             RespStreamContent respStreamContent = (RespStreamContent) content;
             try {
                 Utils.save2File(respStreamContent.getStream(), getFileAddr(respStreamContent.getFileName(), false));

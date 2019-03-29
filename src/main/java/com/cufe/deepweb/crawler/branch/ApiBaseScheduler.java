@@ -27,9 +27,7 @@ public class ApiBaseScheduler extends Scheduler {
     }
 
     @Override
-    protected void status4() {
-        if (infos.isEmpty()) return;
-
+    protected ThreadPoolExecutor status4() {
         //use CallerRunsPolicy to provide a simple feedback control mechanism
         ThreadPoolExecutor pool = new ThreadPoolExecutor(Constant.extraConf.getThreadNum(),
                 Constant.extraConf.getThreadNum(),
@@ -39,11 +37,13 @@ public class ApiBaseScheduler extends Scheduler {
                 threadFactory,
                 new ThreadPoolExecutor.CallerRunsPolicy()
         );
+
         infos.stream().forEach(info -> {
             pool.execute(() -> {
                 infoLinkService.downloadAndIndex(info);
             });
         });
 
+        return pool;
     }
 }

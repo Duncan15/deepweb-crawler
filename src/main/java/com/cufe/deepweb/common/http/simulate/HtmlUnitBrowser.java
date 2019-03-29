@@ -12,6 +12,7 @@ import com.gargoylesoftware.htmlunit.CookieManager;
 import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.*;
+import com.gargoylesoftware.htmlunit.javascript.host.event.Event;
 import com.gargoylesoftware.htmlunit.javascript.host.event.KeyboardEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.LogFactory;
@@ -210,20 +211,8 @@ public final class HtmlUnitBrowser implements WebBrowser {
         HtmlTextInput input = null;//the keyword input
         HtmlElement button = null;// the submit button
 
-        //first search the input from the main page
+        //search the input from the main page
         List inputList = page.getByXPath(Constant.apiBaseConf.getInputXpath());
-        if (inputList.isEmpty()) {
-            //if can get the input directly, search all the iframe
-            if (page.getFrames().size() != 0) {
-                for (FrameWindow frame : page.getFrames()) {
-                    page = frame.getEnclosingPage();
-                    inputList = page.getByXPath(Constant.apiBaseConf.getInputXpath());
-                    if (!inputList.isEmpty()) {
-                        break;
-                    }
-                }
-            }
-        }
 
         //if after search the main page and all the iframe, the inputList still is empty, exit
         if (inputList.isEmpty()) {
@@ -239,7 +228,8 @@ public final class HtmlUnitBrowser implements WebBrowser {
         //below has locate the main page or iframe, here is no need to locate it again
         if (StringUtils.isBlank(Constant.apiBaseConf.getSubmitXpath())) {//if submitXpath is a empty string, use the keyboard enter
             logger.info("undefined submit button xpath, use the keyboard return");
-            page = (HtmlPage) input.type(KeyboardEvent.DOM_VK_RETURN);
+            input.fireEvent(Event.TYPE_KEY_UP);
+            page = (HtmlPage) client.getCurrentWindow().getEnclosedPage();
         } else {
             List buttonList = page.getByXPath(Constant.apiBaseConf.getSubmitXpath());
             if (!buttonList.isEmpty()) {
@@ -256,6 +246,13 @@ public final class HtmlUnitBrowser implements WebBrowser {
                 return Collections.emptyList();
             }
         }
+
+        try {
+            Thread.sleep(3_000);
+        } catch (InterruptedException ex) {
+            //ignored
+        }
+
         //try 5 times to wait .3 second each for filling the page.
         List<Info> links = null;
         for (int i = 0; i < 5; i++) {

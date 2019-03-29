@@ -86,9 +86,9 @@ public class ApacheClient implements CusHttpClient {
                 .setRetryHandler(new StandardHttpRequestRetryHandler())
                 .build();
         config = RequestConfig.custom()
-            .setConnectionRequestTimeout(builder.timeout)
-            .setConnectTimeout(builder.timeout)
-            .setSocketTimeout(builder.timeout)
+            .setConnectionRequestTimeout(10 * builder.timeout)
+            .setConnectTimeout(10 * builder.timeout)
+            .setSocketTimeout(10 * builder.timeout)
             .build();
     }
 
@@ -100,7 +100,7 @@ public class ApacheClient implements CusHttpClient {
      * @param response
      * @return
      */
-    private static Optional<String> checkAttachment(HttpResponse response) {
+    private static Optional<String> checkAttachment(HttpResponse response, String charset) {
         Header header = response.getFirstHeader("Content-Disposition");
         if (header != null) {
             HeaderElement[] elements = header.getElements();
@@ -109,6 +109,12 @@ public class ApacheClient implements CusHttpClient {
                 if ((pair = element.getParameterByName("filename")) != null) {
 
                     String fileName = pair.getValue();
+                    try {
+                        fileName = new String(fileName.getBytes(charset), "UTF-8");
+                    } catch (UnsupportedEncodingException ex) {
+                        //ignored
+                    }
+                    logger.info("filename:{}", fileName);
                     return Optional.ofNullable(fileName);
 
                 }
@@ -134,15 +140,15 @@ public class ApacheClient implements CusHttpClient {
         httpGet.setHeader("user-agent", getUserAgent());
 
 
+        CloseableHttpResponse response = null;
+        try {
+            response = httpClient.execute(httpGet, httpContext.get());
 
-        try (CloseableHttpResponse response = httpClient.execute(httpGet, httpContext.get())) {
             if (response.getStatusLine().getStatusCode() >= 300) {
                 logger.error("URL:{} , HTTP response: {} {}", URL, response.getStatusLine().getStatusCode(), response.getStatusLine().getReasonPhrase());
             } else {
                 Optional<String> fileNameOp;
-                if ((fileNameOp = checkAttachment(response)).isPresent()) {
-                    return RespContent.asStream(fileNameOp.get(), response.getEntity().getContent());
-                }
+
                 HttpEntity entity = response.getEntity();
                 ContentType contentType = ContentType.getOrDefault(entity);
 
@@ -151,7 +157,12 @@ public class ApacheClient implements CusHttpClient {
                 if(charset == null || StringUtils.isBlank(charset.name())) {
                     charset = Charset.forName(Constant.extraConf.getCharset());
                 }
-                return RespContent.asString(EntityUtils.toString(entity, charset));
+                if ((fileNameOp = checkAttachment(response, charset.toString())).isPresent()) {
+                    return RespContent.asStream(fileNameOp.get(), response.getEntity().getContent());
+                }
+                RespContent respContent = RespContent.asString(EntityUtils.toString(entity, charset));
+                response.close();
+                return respContent;
             }
         }catch (Exception ex) {
             //if ex is UnknownHostException, don't record it
@@ -162,6 +173,13 @@ public class ApacheClient implements CusHttpClient {
                 return null;
             }
             logger.error("Exception in HTTP invoke " + URL, ex);
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    //ignored
+                }
+            }
         }
         return null;
     }
