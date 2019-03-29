@@ -93,27 +93,31 @@ public final class HtmlUnitBrowser implements WebBrowser {
             HtmlPage page = null;
             page = client.getPage(loginURL);
             if ((!StringUtils.isBlank(usernameXpath)) && (!StringUtils.isBlank(passwordXpath)) && (!StringUtils.isBlank(submitXpath))) {//如果xpath都有指定
+                logger.info("start to login");
                 List uList = page.getByXPath(usernameXpath);
                 List pList = page.getByXPath(passwordXpath);
                 List sList = page.getByXPath(submitXpath);
                 if (!uList.isEmpty()) {
                     userNameInput = (HtmlTextInput)uList.get(0);
                     userNameInput.setText(username);
+                    logger.info("get login username input");
                 }
                 if (!pList.isEmpty()) {
                     passwordInput = (HtmlPasswordInput)pList.get(0);
                     passwordInput.setText(password);
+                    logger.info("get login password input");
                 }
                 if (!sList.isEmpty()) {
                     button = (HtmlElement) sList.get(0);
                     button.click();
+                    logger.info("get login submit button");
                     isLogin = true;//修改登录状态为已登录
                     return true;
                 }
             }//必须指定xpath，否则无法登录，后续可拓展成指定id等等
             return false;
         } catch (Exception ex) {
-            logger.error("Eception happen when get login page", ex);
+            logger.error("Exception happen when get login page", ex);
             return false;
         }
     }
@@ -198,7 +202,6 @@ public final class HtmlUnitBrowser implements WebBrowser {
     private List<Info> getLinksFromApiBasedQuery(ApiBasedQuery query, LinkCollector collector) {
         WebClient client = threadClient.get();
         HtmlPage page = retryGetPage(client, query.getUrl());
-
         //if can't find the input, directly exist
         if (StringUtils.isBlank(Constant.apiBaseConf.getInputXpath())) {
             return Collections.emptyList();
@@ -206,19 +209,41 @@ public final class HtmlUnitBrowser implements WebBrowser {
 
         HtmlTextInput input = null;//the keyword input
         HtmlElement button = null;// the submit button
+
+        //first search the input from the main page
         List inputList = page.getByXPath(Constant.apiBaseConf.getInputXpath());
-        if (!inputList.isEmpty()) {
-            input = (HtmlTextInput) inputList.get(0);
-            input.setText(query.getKeyword());
-        } else {
+        if (inputList.isEmpty()) {
+            //if can get the input directly, search all the iframe
+            if (page.getFrames().size() != 0) {
+                for (FrameWindow frame : page.getFrames()) {
+                    page = frame.getEnclosingPage();
+                    inputList = page.getByXPath(Constant.apiBaseConf.getInputXpath());
+                    if (!inputList.isEmpty()) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        //if after search the main page and all the iframe, the inputList still is empty, exit
+        if (inputList.isEmpty()) {
+            logger.error("can't get keyword input by Xpath:{} in HTML:{}", Constant.apiBaseConf.getInputXpath(), page.asXml());
             return Collections.emptyList();
         }
 
+        logger.info("get the keyword input");
+        input = (HtmlTextInput) inputList.get(0);
+        input.setText(query.getKeyword());
+
+
+        //below has locate the main page or iframe, here is no need to locate it again
         if (StringUtils.isBlank(Constant.apiBaseConf.getSubmitXpath())) {//if submitXpath is a empty string, use the keyboard enter
+            logger.info("undefined submit button xpath, use the keyboard return");
             page = (HtmlPage) input.type(KeyboardEvent.DOM_VK_RETURN);
         } else {
             List buttonList = page.getByXPath(Constant.apiBaseConf.getSubmitXpath());
             if (!buttonList.isEmpty()) {
+                logger.info("get submit button, click it");
                 button = (HtmlElement) buttonList.get(0);
                 try {
                     page = button.click();
@@ -227,22 +252,23 @@ public final class HtmlUnitBrowser implements WebBrowser {
                 }
 
             } else {
+                logger.error("can't get submit button, exit");
                 return Collections.emptyList();
             }
         }
         //try 5 times to wait .3 second each for filling the page.
         List<Info> links = null;
         for (int i = 0; i < 5; i++) {
-            if ((links = collector.collect(page.asXml(), page.getUrl(), Constant.apiBaseConf.getInfoLinkXpath(), Constant.apiBaseConf.getPayloadXpath())).isEmpty()) {
-                synchronized (page) {
-                    try {
-                        page.wait(3_000);
-                    } catch (InterruptedException ex) {
-                        //ignored
-                    }
+            synchronized (page) {
+                try {
+                    page.wait(3_000);
+                } catch (InterruptedException ex) {
+                    //ignored
                 }
             }
-            break;
+            if (!(links = collector.collect(page.asXml(), page.getUrl(), Constant.apiBaseConf.getInfoLinkXpath(), Constant.apiBaseConf.getPayloadXpath())).isEmpty()) {
+                break;
+            }
         }
         return links;
     }

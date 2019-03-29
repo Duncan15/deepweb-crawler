@@ -81,19 +81,23 @@ public abstract class Scheduler extends Thread{
 
         //firstly select the search link without parameters
         Optional<String> contentOp = browser.getPageContent(prefix);
+        logger.info("select the search page to generate initial query");
         if(!contentOp.isPresent() || contentOp.get().trim().equals("")) {
+            logger.info("can't get the search page, select the index page to generate initial query");
             //if can't get content from search link without parameters, use the index.html of the target site inside
             contentOp = browser.getPageContent(Constant.webSite.getIndexUrl());
             if((!contentOp.isPresent() || contentOp.get().trim().equals("")) && !StringUtils.isBlank(Constant.extraConf.getLoginUrl())) {
+                logger.info("can't get the index page, select the login page to generate initial query");
                 contentOp = browser.getPageContent(Constant.extraConf.getLoginUrl());
             }
         }
 
         if (!contentOp.isPresent() || contentOp.get().trim().equals("")) {
+            logger.error("fail to generate initial query, return 0");
             return 0;
         }
 
-        logger.trace("content is " +contentOp.get());
+        logger.trace("content is " + contentOp.get());
         String[] terms = NlpAnalysis.parse(contentOp.get()).toString().split(",");
         Set<String> deduSet = new HashSet<>();
         Random r = new Random(System.currentTimeMillis());

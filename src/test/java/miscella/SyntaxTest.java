@@ -3,6 +3,8 @@ package miscella;
 import org.junit.jupiter.api.Test;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class SyntaxTest {
     @Test
@@ -26,6 +28,8 @@ public class SyntaxTest {
         Integer[] a = list.toArray(new Integer[0]);
         List<String> l = new ArrayList<>();
         l.toArray(new String[0]);
+
+
 
     }
 }

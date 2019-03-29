@@ -100,7 +100,7 @@ public class ApacheClient implements CusHttpClient {
      * @param response
      * @return
      */
-    private static Optional<String> chechAttachment(HttpResponse response) {
+    private static Optional<String> checkAttachment(HttpResponse response) {
         Header header = response.getFirstHeader("Content-Disposition");
         if (header != null) {
             HeaderElement[] elements = header.getElements();
@@ -132,12 +132,15 @@ public class ApacheClient implements CusHttpClient {
         HttpGet httpGet = new HttpGet(uri);
         httpGet.setConfig(config);
         httpGet.setHeader("user-agent", getUserAgent());
+
+
+
         try (CloseableHttpResponse response = httpClient.execute(httpGet, httpContext.get())) {
             if (response.getStatusLine().getStatusCode() >= 300) {
                 logger.error("URL:{} , HTTP response: {} {}", URL, response.getStatusLine().getStatusCode(), response.getStatusLine().getReasonPhrase());
             } else {
                 Optional<String> fileNameOp;
-                if ((fileNameOp = chechAttachment(response)).isPresent()) {
+                if ((fileNameOp = checkAttachment(response)).isPresent()) {
                     return RespContent.asStream(fileNameOp.get(), response.getEntity().getContent());
                 }
                 HttpEntity entity = response.getEntity();

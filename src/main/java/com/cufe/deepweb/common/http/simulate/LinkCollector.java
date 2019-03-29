@@ -46,6 +46,7 @@ public abstract class LinkCollector {
      * @return
      */
     public List<Info> collect(String content, URL url, String infoLinkXpath, String payloadXpath) {
+        logger.info("search result content:{} for url:{}", content, url.toString());
         List<Info> links = null;
         TagNode rootNode = null;
         try {

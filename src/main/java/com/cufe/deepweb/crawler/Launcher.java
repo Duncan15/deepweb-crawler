@@ -19,6 +19,7 @@ import com.cufe.deepweb.crawler.service.infos.info.Info;
 import com.cufe.deepweb.crawler.service.querys.ApiBaseQueryLinkService;
 import com.cufe.deepweb.crawler.service.querys.UrlBaseQueryLinkService;
 import com.gargoylesoftware.htmlunit.CookieManager;
+import com.gargoylesoftware.htmlunit.util.Cookie;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -90,9 +91,11 @@ public final class Launcher {
         //initialize the service to deal with queryLinks
         //initialize the scheduler thread
         if (Constant.urlBaseConf != null) {
+            logger.info("prepare urlBaseScheduler");
             UrlBaseQueryLinkService urlBaseQueryLinkService = new UrlBaseQueryLinkService(webBrowser, dedu);
             scheduler = new UrlBaseScheduler(alg, urlBaseQueryLinkService, infoLinkService, msgQueue);
         } else {
+            logger.info("prepare apiBaseScheduler");
             ApiBaseQueryLinkService apiBaseQueryLinkService = new ApiBaseQueryLinkService(webBrowser, dedu);
             scheduler = new ApiBaseScheduler(alg, apiBaseQueryLinkService, infoLinkService, msgQueue);
         }
@@ -284,6 +287,10 @@ public final class Launcher {
             if (!webBrowser.login(Constant.extraConf.getLoginUrl(),Constant.extraConf.getUserName(),Constant.extraConf.getPassword(),Constant.extraConf.getUserNameXpath(),Constant.extraConf.getPasswordXpath(),Constant.extraConf.getSubmitXpath())) {
                 logger.error("detect the login information, but can't login, please check the configuration");
                 System.exit(1);
+            }
+            logger.info("print cookie after login");
+            for (Cookie cookie : cookieManager.getCookies()) {
+                logger.info("cookie:{}", cookie.toString());
             }
         }
 
