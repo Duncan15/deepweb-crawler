@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sql2o.Connection;
 import org.sql2o.Sql2o;
+import org.sql2o.Sql2oException;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -162,7 +163,7 @@ public abstract class Scheduler extends Thread{
         threadPool.shutdown();
 
         //loop here until all the thread in thread pool exit
-        int stopCount = 3;//a flag to indicate whether to force stop the thread pool
+        int stopCount = 10;//a flag to indicate whether to force stop the thread pool
         while (true) {
             try {
                 //most of the situation, the thread pool would close after the following block, and jump out the while loop
@@ -325,6 +326,7 @@ public abstract class Scheduler extends Thread{
         public synchronized int dynamicUpdate() {
             int sLinkNum = 0;
             try (Connection conn = sql2o.open()) {
+                conn.setRollbackOnException(true);
                 String sql = null;
 
                 //update the last round's fLinkNum and sLinkNum in database's status table
@@ -333,6 +335,7 @@ public abstract class Scheduler extends Thread{
                 //update the last round's fLinkNum and sLinkNum in database's status table
                 int fLinkNum = queryLinkService.getFailedLinkNum();
                 sLinkNum = queryLinkService.getTotalLinkNum() - fLinkNum;
+                logger.trace("fLinkNum:{},sLinkNum:{},totalLinkNum:{}", fLinkNum, sLinkNum, queryLinkService.getTotalLinkNum());
                 conn.createQuery(sql)
                         .addParameter("fLinkNum", fLinkNum)
                         .addParameter("sLinkNum", sLinkNum)
@@ -361,6 +364,8 @@ public abstract class Scheduler extends Thread{
                         .executeUpdate();
                 lastSInfoLink = sLinkNum;
                 lastFInfoLink = fLinkNum;
+            } catch (Sql2oException ex) {
+
             }
             return sLinkNum;
         }

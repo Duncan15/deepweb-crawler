@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ApiBaseQueryLinkService extends QueryLinkService {
     private Logger logger = LoggerFactory.getLogger(ApiBaseQueryLinkService.class);
@@ -24,6 +25,7 @@ public class ApiBaseQueryLinkService extends QueryLinkService {
         return Query.asApiBased(Constant.apiBaseConf.getPrefix(), Constant.apiBaseConf.getInputXpath(), Constant.apiBaseConf.getSubmitXpath(), keyword);
     }
     public List<Info> getInfoLinks(String keyword) {
+        this.totalLinkNum++;
         ApiBasedQuery query = buildQuery(keyword);
         List<Info> links = browser.getAllLinks(query, collector);
         if (links.size() == 0) {
@@ -38,6 +40,9 @@ public class ApiBaseQueryLinkService extends QueryLinkService {
         //TODO: should implement in detail
         @Override
         public List<Info> privateOp(List<Info> links) {
+            links = links.stream().filter(link -> {//remove the repeated links
+                return dedu.add(link.getUrl());
+            }).collect(Collectors.toList());
             return links;
         }
     }

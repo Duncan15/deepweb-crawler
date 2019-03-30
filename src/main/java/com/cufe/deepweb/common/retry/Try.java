@@ -15,6 +15,7 @@ public class Try<T> {
         T ans = null;
         Exception exception = null;
         for (int i = 0; i < num; i++) {
+            exception = null;
             try {
                 ans = op.execute();
             } catch (Exception ex) {

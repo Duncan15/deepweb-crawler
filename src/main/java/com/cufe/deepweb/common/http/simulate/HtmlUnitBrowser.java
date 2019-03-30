@@ -203,6 +203,9 @@ public final class HtmlUnitBrowser implements WebBrowser {
     private List<Info> getLinksFromApiBasedQuery(ApiBasedQuery query, LinkCollector collector) {
         WebClient client = threadClient.get();
         HtmlPage page = retryGetPage(client, query.getUrl());
+        if (page == null) {
+            return Collections.emptyList();
+        }
         //if can't find the input, directly exist
         if (StringUtils.isBlank(Constant.apiBaseConf.getInputXpath())) {
             return Collections.emptyList();
@@ -222,11 +225,13 @@ public final class HtmlUnitBrowser implements WebBrowser {
 
         logger.info("get the keyword input");
         input = (HtmlTextInput) inputList.get(0);
+        page.setFocusedElement(input);
         input.setText(query.getKeyword());
 
 
         //below has locate the main page or iframe, here is no need to locate it again
         if (StringUtils.isBlank(Constant.apiBaseConf.getSubmitXpath())) {//if submitXpath is a empty string, use the keyboard enter
+            //the keyboard enter operation is invalid, temporarily don't use it
             logger.info("undefined submit button xpath, use the keyboard return");
             input.fireEvent(Event.TYPE_KEY_UP);
             page = (HtmlPage) client.getCurrentWindow().getEnclosedPage();
@@ -247,11 +252,6 @@ public final class HtmlUnitBrowser implements WebBrowser {
             }
         }
 
-        try {
-            Thread.sleep(3_000);
-        } catch (InterruptedException ex) {
-            //ignored
-        }
 
         //try 5 times to wait .3 second each for filling the page.
         List<Info> links = null;
@@ -264,24 +264,24 @@ public final class HtmlUnitBrowser implements WebBrowser {
                 }
             }
             if (!(links = collector.collect(page.asXml(), page.getUrl(), Constant.apiBaseConf.getInfoLinkXpath(), Constant.apiBaseConf.getPayloadXpath())).isEmpty()) {
+                logger.info("have collect infos, continue to execute");
                 break;
             }
+            logger.info("can't collect infos from page, retry");
         }
         return links;
     }
 
 
     private HtmlPage retryGetPage(WebClient client, String url) {
-        return new Try<HtmlPage>(3).run(new RetryOperation<HtmlPage>() {
-            @Override
-            public HtmlPage execute() throws Exception {
+        return new Try<HtmlPage>(3).run(() -> {
                 HtmlPage ans = null;
                 ans = client.getPage(url);
                 if(ans.getBody() == null) {
                     ans = null;
                 }
                 return ans;
-            }
+
         });
     }
     public static void main(String[] args) {

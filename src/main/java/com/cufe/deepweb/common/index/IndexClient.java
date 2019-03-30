@@ -217,6 +217,10 @@ public final class IndexClient implements Closeable {
             doc.add(new TextField(entry.getKey(), entry.getValue(), Field.Store.YES));
         }
         try{
+            if (!indexWriter.isOpen()) {
+                indexWriter = null;
+                updateIndexWriter();
+            }
             indexWriter.addDocument(doc);
         }catch (IOException ex){
             logger.error("error happen when add document",ex);
@@ -456,6 +460,16 @@ public final class IndexClient implements Closeable {
                     docSetMap.put(term, new HashSet<>());
                 }
             }
+
+            if (docSetMap.size() == 0) {
+                //backup operation, sometimes here docSetMap's size is zero, should make sure it is not zero
+                terms = MultiFields.getTerms(indexReader, field);
+                termsEnum = terms.iterator();
+                while (termsEnum.next() != null) {
+                    docSetMap.put(termsEnum.term().utf8ToString(), new HashSet<>());
+                }
+            }
+
         }catch (IOException ex){
             logger.error("IOException in read lucene index", ex);
         }

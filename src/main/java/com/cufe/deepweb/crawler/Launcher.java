@@ -169,6 +169,7 @@ public final class Launcher {
         //config website info
         Sql2o sql2o = Orm.getSql2o();
         try (Connection conn=sql2o.open()) {
+            conn.setRollbackOnException(true);
             //there should have one row corresponding to the webID in database
             String sql = "select * from website where webId=:webID";
             Constant.webSite = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(WebSite.class);
