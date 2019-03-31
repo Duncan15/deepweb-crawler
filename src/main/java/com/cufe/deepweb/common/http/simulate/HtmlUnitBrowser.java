@@ -88,9 +88,9 @@ public final class HtmlUnitBrowser implements WebBrowser {
         WebClient client = null;
         try {
             client = threadClient.get();
-            HtmlTextInput userNameInput = null;//用户名输入框
-            HtmlPasswordInput passwordInput = null;//密码输入框
-            HtmlElement button = null;//登录按钮,最好不要限定为必须button
+            HtmlTextInput userNameInput = null;//the username input
+            HtmlPasswordInput passwordInput = null;//the password input
+            HtmlElement button = null;//the login button, probably no a button
             HtmlPage page = null;
             page = client.getPage(loginURL);
             if ((!StringUtils.isBlank(usernameXpath)) && (!StringUtils.isBlank(passwordXpath)) && (!StringUtils.isBlank(submitXpath))) {//如果xpath都有指定
@@ -111,8 +111,9 @@ public final class HtmlUnitBrowser implements WebBrowser {
                 if (!sList.isEmpty()) {
                     button = (HtmlElement) sList.get(0);
                     button.click();
+                    client.waitForBackgroundJavaScript(3_000);
                     logger.info("get login submit button");
-                    isLogin = true;//修改登录状态为已登录
+                    isLogin = true;//change the login status to login
                     return true;
                 }
             }//必须指定xpath，否则无法登录，后续可拓展成指定id等等
@@ -126,9 +127,7 @@ public final class HtmlUnitBrowser implements WebBrowser {
     @Override
     public Optional<String> getPageContent(String URL) {
         WebClient client = threadClient.get();
-        HtmlElement body = new Try<HtmlElement>(3).run(new RetryOperation<HtmlElement>() {
-            @Override
-            public HtmlElement execute() {
+        HtmlElement body = new Try<HtmlElement>(3).run(() -> {
                 HtmlElement ans = null;
                 try {
                     ans = ((HtmlPage)client.getPage(URL)).getBody();
@@ -136,7 +135,7 @@ public final class HtmlUnitBrowser implements WebBrowser {
                     logger.error("Exception happen when get page content from" + URL, ex);
                 }
                 return ans;
-            }
+
         });
         return Optional.ofNullable(body.asText());
 
