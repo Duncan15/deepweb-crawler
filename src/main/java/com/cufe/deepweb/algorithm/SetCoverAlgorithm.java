@@ -1,7 +1,6 @@
 package com.cufe.deepweb.algorithm;
 
 import com.cufe.deepweb.common.Utils;
-import com.cufe.deepweb.crawler.Constant;
 import com.google.common.base.Stopwatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,6 +1,5 @@
 package com.cufe.deepweb.common.dedu;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 

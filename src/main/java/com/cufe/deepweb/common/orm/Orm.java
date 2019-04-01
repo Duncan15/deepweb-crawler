@@ -7,15 +7,15 @@ public final class Orm {
     private static Sql2o sql2o;
 
     /**
-     * 初始化设置sql2o
-     * @param newSql2o 初始化的sql2o对象
+     * initialize a new sql2o
+     * @param newSql2o the specified sql2o object
      */
     public static void setSql2o(final Sql2o newSql2o) {
         Orm.sql2o = newSql2o;
     }
 
     /**
-     * 获取sql2o实例，该实例线程安全，可全局共用
+     * get a instance of sql2o，the instance is thread-safe, support share globally
      * @return
      */
     public static Sql2o getSql2o() {

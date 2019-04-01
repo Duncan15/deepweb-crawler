@@ -3,7 +3,6 @@ package com.cufe.deepweb.common.http.client;
 import com.cufe.deepweb.common.http.client.resp.RespContent;
 
 import java.io.Closeable;
-import java.util.Optional;
 
 /*
 使用HttpClient的客户端

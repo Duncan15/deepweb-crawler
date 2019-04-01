@@ -6,7 +6,6 @@ import com.cufe.deepweb.common.Utils;
 import com.cufe.deepweb.common.dedu.Deduplicator;
 import com.cufe.deepweb.common.dedu.RAMDocIDDedutor;
 import com.cufe.deepweb.common.index.IndexClient;
-import com.cufe.deepweb.crawler.Constant;
 import com.google.common.base.Stopwatch;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
