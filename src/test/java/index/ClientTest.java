@@ -14,7 +14,8 @@ public class ClientTest {
   static IndexClient client;
   @BeforeAll
   static void init() {
-    client = new IndexClient.Builder(Paths.get("F:/experiment/Index6.6.1/Indexjieba21")).setReadOnly().build();
+    client = new IndexClient.Builder(Paths.get("/Users/cwc/Desktop/tencent/data-crawling/pan/124/index/fulltext")).setReadOnly().build();
+
   }
   @AfterAll
   static void exit() throws Exception {

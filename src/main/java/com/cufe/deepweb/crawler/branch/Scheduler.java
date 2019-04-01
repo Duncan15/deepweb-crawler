@@ -163,7 +163,7 @@ public abstract class Scheduler extends Thread{
         threadPool.shutdown();
 
         //loop here until all the thread in thread pool exit
-        int stopCount = 10;//a flag to indicate whether to force stop the thread pool
+        int stopCount = 50;//a flag to indicate whether to force stop the thread pool
         while (true) {
             try {
                 //most of the situation, the thread pool would close after the following block, and jump out the while loop

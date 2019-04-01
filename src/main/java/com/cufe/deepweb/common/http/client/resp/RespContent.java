@@ -3,10 +3,14 @@ package com.cufe.deepweb.common.http.client.resp;
 import java.io.InputStream;
 
 public class RespContent {
-    public static RespStringContent asString(String str) {
-        return new RespStringContent(str);
+    public static HtmlContent asString(String str) {
+        return new HtmlContent(str);
     }
-    public static RespStreamContent asStream(String name, InputStream stream) {
-        return new RespStreamContent(name, stream);
+    public static StreamContent asStream(String name, InputStream stream) {
+        return new StreamContent(name, stream);
+    }
+    public static JsonContent asJson(String rawContent) {
+        return new JsonContent(rawContent);
+
     }
 }

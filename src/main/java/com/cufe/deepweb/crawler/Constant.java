@@ -19,6 +19,8 @@ public final class Constant {
 
     public static ApiBaseConf apiBaseConf;
 
+    public static JsonBaseConf jsonBaseConf;
+
     /**
      * the extra configuration of website
      */
@@ -92,4 +94,5 @@ public final class Constant {
 
     public final static short URL_BASED = 0;
     public final static short API_BASED = 1;
+    public final static short JSON_BASED = 2;
 }

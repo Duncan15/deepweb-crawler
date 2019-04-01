@@ -4,6 +4,7 @@ import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
 import com.cufe.deepweb.common.orm.model.*;
 import com.cufe.deepweb.crawler.branch.ApiBaseScheduler;
+import com.cufe.deepweb.crawler.branch.JsonBaseScheduler;
 import com.cufe.deepweb.crawler.branch.Scheduler;
 import com.cufe.deepweb.common.http.client.ApacheClient;
 import com.cufe.deepweb.common.http.client.CusHttpClient;
@@ -17,6 +18,7 @@ import com.cufe.deepweb.common.dedu.RAMMD5Dedutor;
 import com.cufe.deepweb.common.orm.Orm;
 import com.cufe.deepweb.crawler.service.infos.info.Info;
 import com.cufe.deepweb.crawler.service.querys.ApiBaseQueryLinkService;
+import com.cufe.deepweb.crawler.service.querys.JsonBaseQueryLinkService;
 import com.cufe.deepweb.crawler.service.querys.UrlBaseQueryLinkService;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import com.gargoylesoftware.htmlunit.util.Cookie;
@@ -94,13 +96,19 @@ public final class Launcher {
             logger.info("prepare urlBaseScheduler");
             UrlBaseQueryLinkService urlBaseQueryLinkService = new UrlBaseQueryLinkService(webBrowser, dedu);
             scheduler = new UrlBaseScheduler(alg, urlBaseQueryLinkService, infoLinkService, msgQueue);
-        } else {
+        } else if (Constant.apiBaseConf != null) {
             logger.info("prepare apiBaseScheduler");
             ApiBaseQueryLinkService apiBaseQueryLinkService = new ApiBaseQueryLinkService(webBrowser, dedu);
-            scheduler = new ApiBaseScheduler(alg, apiBaseQueryLinkService, infoLinkService, msgQueue);
+            scheduler = new ApiBaseScheduler(alg, apiBaseQueryLinkService, infoLinkService);
+        } else if (Constant.jsonBaseConf != null) {
+            logger.info("prepare jsonBaseScheduler");
+            JsonBaseQueryLinkService jsonBaseQueryLinkService = new JsonBaseQueryLinkService(webBrowser, dedu, httpClient);
+            scheduler = new JsonBaseScheduler(alg, jsonBaseQueryLinkService, infoLinkService, msgQueue);
+        } else {
+            logger.error("can't judge to use which scheduler, exit");
+            System.exit(1);
+            return;
         }
-
-
 
         //when scheduler thread start to run, everything startup
         scheduler.start();
@@ -180,6 +188,9 @@ public final class Launcher {
             } else if (Constant.webSite.getBase() == Constant.API_BASED) {
                 sql = "select * from apiBaseConf where webId = :webID";
                 Constant.apiBaseConf = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(ApiBaseConf.class);
+            } else if (Constant.webSite.getBase() == Constant.JSON_BASED) {
+                sql = "select * from jsonBaseConf where webId =:webID";
+                Constant.jsonBaseConf = conn.createQuery(sql).addParameter("webID", webID).executeAndFetchFirst(JsonBaseConf.class);
             } else {
                 logger.error("the base value in website table is undefined, exit");
                 System.exit(1);

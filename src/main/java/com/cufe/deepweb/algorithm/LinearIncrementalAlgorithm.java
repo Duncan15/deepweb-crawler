@@ -114,6 +114,8 @@ public class LinearIncrementalAlgorithm extends SetCoverAlgorithm {
         if (scSize == 0) {
             logger.trace("first run isUpdate() method, just return true");
             si.updateIndex();
+            dedu.getNew();
+            dedu.getCost();
             return true;
         }
 

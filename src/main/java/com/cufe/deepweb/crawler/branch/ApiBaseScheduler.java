@@ -7,7 +7,6 @@ import com.cufe.deepweb.crawler.service.querys.ApiBaseQueryLinkService;
 import com.cufe.deepweb.crawler.service.infos.InfoLinkService;
 
 import java.util.List;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -16,8 +15,8 @@ public class ApiBaseScheduler extends Scheduler {
     private ApiBaseQueryLinkService queryLinkService;
     private InfoLinkService infoLinkService;
     private List<Info> infos;
-    public ApiBaseScheduler(AlgorithmBase algo, ApiBaseQueryLinkService apiBaseQueryLinkService, InfoLinkService infoLinkService, BlockingDeque msgQueue) {
-        super(algo, apiBaseQueryLinkService, infoLinkService, msgQueue);
+    public ApiBaseScheduler(AlgorithmBase algo, ApiBaseQueryLinkService apiBaseQueryLinkService, InfoLinkService infoLinkService) {
+        super(algo, apiBaseQueryLinkService, infoLinkService, null);
         this.queryLinkService = apiBaseQueryLinkService;
         this.infoLinkService = infoLinkService;
     }

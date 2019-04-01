@@ -2,8 +2,8 @@ package com.cufe.deepweb.common.http.client.resp;
 
 import java.io.InputStream;
 
-public class RespStreamContent extends RespContent{
-    RespStreamContent(String fileName, InputStream stream) {
+public class StreamContent extends RespContent{
+    StreamContent(String fileName, InputStream stream) {
         this.fileName = fileName;
         this.stream = stream;
     }

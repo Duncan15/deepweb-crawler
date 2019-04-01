@@ -131,7 +131,7 @@ public final class IndexClient implements Closeable {
             } else {//update indexReader
                 if (indexReader instanceof DirectoryReader) {
                     IndexReader ir = DirectoryReader.openIfChanged((DirectoryReader) indexReader);
-                    if(ir != null){
+                    if(ir != null) {
                         logger.trace("update indexReader");
                         indexReader.close();
                         indexReader = ir;
@@ -180,7 +180,7 @@ public final class IndexClient implements Closeable {
             logger.trace("initialize indexWriter");
             IndexWriterConfig config = new IndexWriterConfig(analyzer);
             config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
-            indexWriter = new IndexWriter(indexDirectory,config);
+            indexWriter = new IndexWriter(indexDirectory, config);
         } catch (IOException ex) {
             logger.error("IOException happen when create new indexWriter", ex);
         }

@@ -148,7 +148,12 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
     private String generateTerm() {
         //the following is set covering's main flow
 
-        if (s.size() < threshold * snapshotSize) {//check whether satisfy the predefined threshold
+        //set the minimal v is 1
+        int v = (int)(threshold * snapshotSize);
+        if (v <= 0) {
+            v = 1;
+        }
+        if (s.size() < v) {//check whether satisfy the predefined threshold
             Stopwatch stopwatch = Stopwatch.createStarted();//use to compute the cost in modifying matrix for current term
             Set<String> candidate = new HashSet<>(); //use to store the terms whose new/cost is identical
             String query = null; //the term would be generate in current round
@@ -183,7 +188,7 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
                     }
                 }
             }else { //when the size is 0, it means can't generate new term from current turn's set covering, return null
-                logger.warn("set covering 中出现new全部为0的情况，set covering");
+                logger.warn("set covering 中出现new全部为0的情况，进入新一轮set covering");
                 return null;
             }
 

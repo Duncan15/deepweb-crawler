@@ -250,9 +250,9 @@ public final class HtmlUnitBrowser implements WebBrowser {
         }
 
 
-        //try 5 times to wait .3 second each for filling the page.
+        //try 3 times to wait .3 second each for filling the page.
         List<Info> links = null;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 3; i++) {
             synchronized (page) {
                 try {
                     page.wait(3_000);
