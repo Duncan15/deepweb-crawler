@@ -4,10 +4,6 @@ public class JsonBaseConf {
     private long id;
     private String prefix;
     /**
-     * the HTTP method to access the prefix, such as GET or POST
-     */
-    private String method;
-    /**
      * the keyword parameter name
      */
     private String paramQuery;
@@ -26,6 +22,20 @@ public class JsonBaseConf {
      */
     private String constString;
 
+    /**
+     * the address of total page number in the json response
+     * example 1:
+     * [0].num
+     *
+     * json:[{"num":100}]
+     *
+     * example 2:
+     * total
+     *
+     * json:{"total":100, content:[]}
+     */
+    private String totalAddress;
+
 
     public long getId() {
         return id;
@@ -41,14 +51,6 @@ public class JsonBaseConf {
 
     public void setPrefix(String prefix) {
         this.prefix = prefix;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    public void setMethod(String method) {
-        this.method = method;
     }
 
     public String getParamQuery() {
@@ -81,5 +83,13 @@ public class JsonBaseConf {
 
     public void setConstString(String constString) {
         this.constString = constString;
+    }
+
+    public String getTotalAddress() {
+        return totalAddress;
+    }
+
+    public void setTotalAddress(String totalAddress) {
+        this.totalAddress = totalAddress;
     }
 }

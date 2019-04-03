@@ -7,10 +7,8 @@ import com.gargoylesoftware.htmlunit.httpclient.HtmlUnitCookieStore;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -26,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -157,10 +154,37 @@ public class ApacheClient implements CusHttpClient {
                 if(charset == null || StringUtils.isBlank(charset.name())) {
                     charset = Charset.forName(Constant.extraConf.getCharset());
                 }
+
+                RespContent respContent = null;
+                String mimeType = contentType.getMimeType();
+
+                //the following rule judge how to deal with this response
+
+                if (mimeType.startsWith("text")) {
+                    //rule 1:
+                    //if mime-type is text/*, deal with it as string content
+                    respContent = RespContent.asString(EntityUtils.toString(entity, charset));
+                } else if (mimeType.contains("application/json")) {
+                    //rule 2:
+                    //if mime-type is application/json, parse it as json
+                    respContent = RespContent.asJson(EntityUtils.toString(entity, charset));
+
+                }
+
+                //rule 3:
+                //if mime-type is neither text/* nor application/json, check that whether it has attachment
                 if ((fileNameOp = checkAttachment(response, charset.toString())).isPresent()) {
+                    //if it has attachment, deal with it as stream content
+                    //and here don't close the response, otherwise would occur exception
                     return RespContent.asStream(fileNameOp.get(), response.getEntity().getContent());
                 }
-                RespContent respContent = RespContent.asString(EntityUtils.toString(entity, charset));
+
+                //rule 4:
+                //if this response hasn't contain a attachment, deal with it as a string content whatever it is.
+                if (respContent == null) {
+                    respContent = RespContent.asString(EntityUtils.toString(entity, charset));
+                }
+
                 response.close();
                 return respContent;
             }

@@ -1,5 +1,6 @@
 package com.cufe.deepweb.crawler.service.infos;
 
+import com.cufe.deepweb.common.http.client.resp.JsonContent;
 import com.cufe.deepweb.common.http.client.resp.RespContent;
 import com.cufe.deepweb.common.http.client.resp.StreamContent;
 import com.cufe.deepweb.common.http.client.resp.HtmlContent;
@@ -118,9 +119,9 @@ public class InfoLinkService extends LinkService {
     public void  downloadAndIndex(Info info) {
         RespContent content = httpClient.getContent(info.getUrl());
         Map<String ,String> map = info.getPayload() == null ? new HashMap<>() : info.getPayload();
-        //save the document into directory if the return value contains a string
-        //or save the attachment into a file if the return value contains an inputStream
-        if (content instanceof HtmlContent) {//if the target document get successfully
+
+        if (content instanceof HtmlContent) {
+            //save the document into directory if the return value contains a string
             HtmlContent htmlContent = (HtmlContent) content;
             try {
                 Utils.save2File(htmlContent.getContent(), getFileAddr(info.getUrl(), true));
@@ -128,7 +129,13 @@ public class InfoLinkService extends LinkService {
                 logger.error("IOException in save content to file", ex);
             }
             map.putAll(getFieldContentMap((htmlContent.getContent())));
+        } else if (content instanceof JsonContent) {
+            //at current implementation of crawler, here must not a json
+            //here leave a TODO for future development.
+            return;
+
         } else if (content instanceof StreamContent) {
+            //or save the attachment into a file if the return value contains an inputStream
             StreamContent streamContent = (StreamContent) content;
             try {
                 Utils.save2File(streamContent.getStream(), getFileAddr(streamContent.getFileName(), false));

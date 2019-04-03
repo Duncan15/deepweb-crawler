@@ -56,10 +56,7 @@ public class UrlBaseQueryLinkService extends QueryLinkService {
             }
         }
         String[] pgParams = Constant.urlBaseConf.getStartPageNum().split(",");
-        int startNum = Integer.parseInt(pgParams[0]);//the start number of pageNum，maybe 1 or 0
-        int numInterval = Integer.parseInt(pgParams[1]);//the interval number of different pageNum corresponding to the neighbour query link
-        int pgV = (pageNum - 1) * numInterval + startNum;//the final value occur in the query link
-        paramPairList.add(Constant.urlBaseConf.getParamPage() + "=" + pgV);
+        paramPairList.add(Constant.urlBaseConf.getParamPage() + "=" + parsePageParameterAndGetTagetNum(pgParams, pageNum));
         if (!queryLink.endsWith("?")) {
             queryLink += "?";
         }
@@ -155,7 +152,7 @@ public class UrlBaseQueryLinkService extends QueryLinkService {
         int num = getTotalPageNum(keyword);
         logger.info("total page num is {}", num);
         this.totalLinkNum = num;
-        return new QueryLinks(num, keyword);
+        return new UrlBaseQueryLinks(num, keyword);
     }
 
     /**
@@ -198,43 +195,18 @@ public class UrlBaseQueryLinkService extends QueryLinkService {
     }
 
 
+    public class UrlBaseQueryLinks extends QueryLinks {
 
-    /**
-     * the generator of query link
-     */
-    public class QueryLinks {
-        /**
-         * all the query page's page number start at 1
-         */
-        private int counter = 1;
-        private int pageNum;
-        private String keyword;
-        private QueryLinks(int pageNum, String keyword) {
-            this.pageNum = pageNum;
-            this.keyword = keyword;
+        private UrlBaseQueryLinks(int pageNum, String keyword) {
+            super(pageNum, keyword);
         }
 
-        /**
-         * get next queryLink
-         * @return null if can't generate next query link
-         */
-        public synchronized String next() {
-
-            String ans = null;
-            if (counter <= pageNum) {
-                ans = buildQueryLink(keyword, counter);
-                counter++;
-            }
-            return ans;
+        @Override
+        protected String buildQueryLink(String keyword, int pageNum) {
+            return UrlBaseQueryLinkService.this.buildQueryLink(keyword, pageNum);
         }
 
 
-        public int getCounter() {
-            return this.counter;
-        }
-        public int getPageNum() {
-            return this.pageNum;
-        }
     }
 
     /**
