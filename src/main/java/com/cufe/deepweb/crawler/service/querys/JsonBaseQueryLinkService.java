@@ -5,14 +5,16 @@ import com.cufe.deepweb.common.http.client.CusHttpClient;
 import com.cufe.deepweb.common.http.client.resp.JsonContent;
 import com.cufe.deepweb.common.http.simulate.WebBrowser;
 import com.cufe.deepweb.crawler.Constant;
+import com.cufe.deepweb.crawler.service.infos.info.Info;
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -24,9 +26,22 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
      * the http tool for this queryLinkService to access site.
      */
     private CusHttpClient httpClient;
+
+    /**
+     * the JsonPointer of target data
+     */
+    private JsonPointer totalAddressJsonPtr;
+    private JsonPointer contentJsonPtr;
+
+    private String[] linkRules;
+    private String[] payloadRules;
     public JsonBaseQueryLinkService(WebBrowser browser, Deduplicator dedu, CusHttpClient httpClient) {
         super(browser, dedu);
         this.httpClient = httpClient;
+        totalAddressJsonPtr = JsonPointer.compile(Constant.jsonBaseConf.getTotalAddress());
+        contentJsonPtr = JsonPointer.compile(Constant.jsonBaseConf.getContentAddress());
+        linkRules = Constant.jsonBaseConf.getLinkRule().split("\\+");
+        payloadRules = Constant.jsonBaseConf.getPayloadRule().split("\\+");
     }
 
     /**
@@ -68,21 +83,7 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
         //current implementation just use the first method
         JsonContent content = (JsonContent) httpClient.getContent(buildQueryLink(keyword, 1));
         JsonNode node = content.getRoot();
-        String totalAddress = Constant.jsonBaseConf.getTotalAddress();
-        String[] addrs = totalAddress.split(".");
-        for (int i = 0; i < addrs.length; i++) {
-            if (addrs[i].startsWith("[")) {
-                //the current address format is [num]
-                String numStr = addrs[i].substring(1, addrs[i].length() - 1);
-                int num = Integer.parseInt(numStr);
-                ArrayNode cur = (ArrayNode) node;
-                node = cur.get(num);
-            } else {
-                //the current address format is name
-                ObjectNode cur =(ObjectNode) node;
-                node = cur.get(addrs[i]);
-            }
-        }
+        node = node.at(totalAddressJsonPtr);
         Integer total = null;
         if (node.isInt()) {
             total = node.intValue();
@@ -99,6 +100,52 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
     public QueryLinks getQueryLinks(String keyword) {
         int total = getTotalPageNum(keyword);
         return new JsonBaseQueryLinks(total, keyword);
+    }
+
+    /**
+     * get the infoLinks from target query page
+     * @param queryLink
+     * @return
+     */
+    public List<Info> getInfoLinks(String queryLink) {
+        JsonContent content = (JsonContent) httpClient.getContent(queryLink);//directly cast to json content, maybe cause exception
+        JsonNode node = content.getRoot();
+        node = node.at(contentJsonPtr);
+
+        //if can't find the target node by JsonPointer or the target node is not a ArrayNode, just return empty list
+        if (node.isMissingNode() || !(node instanceof ArrayNode)) {
+            return Collections.emptyList();
+        }
+        List<Info> list = new ArrayList<>();
+
+        ArrayNode arr = (ArrayNode) node;
+        for (JsonNode e : arr) {
+            StringBuilder sbLink = new StringBuilder();
+            for (String rule : linkRules) {
+                if (rule.startsWith("[")) {
+                    sbLink.append(rule.substring(1, rule.length() - 1));
+                } else {
+                    JsonNode dtNode = e.at(rule);
+                    if (dtNode.isTextual()) {
+                        sbLink.append(dtNode.textValue());
+                    } else if (dtNode.isInt()) {
+                        sbLink.append(dtNode.intValue());
+                    }
+                }
+            }
+            StringBuilder sbLoad = new StringBuilder();
+            for (String rule : payloadRules) {
+                JsonNode dtNode = e.at(rule);
+                if (dtNode.isTextual()) {
+                    sbLoad.append(dtNode.textValue());
+                } else if (dtNode.isInt()) {
+                    sbLoad.append(dtNode.intValue());
+                }
+                sbLoad.append(" ");
+            }
+            list.add(Info.link(sbLink.toString()).addPayLoad(Constant.FT_INDEX_FIELD, sbLoad.toString()));
+        }
+        return list;
     }
 
 

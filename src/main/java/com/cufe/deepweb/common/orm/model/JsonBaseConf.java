@@ -23,18 +23,26 @@ public class JsonBaseConf {
     private String constString;
 
     /**
-     * the address of total page number in the json response
-     * example 1:
-     * [0].num
-     *
-     * json:[{"num":100}]
-     *
-     * example 2:
-     * total
-     *
-     * json:{"total":100, content:[]}
+     * use JsonPointer to locate the address of total page number
      */
     private String totalAddress;
+
+
+    /**
+     * use JsonPointer to locate the address of content array
+     */
+    private String contentAddress;
+
+
+    /**
+     * the rule indicates that how to build infoLink from a unit of content array
+     */
+    private String linkRule;
+
+    /**
+     * the rule indicates that how to build payload content from a unit of content array
+     */
+    private String payloadRule;
 
 
     public long getId() {
@@ -91,5 +99,29 @@ public class JsonBaseConf {
 
     public void setTotalAddress(String totalAddress) {
         this.totalAddress = totalAddress;
+    }
+
+    public String getContentAddress() {
+        return contentAddress;
+    }
+
+    public void setContentAddress(String contentAddress) {
+        this.contentAddress = contentAddress;
+    }
+
+    public String getLinkRule() {
+        return linkRule;
+    }
+
+    public void setLinkRule(String linkRule) {
+        this.linkRule = linkRule;
+    }
+
+    public String getPayloadRule() {
+        return payloadRule;
+    }
+
+    public void setPayloadRule(String payloadRule) {
+        this.payloadRule = payloadRule;
     }
 }

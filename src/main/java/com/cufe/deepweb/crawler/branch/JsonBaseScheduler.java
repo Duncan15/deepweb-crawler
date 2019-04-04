@@ -1,12 +1,17 @@
 package com.cufe.deepweb.crawler.branch;
 
 import com.cufe.deepweb.algorithm.AlgorithmBase;
+import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.crawler.service.infos.InfoLinkService;
+import com.cufe.deepweb.crawler.service.infos.info.Info;
 import com.cufe.deepweb.crawler.service.querys.JsonBaseQueryLinkService;
 import com.cufe.deepweb.crawler.service.querys.QueryLinkService;
 
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class JsonBaseScheduler extends Scheduler {
     private JsonBaseQueryLinkService queryLinkService;
@@ -25,6 +30,41 @@ public class JsonBaseScheduler extends Scheduler {
 
     @Override
     protected ThreadPoolExecutor status4() {
-        return null;
+        ThreadPoolExecutor pool = new ThreadPoolExecutor(
+                Constant.extraConf.getThreadNum(),
+                Constant.extraConf.getThreadNum(),
+                0,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingDeque<>(),//set the size of thread queue to infinity
+                threadFactory
+        );
+        if (queryLinks.getPageNum() <= 0) return pool;
+        AtomicInteger produceCounter = new AtomicInteger(0);
+        Runnable producer = () -> {
+          String link = null;
+          while ((link = queryLinks.next()) != null) {
+              queryLinkService.getInfoLinks(link).forEach(info -> msgQueue.offer(info));
+          }
+          produceCounter.incrementAndGet();
+        };
+        for (int i = 0; i < 5; i++) {
+            new Thread(producer).start();
+        }
+        for (int i = 0; i < Constant.extraConf.getThreadNum(); i++) {
+            pool.execute(() -> {
+                while (true) {
+                    Info info = (Info) msgQueue.poll();
+                    if (info != null) {
+                        infoLinkService.downloadAndIndex(info);
+                        continue;
+                    } else if (produceCounter.get() < 5) {
+                        continue;
+                    } else {
+                        break;
+                    }
+                }
+            });
+        }
+        return pool;
     }
 }
