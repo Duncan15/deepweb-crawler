@@ -139,6 +139,7 @@ public class InfoLinkService extends LinkService {
             StreamContent streamContent = (StreamContent) content;
             try {
                 Utils.save2File(streamContent.getStream(), getFileAddr(streamContent.getFileName(), false));
+                streamContent.getStream().close();
             } catch (IOException ex) {
                 logger.error("IOException in save content to file", ex);
             }

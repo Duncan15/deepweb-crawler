@@ -78,7 +78,14 @@ public abstract class Scheduler extends Thread{
         logger.info("start initial process");
         WebBrowser browser = this.queryLinkService.getWebBrowser();
 
-        String prefix = Constant.urlBaseConf == null ? Constant.apiBaseConf.getPrefix() : Constant.urlBaseConf.getPrefix();
+        String prefix = "";
+        if (this instanceof UrlBaseScheduler) {
+            prefix = Constant.urlBaseConf.getPrefix();
+        } else if (this instanceof ApiBaseScheduler) {
+            prefix = Constant.apiBaseConf.getPrefix();
+        } else if (this instanceof JsonBaseScheduler) {
+            prefix = Constant.jsonBaseConf.getPrefix();
+        }
 
         //firstly select the search link without parameters
         Optional<String> contentOp = browser.getPageContent(prefix);

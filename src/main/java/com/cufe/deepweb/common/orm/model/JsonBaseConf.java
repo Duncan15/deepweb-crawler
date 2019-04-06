@@ -2,6 +2,17 @@ package com.cufe.deepweb.common.orm.model;
 
 public class JsonBaseConf {
     private long id;
+
+    public long getWebId() {
+        return webId;
+    }
+
+    public void setWebId(long webId) {
+        this.webId = webId;
+    }
+
+    private long webId;
+
     private String prefix;
     /**
      * the keyword parameter name

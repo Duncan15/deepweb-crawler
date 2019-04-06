@@ -39,7 +39,10 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
         super(browser, dedu);
         this.httpClient = httpClient;
         totalAddressJsonPtr = JsonPointer.compile(Constant.jsonBaseConf.getTotalAddress());
-        contentJsonPtr = JsonPointer.compile(Constant.jsonBaseConf.getContentAddress());
+        if (StringUtils.isNotBlank(Constant.jsonBaseConf.getContentAddress())) {
+            contentJsonPtr = JsonPointer.compile(Constant.jsonBaseConf.getContentAddress());
+        }
+
         linkRules = Constant.jsonBaseConf.getLinkRule().split("\\+");
         payloadRules = Constant.jsonBaseConf.getPayloadRule().split("\\+");
     }
@@ -81,7 +84,7 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
      */
     private int getTotalPageNum(String keyword) {
         //current implementation just use the first method
-        JsonContent content = (JsonContent) httpClient.getContent(buildQueryLink(keyword, 1));
+        JsonContent content = httpClient.getJSON(buildQueryLink(keyword, 1));
         JsonNode node = content.getRoot();
         node = node.at(totalAddressJsonPtr);
         Integer total = null;
@@ -99,6 +102,7 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
 
     public QueryLinks getQueryLinks(String keyword) {
         int total = getTotalPageNum(keyword);
+        this.totalLinkNum = total;
         return new JsonBaseQueryLinks(total, keyword);
     }
 
@@ -108,12 +112,16 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
      * @return
      */
     public List<Info> getInfoLinks(String queryLink) {
-        JsonContent content = (JsonContent) httpClient.getContent(queryLink);//directly cast to json content, maybe cause exception
+        JsonContent content = httpClient.getJSON(queryLink);//directly cast to json content, maybe cause exception
         JsonNode node = content.getRoot();
-        node = node.at(contentJsonPtr);
+        if (contentJsonPtr != null) {
+            node = node.at(contentJsonPtr);
+        }
+
 
         //if can't find the target node by JsonPointer or the target node is not a ArrayNode, just return empty list
         if (node.isMissingNode() || !(node instanceof ArrayNode)) {
+            failedLinkNum++;
             return Collections.emptyList();
         }
         List<Info> list = new ArrayList<>();
@@ -121,18 +129,47 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
         ArrayNode arr = (ArrayNode) node;
         for (JsonNode e : arr) {
             StringBuilder sbLink = new StringBuilder();
+            boolean valid = true;
             for (String rule : linkRules) {
+
                 if (rule.startsWith("[")) {
                     sbLink.append(rule.substring(1, rule.length() - 1));
                 } else {
                     JsonNode dtNode = e.at(rule);
-                    if (dtNode.isTextual()) {
-                        sbLink.append(dtNode.textValue());
-                    } else if (dtNode.isInt()) {
-                        sbLink.append(dtNode.intValue());
+                    if (dtNode.isMissingNode()) {
+                        valid = false;
+                        break;
                     }
+                    String partValue = "";
+                    if (dtNode.isTextual()) {
+                        partValue += dtNode.textValue();
+                    } else if (dtNode.isInt()) {
+                        partValue += dtNode.intValue();
+                    }
+                    //remove the html tag from json content if exists
+                    while (partValue.indexOf("<") >= 0) {
+                        int start = partValue.indexOf("<");
+                        int end = partValue.indexOf(">");
+                        partValue = partValue.substring(0, start) + partValue.substring(end + 1);
+                    }
+                    if (partValue.indexOf("/") < 0) {
+                        try {
+                            partValue = URLEncoder.encode(partValue, Constant.extraConf.getCharset());
+                        } catch (UnsupportedEncodingException ex) {
+                            //ignored
+                        }
+                    }
+
+                    sbLink.append(partValue);
                 }
             }
+
+            //TODO: can use collector to implement the filter logic in the future
+            //dedu operation
+            if (!valid || !dedu.add(sbLink.toString())) {
+                continue;
+            }
+
             StringBuilder sbLoad = new StringBuilder();
             for (String rule : payloadRules) {
                 JsonNode dtNode = e.at(rule);
@@ -143,6 +180,8 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
                 }
                 sbLoad.append(" ");
             }
+
+
             list.add(Info.link(sbLink.toString()).addPayLoad(Constant.FT_INDEX_FIELD, sbLoad.toString()));
         }
         return list;
@@ -160,5 +199,8 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
         protected String buildQueryLink(String keyword, int pageNum) {
             return JsonBaseQueryLinkService.this.buildQueryLink(keyword, pageNum);
         }
+    }
+    class InfoLinkCollector {
+
     }
 }

@@ -237,7 +237,7 @@ public final class Launcher {
             logger.error("the website information corresponding to the webID can't be find，program exit");
             System.exit(1);
         }
-        if (Constant.apiBaseConf == null && Constant.urlBaseConf == null) {
+        if (Constant.apiBaseConf == null && Constant.urlBaseConf == null && Constant.jsonBaseConf == null) {
             logger.error("both urlBaseConf and apiBaseConf are not exist, exit");
             System.exit(1);
         }

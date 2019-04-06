@@ -1,5 +1,6 @@
 package com.cufe.deepweb.common.http.client;
 
+import com.cufe.deepweb.common.http.client.resp.JsonContent;
 import com.cufe.deepweb.common.http.client.resp.RespContent;
 
 import java.io.Closeable;
@@ -18,4 +19,5 @@ public interface CusHttpClient extends Closeable {
     RespContent getContent(String URL);
 
 
+    JsonContent getJSON(String URL);
 }

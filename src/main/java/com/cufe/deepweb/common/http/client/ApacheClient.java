@@ -1,5 +1,7 @@
 package com.cufe.deepweb.common.http.client;
 
+import com.cufe.deepweb.common.http.client.resp.HtmlContent;
+import com.cufe.deepweb.common.http.client.resp.JsonContent;
 import com.cufe.deepweb.common.http.client.resp.RespContent;
 import com.cufe.deepweb.crawler.Constant;
 import com.gargoylesoftware.htmlunit.CookieManager;
@@ -119,12 +121,8 @@ public class ApacheClient implements CusHttpClient {
         }
         return Optional.empty();
     }
-    /**
-     * download the content corresponding to the URL
-     * @param URL
-     * @return
-     */
-    public RespContent getContent(String URL) {
+
+    private HttpGet buildBaseHttpGet(String URL) {
         URI uri = null;
         try {
             uri = URI.create(URL);
@@ -135,8 +133,45 @@ public class ApacheClient implements CusHttpClient {
         HttpGet httpGet = new HttpGet(uri);
         httpGet.setConfig(config);
         httpGet.setHeader("user-agent", getUserAgent());
+        return httpGet;
+    }
+    @Override
+    public JsonContent getJSON(String URL) {
+        HttpGet httpGet = buildBaseHttpGet(URL);
+        if (httpGet == null) return null;
+        httpGet.addHeader("Accept", "application/json");
+        try(CloseableHttpResponse response = httpClient.execute(httpGet, httpContext.get())) {
+            if (response.getStatusLine().getStatusCode() >= 300) {
+                logger.error("URL:{} HTTP response {}", URL, response.getStatusLine());
+            } else {
+                HttpEntity entity = response.getEntity();
+                ContentType contentType = ContentType.getOrDefault(entity);
 
+                //if can't auto detect the charset from the response, set the charset to the value configured.
+                Charset charset = contentType.getCharset();
+                if(charset == null || StringUtils.isBlank(charset.name())) {
+                    charset = Charset.forName(Constant.extraConf.getCharset());
+                }
 
+                return RespContent.asJson(EntityUtils.toString(entity, charset));
+            }
+        } catch (IOException ex) {
+            //ignored
+        }
+        return null;
+    }
+
+    /**
+     * download the content corresponding to the URL
+     * @param URL
+     * @return
+     */
+    @Override
+    public RespContent getContent(String URL) {
+        HttpGet httpGet = buildBaseHttpGet(URL);
+        if (httpGet == null) {
+            return null;
+        }
         CloseableHttpResponse response = null;
         try {
             response = httpClient.execute(httpGet, httpContext.get());
@@ -155,38 +190,17 @@ public class ApacheClient implements CusHttpClient {
                     charset = Charset.forName(Constant.extraConf.getCharset());
                 }
 
-                RespContent respContent = null;
-                String mimeType = contentType.getMimeType();
-
-                //the following rule judge how to deal with this response
-
-                if (mimeType.startsWith("text")) {
-                    //rule 1:
-                    //if mime-type is text/*, deal with it as string content
-                    respContent = RespContent.asString(EntityUtils.toString(entity, charset));
-                } else if (mimeType.contains("application/json")) {
-                    //rule 2:
-                    //if mime-type is application/json, parse it as json
-                    respContent = RespContent.asJson(EntityUtils.toString(entity, charset));
-
-                }
-
-                //rule 3:
-                //if mime-type is neither text/* nor application/json, check that whether it has attachment
+                //rule 1:
+                //if it has attachment, deal with it as stream content
                 if ((fileNameOp = checkAttachment(response, charset.toString())).isPresent()) {
-                    //if it has attachment, deal with it as stream content
-                    //and here don't close the response, otherwise would occur exception
                     return RespContent.asStream(fileNameOp.get(), response.getEntity().getContent());
+                } else {
+                    //rule 2:
+                    //if this response hasn't contain a attachment, deal with it as a string content whatever it is.
+                    HtmlContent respContent = RespContent.asString(EntityUtils.toString(entity, charset));
+                    response.close();
+                    return respContent;
                 }
-
-                //rule 4:
-                //if this response hasn't contain a attachment, deal with it as a string content whatever it is.
-                if (respContent == null) {
-                    respContent = RespContent.asString(EntityUtils.toString(entity, charset));
-                }
-
-                response.close();
-                return respContent;
             }
         }catch (Exception ex) {
             //if ex is UnknownHostException, don't record it
