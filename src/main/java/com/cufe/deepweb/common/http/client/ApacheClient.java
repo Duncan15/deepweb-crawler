@@ -179,6 +179,9 @@ public class ApacheClient implements CusHttpClient {
 
             if (response.getStatusLine().getStatusCode() >= 300) {
                 logger.error("URL:{} , HTTP response: {} {}", URL, response.getStatusLine().getStatusCode(), response.getStatusLine().getReasonPhrase());
+                //here must remember to close the response
+                response.close();
+                return null;
             } else {
                 Optional<String> fileNameOp;
 
@@ -219,8 +222,9 @@ public class ApacheClient implements CusHttpClient {
                     //ignored
                 }
             }
+            return null;
         }
-        return null;
+
     }
 
     @Override
