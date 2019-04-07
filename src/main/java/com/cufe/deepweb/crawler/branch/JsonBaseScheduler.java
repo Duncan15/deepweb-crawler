@@ -6,6 +6,8 @@ import com.cufe.deepweb.crawler.service.infos.InfoLinkService;
 import com.cufe.deepweb.crawler.service.infos.info.Info;
 import com.cufe.deepweb.crawler.service.querys.JsonBaseQueryLinkService;
 import com.cufe.deepweb.crawler.service.querys.QueryLinkService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -14,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class JsonBaseScheduler extends Scheduler {
+    private Logger logger = LoggerFactory.getLogger(JsonBaseScheduler.class);
     private JsonBaseQueryLinkService queryLinkService;
     private InfoLinkService infoLinkService;
     private QueryLinkService.QueryLinks queryLinks;
@@ -46,6 +49,8 @@ public class JsonBaseScheduler extends Scheduler {
               queryLinkService.getInfoLinks(link).forEach(info -> msgQueue.offer(info));
           }
           produceCounter.incrementAndGet();
+          logger.info("producer:{} exist", Thread.currentThread().getName());
+
         };
         for (int i = 0; i < 5; i++) {
             new Thread(producer).start();
