@@ -128,6 +128,11 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
 
         ArrayNode arr = (ArrayNode) node;
         for (JsonNode e : arr) {
+
+            //special code
+            String filename = null;
+
+
             StringBuilder sbLink = new StringBuilder();
             boolean valid = true;
             for (String rule : linkRules) {
@@ -152,6 +157,12 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
                         int end = partValue.indexOf(">");
                         partValue = partValue.substring(0, start) + partValue.substring(end + 1);
                     }
+
+                    //special code
+                    if (rule.contains("filename")) {
+                        filename = partValue;
+                    }
+
                     if (partValue.indexOf("/") < 0) {
                         try {
                             partValue = URLEncoder.encode(partValue, Constant.extraConf.getCharset());
@@ -182,7 +193,7 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
             }
 
 
-            list.add(Info.link(sbLink.toString()).addPayLoad(Constant.FT_INDEX_FIELD, sbLoad.toString()));
+            list.add(Info.link(sbLink.toString()).addPayLoad(Constant.FT_INDEX_FIELD, sbLoad.toString()).addPayLoad("filename", filename));
         }
         return list;
     }

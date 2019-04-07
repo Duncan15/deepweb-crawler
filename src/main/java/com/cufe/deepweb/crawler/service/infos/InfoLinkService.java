@@ -137,11 +137,28 @@ public class InfoLinkService extends LinkService {
         } else if (content instanceof StreamContent) {
             //or save the attachment into a file if the return value contains an inputStream
             StreamContent streamContent = (StreamContent) content;
+            String fileAddr = "";
+            if (map.get("filename") != null) {
+                fileAddr = getFileAddr(map.get("filename"), false);
+            } else {
+                fileAddr = getFileAddr(streamContent.getFileName(), false);
+            }
+
             try {
-                Utils.save2File(streamContent.getStream(), getFileAddr(streamContent.getFileName(), false));
-                streamContent.getStream().close();
+                Utils.save2File(streamContent.getStream(), fileAddr);
             } catch (IOException ex) {
-                logger.error("IOException in save content to file", ex);
+                logger.error("IOException in save content to file:" + fileAddr, ex);
+                File f = new File(fileAddr);
+                if (f.exists()) {
+                    f.delete();
+                }
+            } finally {
+                try {
+                    streamContent.getStream().close();
+                } catch (IOException ex) {
+                    //ignored
+                }
+
             }
 
         } else {

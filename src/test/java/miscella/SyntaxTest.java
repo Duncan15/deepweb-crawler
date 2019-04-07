@@ -1,6 +1,12 @@
 package miscella;
 
+import org.apache.http.impl.io.ChunkedInputStream;
 import org.junit.jupiter.api.Test;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
@@ -28,8 +34,6 @@ public class SyntaxTest {
         Integer[] a = list.toArray(new Integer[0]);
         List<String> l = new ArrayList<>();
         l.toArray(new String[0]);
-
-
 
     }
 }
