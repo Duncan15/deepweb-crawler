@@ -63,7 +63,13 @@ public class JsonBaseScheduler extends Scheduler {
                         infoLinkService.downloadAndIndex(info);
                         continue;
                     } else if (produceCounter.get() < 5) {
-                        logger.info("producer number {}", produceCounter.get());
+                        try {
+                            Thread.sleep(3_000);
+                        } catch (InterruptedException ex) {
+                            //ignored
+                        }
+
+                        logger.info("finished producer number {}", produceCounter.get());
                         continue;
                     } else {
                         break;
