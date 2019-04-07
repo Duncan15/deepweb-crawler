@@ -49,7 +49,7 @@ public class JsonBaseScheduler extends Scheduler {
               queryLinkService.getInfoLinks(link).forEach(info -> msgQueue.offer(info));
           }
           produceCounter.incrementAndGet();
-          logger.info("producer:{} exist", Thread.currentThread().getName());
+          logger.info("producer:{} exit", Thread.currentThread().getName());
 
         };
         for (int i = 0; i < 5; i++) {
@@ -63,6 +63,7 @@ public class JsonBaseScheduler extends Scheduler {
                         infoLinkService.downloadAndIndex(info);
                         continue;
                     } else if (produceCounter.get() < 5) {
+                        logger.info("producer number {}", produceCounter.get());
                         continue;
                     } else {
                         break;
