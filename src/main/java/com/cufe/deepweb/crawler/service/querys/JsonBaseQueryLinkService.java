@@ -113,6 +113,7 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
      */
     public List<Info> getInfoLinks(String queryLink) {
         JsonContent content = httpClient.getJSON(queryLink);//directly cast to json content, maybe cause exception
+        if (content == null) return Collections.emptyList();
         JsonNode node = content.getRoot();
         if (contentJsonPtr != null) {
             node = node.at(contentJsonPtr);

@@ -156,6 +156,7 @@ public class ApacheClient implements CusHttpClient {
                 return RespContent.asJson(EntityUtils.toString(entity, charset));
             }
         } catch (IOException ex) {
+            logger.error("error happen when get JSON content", ex);
             //ignored
         }
         return null;
