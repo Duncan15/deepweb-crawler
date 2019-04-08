@@ -2,6 +2,7 @@ package com.cufe.deepweb.crawler;
 
 import com.cufe.deepweb.algorithm.AlgorithmBase;
 import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
+import com.cufe.deepweb.common.dedu.RAMStrDedutor;
 import com.cufe.deepweb.common.orm.model.*;
 import com.cufe.deepweb.crawler.branch.ApiBaseScheduler;
 import com.cufe.deepweb.crawler.branch.JsonBaseScheduler;
@@ -14,7 +15,6 @@ import com.cufe.deepweb.common.index.IndexClient;
 import com.cufe.deepweb.crawler.branch.UrlBaseScheduler;
 import com.cufe.deepweb.crawler.service.infos.InfoLinkService;
 import com.cufe.deepweb.common.dedu.Deduplicator;
-import com.cufe.deepweb.common.dedu.RAMMD5Dedutor;
 import com.cufe.deepweb.common.orm.Orm;
 import com.cufe.deepweb.crawler.service.infos.info.Info;
 import com.cufe.deepweb.crawler.service.querys.ApiBaseQueryLinkService;
@@ -291,7 +291,9 @@ public final class Launcher {
         //configure the index client to use ansj_seg analyzer
         indexClient = new IndexClient.Builder(Paths.get(Constant.webSite.getWorkFile(),Constant.FT_INDEX_ADDR)).setAnalyzer(IndexClient.AnalyzerTpye.cn).build();
         //configure the RAM md5 deduplicater
-        dedu = new RAMMD5Dedutor(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
+        //dedu = new RAMMD5Dedutor(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
+
+        dedu = dedu = new RAMStrDedutor(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
 
         //the global cookie manager
         CookieManager cookieManager = new CookieManager();

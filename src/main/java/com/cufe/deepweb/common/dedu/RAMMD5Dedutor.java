@@ -24,6 +24,7 @@ public class RAMMD5Dedutor extends RAMStrDedutor {
      * don't use data saving file
      */
     public RAMMD5Dedutor() {
+        super();
         try {
             md5 = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException ex){

@@ -24,7 +24,7 @@ public class RAMStrDedutor extends Deduplicator<String> {
      */
     public RAMStrDedutor(Path dataPath){
         this.dataPath = dataPath;
-        deduSet = null;
+        deduSet = new HashSet<>();
         File f  = dataPath.resolve( Constant.round + DATA_FILE_NAME).toFile();
         if (f.exists()) {//if data saving file exists
             logger.info("start to read dedu information from file {}", f.getAbsolutePath());
@@ -36,13 +36,6 @@ public class RAMStrDedutor extends Deduplicator<String> {
                 logger.info("read dedu information finish");
                 f.delete();
             }
-        }
-
-        /**
-         * if fail to read information from data saving file, just ignore it
-         */
-        if (deduSet == null) {
-            deduSet = new HashSet<>();
         }
     }
 
@@ -61,6 +54,11 @@ public class RAMStrDedutor extends Deduplicator<String> {
         return false;
     }
 
+    /**
+     * the concrete dedu strategy, the subclass can override this method to provide other operations
+     * @param o
+     * @return
+     */
     protected boolean dedu(String o) {
         return deduSet.add(o);
     }
