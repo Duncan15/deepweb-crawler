@@ -461,20 +461,13 @@ public final class IndexClient implements Closeable {
                 }
             }
 
-            if (docSetMap.size() == 0) {
-                //backup operation, sometimes here docSetMap's size is zero, should make sure it is not zero
-                terms = MultiFields.getTerms(indexReader, field);
-                termsEnum = terms.iterator();
-                while (termsEnum.next() != null) {
-                    docSetMap.put(termsEnum.term().utf8ToString(), new HashSet<>());
-                }
-            }
-
         }catch (IOException ex){
             logger.error("IOException in read lucene index", ex);
         }
         logger.trace("get terms finish");
-
+        if (docSetMap.size() == 0) {
+            return Collections.emptyMap();
+        }
         ExecutorService service = Executors.newFixedThreadPool(indexReader.leaves().size());//thread pool to operate the sub index
         List<LeafReaderContext> leafList = indexReader.leaves();
         logger.trace("sub index size:{}", leafList.size());

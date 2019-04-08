@@ -94,6 +94,11 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
             String newTerm = generateTerm();
             if(newTerm == null) {
                 logger.trace("fail to generate term from current turn's set covering");
+                //limit the invoke depth to prevent stackOverFlow error
+                if (termList.size() == 0) {
+                    logger.error("can't generate term just after building matrix, exit");
+                    return null;
+                }
                 return getNextTerm(true);
             }
             logger.trace("generate successfully");
@@ -103,6 +108,48 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
             buildMatrix();
             return getNextTerm(false);
         }
+    }
+
+    /**
+     * internal use method getDocSetMap(String mainField, double low, double up)
+     * try the best to make sure the return map's size is not zero
+     * @param mainField
+     * @return
+     */
+    private Map<String, Set<Integer>> getDocSetMap(String mainField) {
+        Map<String, Set<Integer>> innerMap = null;
+        double low = lowBound, up = upBound;
+        int loop = 10;
+        while (loop > 0) {
+            if (low <= 0) {
+                low = 0;
+            }
+            if (up >= 1) {
+                up = 1;
+            }
+            innerMap = getDocSetMap(mainField, low, up);
+            logger.info("the initial size of newMap is {}, the selected query size is {}", innerMap.size(), getqList().size());
+            //remove the selected query in the candidate terms
+            if(getqList().size() != 0) {
+                for(String query : getqList()) {
+                    if(innerMap.containsKey(query)) {
+                        innerMap.remove(query);
+                    }
+                }
+            }
+            logger.info("the size of newMap after removing the selected query is {}", innerMap.size());
+            loop--;
+            if (low == 0 && up == 1) {//if the upBound and lowBound touch the minimum and maximum value, directly return
+                break;
+            }
+            if (innerMap.size() == 0) {
+                low -= 0.01;
+                up += 0.1;
+            } else {//if the size is not 0, directly return
+                break;
+            }
+        }
+        return innerMap;
     }
 
     /**
@@ -118,16 +165,8 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
         s.clear();
         df.clear();
         newMap.clear();
-        newMap = getDocSetMap(mainField,lowBound,upBound);//store each term's new docID set in set covering
 
-        //remove the selected query in the candidate terms
-        if(getqList().size() != 0) {
-            for(String query : getqList()) {
-                if(newMap.containsKey(query)) {
-                    newMap.remove(query);
-                }
-            }
-        }
+        newMap = getDocSetMap(mainField);//store each term's new docID set in set covering
 
         newMap.entrySet().forEach(entry -> df.put(entry.getKey(), entry.getValue().size()));//store each term's initial document frequency
 
@@ -188,7 +227,7 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
                     }
                 }
             }else { //when the size is 0, it means can't generate new term from current turn's set covering, return null
-                logger.warn("set covering 中出现new全部为0的情况，进入新一轮set covering");
+                logger.warn("all terms's new in set covering is 0，go to next set covering");
                 return null;
             }
 

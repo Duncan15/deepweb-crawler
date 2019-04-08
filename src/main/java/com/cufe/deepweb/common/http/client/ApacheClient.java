@@ -207,14 +207,6 @@ public class ApacheClient implements CusHttpClient {
                 }
             }
         }catch (Exception ex) {
-            //if ex is UnknownHostException, don't record it
-            if (ex instanceof IOException) {
-                return null;
-            }
-            if (ex instanceof ConnectException) {
-                return null;
-            }
-            logger.error("Exception in HTTP invoke " + URL, ex);
             if (response != null) {
                 try {
                     response.close();
@@ -222,6 +214,13 @@ public class ApacheClient implements CusHttpClient {
                     //ignored
                 }
             }
+
+            //if ex is UnknownHostException, don't record it
+            if (ex instanceof IOException || ex instanceof ConnectException) {
+                return null;
+            }
+
+            logger.error("Exception in HTTP invoke " + URL, ex);
             return null;
         }
 

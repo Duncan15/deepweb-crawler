@@ -152,6 +152,10 @@ public abstract class Scheduler extends Thread{
         logger.info("start the M2status");
         //status2: generate the query term
         String curQuery = algo.getNextQuery();
+        if (curQuery == null) {
+            logger.info("can't generate more queries, exit");
+            System.exit(0);
+        }
         logger.info("this turn's query is {}",curQuery);
 
         //status3

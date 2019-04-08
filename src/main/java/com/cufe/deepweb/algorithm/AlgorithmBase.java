@@ -47,8 +47,10 @@ public abstract class AlgorithmBase {
         this.qList.addAll(list);
         this.qCount = qList.size();
     }
-    /*
-    使用该算法时直接调用该方法，不必关心具体算法实现
+
+    /**
+     * if return null that represent something error happen
+     * @return
      */
     public final String getNextQuery() {
         logger.trace("start to infer query");
@@ -58,6 +60,7 @@ public abstract class AlgorithmBase {
         // invoke the implementation class's override method generateQuery() by dynamic binding
         if(qCount != 0) {
             String nextQuery = generateQuery();
+            if (nextQuery == null) return null;//something error happen
             logger.trace("get query {}", nextQuery);
             qList.add(nextQuery);
         }

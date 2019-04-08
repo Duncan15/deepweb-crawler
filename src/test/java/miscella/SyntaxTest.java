@@ -34,6 +34,11 @@ public class SyntaxTest {
         Integer[] a = list.toArray(new Integer[0]);
         List<String> l = new ArrayList<>();
         l.toArray(new String[0]);
-
+    }
+    @Test void testMiscella() {
+        float a = 1.5f -1;
+        if (a == 0.5) {
+            System.out.println("hello");
+        }
     }
 }
