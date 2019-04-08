@@ -194,7 +194,7 @@ public class JsonBaseQueryLinkService extends QueryLinkService {
             }
 
 
-            list.add(Info.link(sbLink.toString()).addPayLoad(Constant.FT_INDEX_FIELD, sbLoad.toString()).addPayLoad("filename", filename));
+            list.add(Info.link(sbLink.toString()).addPayLoad(Constant.FT_INDEX_FIELD, sbLoad.toString()).addPayLoad("filename", filename).addPayLoad("link", sbLink.toString()));
         }
         return list;
     }

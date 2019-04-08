@@ -45,6 +45,12 @@ public class ClientTest {
     content.forEach(System.out::println);
   }
   @Test
+  void searchAndPrint() {
+    client.loadDocuments(new ArrayList<>(client.search("fulltext", "浪潮"))).forEach(map -> {
+      System.out.println(map.get("filename") + map.get("fulltext"));
+    });
+  }
+  @Test
   void testDocSetMapMemory() {
     System.out.println("record doc set map memory");
     Utils.logMemorySize();

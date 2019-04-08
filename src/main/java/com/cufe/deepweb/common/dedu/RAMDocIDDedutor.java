@@ -16,7 +16,7 @@ public class RAMDocIDDedutor extends Deduplicator<Integer> {
 
     }
     @Override
-    public boolean add(Integer o) {
+    public synchronized boolean add(Integer o) {
         this.costV++;
        if (deduSet.add(o)) {
            this.newV++;
