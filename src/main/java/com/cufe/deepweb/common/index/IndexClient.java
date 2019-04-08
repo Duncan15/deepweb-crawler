@@ -121,7 +121,7 @@ public final class IndexClient implements Closeable {
     private synchronized void updateIndexReader() {
         try {
             if (!DirectoryReader.indexExists(indexDirectory)) {
-                logger.trace("this index have no data, refuse to initialize indexReader");
+                logger.info("this index have no data, refuse to initialize indexReader");
                 return;
             }
 

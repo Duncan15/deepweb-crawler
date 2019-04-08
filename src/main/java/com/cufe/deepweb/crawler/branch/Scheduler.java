@@ -222,7 +222,7 @@ public abstract class Scheduler extends Thread{
                 totalNum += each;
             }
         }
-        if (sLinkNumList.size() == 10 && totalNum < 10) {
+        if (sLinkNumList.size() == 10 && totalNum < 3) {
             return false;
         }
         return true;
