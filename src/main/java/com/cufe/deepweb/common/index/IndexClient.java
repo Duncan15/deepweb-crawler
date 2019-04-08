@@ -23,6 +23,11 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * after initializing, there must has a directory
+ * if this is a writable indexClient, there also has a indexWriter
+ * only when the index has data, there would has a indexReader
+ */
 public final class IndexClient implements Closeable {
     private final Logger logger = LoggerFactory.getLogger(IndexClient.class);
     /**
@@ -182,7 +187,11 @@ public final class IndexClient implements Closeable {
             config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
             indexWriter = new IndexWriter(indexDirectory, config);
         } catch (IOException ex) {
-            logger.error("IOException happen when create new indexWriter", ex);
+            logger.error("IOException happen when create new indexWriter, exit", ex);
+            //now indexWriter would be null or in an unexpected status
+            //for example, the disk hasn't enough space
+            //can't create an indexWriter, must be an serious exception, should exit
+            System.exit(1);
         }
     }
     /**
@@ -217,13 +226,15 @@ public final class IndexClient implements Closeable {
             doc.add(new TextField(entry.getKey(), entry.getValue(), Field.Store.YES));
         }
         try{
-            if (!indexWriter.isOpen()) {
-                indexWriter = null;
-                updateIndexWriter();
-            }
             indexWriter.addDocument(doc);
         }catch (IOException ex){
             logger.error("error happen when add document",ex);
+            synchronized (this) {
+                if (!indexWriter.isOpen()) {
+                    indexWriter = null;
+                    updateIndexWriter();
+                }
+            }
         }
     }
 
