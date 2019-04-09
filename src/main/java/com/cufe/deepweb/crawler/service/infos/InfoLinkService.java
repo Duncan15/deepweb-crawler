@@ -129,6 +129,7 @@ public class InfoLinkService extends LinkService {
                 logger.error("IOException in save content to file", ex);
             }
             map.putAll(getFieldContentMap((htmlContent.getContent())));
+            indexClient.addDocument(map);
         } else if (content instanceof JsonContent) {
             //at current implementation of crawler, here must not a json
             //here leave a TODO for future development.
@@ -160,11 +161,10 @@ public class InfoLinkService extends LinkService {
                 }
 
             }
-
+            indexClient.addDocument(map);
         } else {
             failedLinkNum++;
         }
-        indexClient.addDocument(map);
     }
 
     @Override

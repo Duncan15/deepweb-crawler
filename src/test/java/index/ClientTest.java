@@ -47,7 +47,7 @@ public class ClientTest {
   @Test
   void searchAndPrint() {
     client.loadDocuments(new ArrayList<>(client.search("fulltext", "浪潮"))).forEach(map -> {
-      System.out.println(map.get("filename") + map.get("fulltext"));
+      System.out.println(map.get("filename") + map.get("link"));
     });
   }
   @Test

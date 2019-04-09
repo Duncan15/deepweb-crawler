@@ -183,7 +183,7 @@ public final class IndexClient implements Closeable {
                 } catch (IOException ex) {//often be a AlreadyClosedException here
                     logger.error("error happen when commit", ex);
                     indexWriter = null;
-                    updateIndexWriter();//reopen the indexWriter
+                    updateIndex();//reopen the indexWriter
                 }
 
                 return;
@@ -193,6 +193,7 @@ public final class IndexClient implements Closeable {
             IndexWriterConfig config = new IndexWriterConfig(analyzer);
             config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
             indexWriter = new IndexWriter(indexDirectory, config);
+            indexWriter.commit();
         } catch (IOException ex) {
             logger.error("IOException happen when create new indexWriter, exit", ex);
             //now indexWriter would be null or in an unexpected status
@@ -239,7 +240,7 @@ public final class IndexClient implements Closeable {
             synchronized (this) {
                 if (!indexWriter.isOpen()) {
                     indexWriter = null;
-                    updateIndexWriter();
+                    updateIndex();
                 }
             }
 
