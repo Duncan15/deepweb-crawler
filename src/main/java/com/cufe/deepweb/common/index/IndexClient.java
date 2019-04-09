@@ -178,7 +178,14 @@ public final class IndexClient implements Closeable {
             //if index writer has existed
             if (indexWriter != null) {
                 logger.trace("commit indexWriter");
-                indexWriter.commit();
+                try {
+                    indexWriter.commit();
+                } catch (IOException ex) {//often be a AlreadyClosedException here
+                    logger.error("error happen when commit", ex);
+                    indexWriter = null;
+                    updateIndexWriter();//reopen the indexWriter
+                }
+
                 return;
             }
             //every time create a new index writer
@@ -227,7 +234,7 @@ public final class IndexClient implements Closeable {
         }
         try{
             indexWriter.addDocument(doc);
-        }catch (IOException ex){
+        }catch (IOException ex) {//often be a AlreadyClosedException here
             logger.error("error happen when add document",ex);
             synchronized (this) {
                 if (!indexWriter.isOpen()) {
@@ -235,6 +242,7 @@ public final class IndexClient implements Closeable {
                     updateIndexWriter();
                 }
             }
+
         }
     }
 
