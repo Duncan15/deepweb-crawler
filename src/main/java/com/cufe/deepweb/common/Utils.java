@@ -64,6 +64,12 @@ public final class Utils {
 
     }
 
+    public static void deleteFile(String fileName) {
+        File f = new File(fileName);
+        if (f.exists()) {
+            f.delete();
+        }
+    }
     /**
      * 判断集合内任务是否运行完毕，同时对运行完毕的任务进行清理
      * @param runSet

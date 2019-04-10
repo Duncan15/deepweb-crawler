@@ -86,7 +86,7 @@ public class InfoLinkService extends LinkService {
         return fieldContentMap;
     }
     private String getFileAddr(String link, boolean generateFileName) {
-        Path p = Paths.get(Constant.webSite.getWorkFile(),Constant.HTML_ADDR,Constant.current.getRound());
+        Path p = Paths.get(Constant.webSite.getWorkFile(),Constant.HTML_ADDR, Constant.current.getRound());
         File f = p.toFile();
         String newFilePath = null;
         //if the path of f no exist, create it
@@ -107,26 +107,30 @@ public class InfoLinkService extends LinkService {
         } else {
             newFilePath = p.resolve(link).toString();
         }
-
-        totalLinkNum++;
         return newFilePath;
     }
+
 
     /**
      * download the target document and build into index
      * @param info
      */
     public void  downloadAndIndex(Info info) {
+        totalLinkNum++;
         RespContent content = httpClient.getContent(info.getUrl());
         Map<String ,String> map = info.getPayload() == null ? new HashMap<>() : info.getPayload();
 
+        String fileAddr = "";
         if (content instanceof HtmlContent) {
             //save the document into directory if the return value contains a string
             HtmlContent htmlContent = (HtmlContent) content;
+            fileAddr = getFileAddr(info.getUrl(), true);
             try {
-                Utils.save2File(htmlContent.getContent(), getFileAddr(info.getUrl(), true));
+                Utils.save2File(htmlContent.getContent(), fileAddr);
             } catch (IOException ex) {
+                failedLinkNum++;
                 logger.error("IOException in save content to file", ex);
+                Utils.deleteFile(fileAddr);
             }
             map.putAll(getFieldContentMap((htmlContent.getContent())));
             indexClient.addDocument(map);
@@ -138,7 +142,6 @@ public class InfoLinkService extends LinkService {
         } else if (content instanceof StreamContent) {
             //or save the attachment into a file if the return value contains an inputStream
             StreamContent streamContent = (StreamContent) content;
-            String fileAddr = "";
             if (map.get("filename") != null) {
                 fileAddr = getFileAddr(map.get("filename"), false);
             } else {
@@ -148,11 +151,10 @@ public class InfoLinkService extends LinkService {
             try {
                 Utils.save2File(streamContent.getStream(), fileAddr);
             } catch (IOException ex) {
+                failedLinkNum++;
                 logger.error("IOException in save content to file:" + fileAddr, ex);
                 File f = new File(fileAddr);
-                if (f.exists()) {
-                    f.delete();
-                }
+                Utils.deleteFile(fileAddr);
             } finally {
                 try {
                     streamContent.getStream().close();

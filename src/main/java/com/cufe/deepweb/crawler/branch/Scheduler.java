@@ -222,7 +222,7 @@ public abstract class Scheduler extends Thread{
                 totalNum += each;
             }
         }
-        if (sLinkNumList.size() == 10 && totalNum < 3) {
+        if (sLinkNumList.size() == 10 && totalNum <= 1) {
             return false;
         }
         return true;
@@ -345,7 +345,7 @@ public abstract class Scheduler extends Thread{
 
                 //update the last round's fLinkNum and sLinkNum in database's status table
                 int fLinkNum = queryLinkService.getFailedLinkNum();
-                sLinkNum = queryLinkService.getTotalLinkNum() - fLinkNum;
+                sLinkNum = queryLinkService.getTotalLinkNum() - queryLinkService.getFailedLinkNum();
                 logger.trace("fLinkNum:{},sLinkNum:{},totalLinkNum:{}", fLinkNum, sLinkNum, queryLinkService.getTotalLinkNum());
                 conn.createQuery(sql)
                         .addParameter("fLinkNum", fLinkNum)
@@ -356,7 +356,7 @@ public abstract class Scheduler extends Thread{
                         .executeUpdate();
 
                 fLinkNum = infoLinkService.getFailedLinkNum();
-                sLinkNum = infoLinkService.getTotalLinkNum() - fLinkNum;
+                sLinkNum = infoLinkService.getTotalLinkNum() - infoLinkService.getFailedLinkNum();
                 sLinkNum = sLinkNum > 0 ? sLinkNum : 0;
                 conn.createQuery(sql)
                         .addParameter("fLinkNum", fLinkNum)
@@ -376,7 +376,7 @@ public abstract class Scheduler extends Thread{
                 lastSInfoLink = sLinkNum;
                 lastFInfoLink = fLinkNum;
             } catch (Sql2oException ex) {
-
+                logger.error("sql2o error when update db", ex);
             }
             return sLinkNum;
         }
