@@ -7,25 +7,11 @@
     <artifactId>crawler</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <profiles>
-        <!--开发环境，默认激活-->
-        <profile>
-            <id>dev</id>
-            <properties>
-                <running.env>dev</running.env>
-            </properties>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-        </profile>
-        <!--生产环境-->
-        <profile>
-            <id>prd</id>
-            <properties>
-                <running.env>prd</running.env>
-            </properties>
-        </profile>
-    </profiles>
+    <properties>
+        <!--for maven plugin use-->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
     <dependencies>
         <!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-core -->
         <dependency>
@@ -60,6 +46,7 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.15</version>
+            <scope>runtime</scope>
         </dependency>
 
         <!--HtmlUnit(headless web browser)-->
@@ -163,7 +150,7 @@
 
     </dependencies>
     <build>
-
+        <finalName>Controller_unstructed</finalName>
         <plugins>
             <!--指定mvn编译器的Java版本-->
             <plugin>
@@ -175,7 +162,8 @@
                     <target>1.9</target>
                 </configuration>
             </plugin>
-            <!--指定编译的jar包的启动入口-->
+
+            <!--构建uber-jar-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
