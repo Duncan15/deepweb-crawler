@@ -53,7 +53,10 @@ public class Starter {
         Stopwatch stopwatch = Stopwatch.createStarted();
         init(args);
         //默认使用的field为fulltext
-        AlgorithmBase algo = new LinearIncrementalAlgorithm.Builder(targetClient, dedu).setMainField(field).setInitQuery("consume").build();
+        AlgorithmBase algo;
+        LinearIncrementalAlgorithm.Builder builder = new LinearIncrementalAlgorithm.Builder(targetClient, dedu);
+        builder.setMainField(field);
+        algo = builder.build();
         //当爬取比例小于指定比例时，继续
         while (threshold > dedu.getTotal() / (double)sourceClient.getDocSize()) {
             logger.info("HR:{}", dedu.getTotal() / (double)sourceClient.getDocSize());

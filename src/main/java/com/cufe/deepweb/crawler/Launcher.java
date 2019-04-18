@@ -318,7 +318,10 @@ public final class Launcher {
                 .build();
 
         //initialize the strategy algorithm, this algorithm would only be used in scheduler thread
-        alg = new LinearIncrementalAlgorithm.Builder(indexClient, dedu).setProductPath(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR)).setLowBound(0.002).setUpBound(0.05).build();
+        LinearIncrementalAlgorithm.Builder builder = new LinearIncrementalAlgorithm.Builder(indexClient, dedu);
+        builder.setLowBound(0.02).setUpBound(0.05);
+        builder.setProductPath(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
+        alg = builder.build();
 
         //after initialize all the utility, set the current pid to db
         try (Connection conn = sql2o.open()) {

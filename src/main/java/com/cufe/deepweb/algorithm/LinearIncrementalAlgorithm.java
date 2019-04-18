@@ -1,12 +1,10 @@
 package com.cufe.deepweb.algorithm;
 
-import com.cufe.deepweb.crawler.Constant;
 import com.cufe.deepweb.common.index.IndexClient;
 import com.cufe.deepweb.common.dedu.Deduplicator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -44,66 +42,17 @@ public class LinearIncrementalAlgorithm extends SetCoverAlgorithm {
      */
     private static final String DATA_FILE = "qList.dat";
 
-    /**
-     * a path to remark whether run in production mode
-     * in production mode, when exit should save some information
-     */
-    private Path productPath;
-
     private Queue<Double> stepQueue;
     private LinearIncrementalAlgorithm(Builder builder) {
-        super(builder.mainField, builder.upBound, builder.lowBound, builder.threshold, builder.sendingCost);
+        super(builder);
         stepLen = builder.stepLen;
         stepQueue = new ArrayDeque<>(stepLen);
         si = builder.indexClient;
         dedu = builder.deduplicator;
-        productPath = builder.productPath;
-        this.setInitQuery(builder.initQuery);
-        this.productInit();
     }
 
-    /**
-     * do some initial operations for production mode
-     */
-    private void productInit() {
-        if (this.productPath != null) {
-            File f = this.productPath.resolve(DATA_FILE).toFile();
-            if(f.exists()) {
-                logger.info("start to read qList information from file {}", f.getAbsolutePath());
-                try(ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(f))) {
-                    List<String> qList = (List<String>) inputStream.readObject();
-                    this.setqList(qList);
-                    logger.info("the size of qList read from file is " + qList.size());
-                } catch (Exception ex) {
-                    logger.error("Exception happen when read qList object file");
-                } finally {
-                    logger.info("read qList information finish");
-                    f.delete();
-                }
-            }
-        }
-    }
-
-    /**
-     * do some information collecting operations
-     */
-    @Override
-    public void close() {
-        super.close();
-        if(this.productPath != null) {
-            System.out.println("start to store qList information");
-            File f = this.productPath.resolve(DATA_FILE).toFile();
-            if (f.exists()) {
-                System.out.println("the qList data saving file has existed, exit directly");
-                return;
-            }
-            try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(f))) {
-                outputStream.writeObject(this.getqList());
-            } catch (IOException ex) {
-                //ignored
-            }
-            System.out.println("store qList information finish");
-        }
+    protected void update() {
+        si.updateIndex();
     }
 
     @Override
@@ -113,7 +62,6 @@ public class LinearIncrementalAlgorithm extends SetCoverAlgorithm {
         //only run one time at the beginning, update the index and confirm to update
         if (scSize == 0) {
             logger.trace("first run isUpdate() method, just return true");
-            si.updateIndex();
             dedu.getNew();
             dedu.getCost();
             return true;
@@ -140,7 +88,6 @@ public class LinearIncrementalAlgorithm extends SetCoverAlgorithm {
                 stepQueue.offer(curQuality);
                 return false;
             } else {
-                si.updateIndex();
                 return true;
             }
         }
@@ -158,19 +105,11 @@ public class LinearIncrementalAlgorithm extends SetCoverAlgorithm {
     /*
     构造器
      */
-    public static class Builder{
+    public static class Builder extends SetCoverAlgorithm.Builder {
         private IndexClient indexClient;
         private Deduplicator deduplicator;
         private int stepLen = 3;
 
-        private String mainField = Constant.FT_INDEX_FIELD; //the default lucene index's main field
-        private double upBound = 0.15; //set covering algorithm's up bound
-        private double lowBound = 0.02;
-        private double threshold = 0.99;
-        private int sendingCost = 100;
-
-        private String initQuery = "produce";
-        private Path productPath;
 
 
         public Builder(IndexClient client,Deduplicator dedu){
@@ -178,46 +117,12 @@ public class LinearIncrementalAlgorithm extends SetCoverAlgorithm {
             deduplicator = dedu;
         }
 
-        public Builder setLowBound(double lowBound) {
-            this.lowBound = lowBound;
-            return this;
-        }
 
-        public Builder setUpBound(double upBound) {
-            this.upBound = upBound;
-            return this;
-        }
-
-        public Builder setMainField(String mainField) {
-            this.mainField = mainField;
-            return this;
-        }
-
-        public Builder setThreshold(double threshold) {
-            this.threshold = threshold;
-            return this;
-        }
-
-        public Builder setSendingCost(int sendingCost) {
-            this.sendingCost = sendingCost;
-            return this;
-        }
 
         public Builder setStepLen(int stepLen) {
             this.stepLen = stepLen;
             return this;
         }
-
-        public Builder setInitQuery(String initQuery) {
-            this.initQuery = initQuery;
-            return this;
-        }
-        public Builder setProductPath(Path productPath) {
-            this.productPath = productPath;
-            return this;
-        }
-
-
 
         public LinearIncrementalAlgorithm build(){
             LinearIncrementalAlgorithm algo = new LinearIncrementalAlgorithm(this);
