@@ -1,6 +1,7 @@
 package com.cufe.deepweb.crawler;
 
 import com.cufe.deepweb.algorithm.AlgorithmBase;
+import com.cufe.deepweb.algorithm.AllInAlgorithm;
 import com.cufe.deepweb.algorithm.LinearIncrementalAlgorithm;
 import com.cufe.deepweb.common.dedu.RAMStrDedutor;
 import com.cufe.deepweb.common.orm.model.*;
@@ -318,7 +319,8 @@ public final class Launcher {
                 .build();
 
         //initialize the strategy algorithm, this algorithm would only be used in scheduler thread
-        LinearIncrementalAlgorithm.Builder builder = new LinearIncrementalAlgorithm.Builder(indexClient, dedu);
+        //LinearIncrementalAlgorithm.Builder builder = new LinearIncrementalAlgorithm.Builder(indexClient, dedu);
+        AllInAlgorithm.Builder builder = new AllInAlgorithm.Builder().setIndexClient(indexClient);
         builder.setLowBound(0.02).setUpBound(0.05);
         builder.setProductPath(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
         alg = builder.build();
