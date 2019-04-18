@@ -11,6 +11,11 @@ public final class Constant {
     private Constant() { }
 
     /**
+     * the default all-in-number is 0, indicates that no all in algorithm
+     */
+    public static int ALL_IN_NUM = 0;
+
+    /**
      * the basic configuration of website
      */
     public static WebSite webSite;

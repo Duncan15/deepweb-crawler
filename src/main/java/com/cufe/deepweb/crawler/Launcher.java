@@ -127,14 +127,14 @@ public final class Launcher {
      */
     private static void init(final String[] args) {
         Options options = new Options();
-        options.addOption(Option.builder("i")
+        options.addOption(Option.builder("wi")
             .longOpt("web-id")
             .hasArg()
             .required()
             .desc("the specified website ID")
             .build()
         );
-        options.addOption(Option.builder("l")
+        options.addOption(Option.builder("jl")
             .longOpt("jdbc-url")
             .hasArg()
             .required()
@@ -155,6 +155,12 @@ public final class Launcher {
             .desc("the specified database password")
             .build()
         );
+        options.addOption(Option.builder("ain")
+                .longOpt("all-in-num")
+                .hasArg()
+                .desc("the number of turns in the all-in algorithm")
+                .build()
+        );
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
         try {
@@ -163,6 +169,8 @@ public final class Launcher {
             logger.error("error happen when parse commandline args", ex);
             System.exit(1);
         }
+
+        Constant.ALL_IN_NUM = Integer.parseInt(cmd.getOptionValue("all-in-num", "0"));
 
         //config mysql
         String webIDStr = cmd.getOptionValue("web-id");
@@ -320,7 +328,7 @@ public final class Launcher {
 
         //initialize the strategy algorithm, this algorithm would only be used in scheduler thread
         //LinearIncrementalAlgorithm.Builder builder = new LinearIncrementalAlgorithm.Builder(indexClient, dedu);
-        AllInAlgorithm.Builder builder = new AllInAlgorithm.Builder().setIndexClient(indexClient);
+        AllInAlgorithm.Builder builder = new AllInAlgorithm.Builder().setIndexClient(indexClient).setAllInNum(Constant.ALL_IN_NUM);
         builder.setLowBound(0.02).setUpBound(0.05);
         builder.setProductPath(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
         alg = builder.build();

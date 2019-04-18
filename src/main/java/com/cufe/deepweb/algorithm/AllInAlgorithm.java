@@ -14,9 +14,14 @@ import java.util.Set;
 public class AllInAlgorithm extends SetCoverAlgorithm {
     private final Logger logger = LoggerFactory.getLogger(AllInAlgorithm.class);
     private IndexClient client;
+    /**
+     * the counter to record the left number of set-covering
+     */
+    private int allInNum;
     private AllInAlgorithm(Builder builder) {
         super(builder);
         this.client = builder.client;
+        this.allInNum = builder.allInNum;
     }
 
     @Override
@@ -29,6 +34,11 @@ public class AllInAlgorithm extends SetCoverAlgorithm {
     }
     protected void update() {
         client.updateIndex();
+        allInNum--;
+        if (allInNum == 0) {
+            logger.info("touch the end of all-in algorithm, exit");
+            System.exit(0);
+        }
     }
 
     @Override
@@ -41,13 +51,22 @@ public class AllInAlgorithm extends SetCoverAlgorithm {
         return client.getDocSize();
     }
     public static class Builder extends SetCoverAlgorithm.Builder {
+        private final Logger logger = LoggerFactory.getLogger(Builder.class);
         private IndexClient client;
+        private int allInNum = 0;
 
         public Builder setIndexClient(IndexClient client) {
             this.client = client;
             return this;
         }
-
+        public Builder setAllInNum(int num) {
+            if (num < 0) {
+                logger.error("all-in number shouldn't small than 0, exit");
+                System.exit(1);
+            }
+            this.allInNum = num;
+            return this;
+        }
         public AllInAlgorithm build() {
             return new AllInAlgorithm(this);
         }

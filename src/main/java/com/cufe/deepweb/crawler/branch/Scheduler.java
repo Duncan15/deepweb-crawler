@@ -222,7 +222,9 @@ public abstract class Scheduler extends Thread{
                 totalNum += each;
             }
         }
-        if (sLinkNumList.size() == 10 && totalNum <= 1) {
+
+        //only when the all-in algorithm is not used, the above calculation is valid
+        if (sLinkNumList.size() == 10 && totalNum <= 1 && Constant.ALL_IN_NUM == 0) {
             return false;
         }
         return true;
