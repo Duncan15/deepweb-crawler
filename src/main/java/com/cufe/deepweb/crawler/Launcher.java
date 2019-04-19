@@ -329,7 +329,7 @@ public final class Launcher {
         //initialize the strategy algorithm, this algorithm would only be used in scheduler thread
         //LinearIncrementalAlgorithm.Builder builder = new LinearIncrementalAlgorithm.Builder(indexClient, dedu);
         AllInAlgorithm.Builder builder = new AllInAlgorithm.Builder().setIndexClient(indexClient).setAllInNum(Constant.ALL_IN_NUM);
-        builder.setLowBound(0.02).setUpBound(0.05);
+        builder.setLowBound(0.002).setUpBound(0.05);
         builder.setProductPath(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
         alg = builder.build();
 

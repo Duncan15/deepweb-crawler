@@ -165,6 +165,7 @@ public abstract class SetCoverAlgorithm extends AlgorithmBase {
         newMap.clear();
 
         newMap = getDocSetMap(mainField);//store each term's new docID set in set covering
+        logger.info("the number of candidate terms after building matrix is {}", newMap.size());
 
         newMap.entrySet().forEach(entry -> df.put(entry.getKey(), entry.getValue().size()));//store each term's initial document frequency
 

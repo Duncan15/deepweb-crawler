@@ -35,6 +35,7 @@ public class AllInAlgorithm extends SetCoverAlgorithm {
     protected void update() {
         client.updateIndex();
         allInNum--;
+        logger.info("left update time is {}", allInNum);
         if (allInNum == 0) {
             logger.info("touch the end of all-in algorithm, exit");
             System.exit(0);
