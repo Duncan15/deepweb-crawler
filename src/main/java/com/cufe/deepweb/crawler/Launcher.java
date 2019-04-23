@@ -124,6 +124,7 @@ public final class Launcher {
      *        [1] jdbc-url
      *        [2] username
      *        [3] password
+     *        [4] all-in-num: specified for the all-in mode
      */
     private static void init(final String[] args) {
         Options options = new Options();
@@ -326,10 +327,14 @@ public final class Launcher {
                 .setTimeout(Constant.extraConf.getTimeout())
                 .build();
 
+
         //initialize the strategy algorithm, this algorithm would only be used in scheduler thread
-        //LinearIncrementalAlgorithm.Builder builder = new LinearIncrementalAlgorithm.Builder(indexClient, dedu);
-        AllInAlgorithm.Builder builder = new AllInAlgorithm.Builder().setIndexClient(indexClient).setAllInNum(Constant.ALL_IN_NUM);
-        builder.setLowBound(0.002).setUpBound(0.05);
+        AlgorithmBase.Builder builder;
+        if (Constant.ALL_IN_NUM == 0) {
+            builder = new LinearIncrementalAlgorithm.Builder(indexClient, dedu);
+        } else {
+            builder = new AllInAlgorithm.Builder().setIndexClient(indexClient).setAllInNum(Constant.ALL_IN_NUM).setLowBound(0.002).setUpBound(0.05);
+        }
         builder.setProductPath(Paths.get(Constant.webSite.getWorkFile(), Constant.DATA_ADDR));
         alg = builder.build();
 

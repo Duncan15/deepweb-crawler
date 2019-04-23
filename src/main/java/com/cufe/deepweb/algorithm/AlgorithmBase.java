@@ -143,5 +143,6 @@ public abstract class AlgorithmBase {
             this.productPath = productPath;
             return this;
         }
+        public AlgorithmBase build() {return null;}
     }
 }
