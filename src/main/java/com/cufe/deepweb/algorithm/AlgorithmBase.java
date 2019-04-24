@@ -27,10 +27,8 @@ public abstract class AlgorithmBase {
 
     public AlgorithmBase(Builder builder) {
         this.productPath = builder.productPath;
+        qList = new ArrayList<>();
         this.productInit();
-        if (this.qList == null) {
-            qList = new ArrayList<>();
-        }
         qCount = qList.size();
         if (this.qList.size() == 0) {
             setInitQuery("consume");//set the default initial query, the implementation class can cover this value
