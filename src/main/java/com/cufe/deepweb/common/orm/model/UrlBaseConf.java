@@ -34,6 +34,19 @@ public class UrlBaseConf {
      */
     private String paramValueList;
 
+    public String getInfoLinkXpath() {
+        return infoLinkXpath;
+    }
+
+    public void setInfoLinkXpath(String infoLinkXpath) {
+        this.infoLinkXpath = infoLinkXpath;
+    }
+
+    /**
+     * assistant parameter to help to locate the info-link's address, this parameter can be empty
+     */
+    private String infoLinkXpath;
+
     public long getId() {
         return id;
     }

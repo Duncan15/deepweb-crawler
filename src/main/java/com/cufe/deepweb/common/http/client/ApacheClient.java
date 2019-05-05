@@ -113,7 +113,7 @@ public class ApacheClient implements CusHttpClient {
                     } catch (UnsupportedEncodingException ex) {
                         //ignored
                     }
-                    logger.info("filename:{}", fileName);
+                    logger.trace("filename:{}", fileName);
                     return Optional.ofNullable(fileName);
 
                 }

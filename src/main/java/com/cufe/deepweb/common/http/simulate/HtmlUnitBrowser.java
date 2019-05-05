@@ -195,7 +195,7 @@ public final class HtmlUnitBrowser implements WebBrowser {
         String URL = query.getUrl();
         WebClient client = threadClient.get();
         HtmlPage page = retryGetPage(client, URL);
-        return collector.collect(page.asXml(), page.getUrl(), null, null);
+        return collector.collect(page.asXml(), page.getUrl(), Constant.urlBaseConf.getInfoLinkXpath(), null);
     }
     private List<Info> getLinksFromApiBasedQuery(ApiBasedQuery query, LinkCollector collector) {
         WebClient client = threadClient.get();
@@ -274,9 +274,7 @@ public final class HtmlUnitBrowser implements WebBrowser {
         return new Try<HtmlPage>(3).run(() -> {
                 HtmlPage ans = null;
                 ans = client.getPage(url);
-                if(ans.getBody() == null) {
-                    ans = null;
-                }
+                Objects.requireNonNull(ans.getBody());
                 return ans;
 
         });

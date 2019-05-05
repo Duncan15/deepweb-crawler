@@ -58,11 +58,10 @@ public class UrlBaseScheduler extends Scheduler {
                         tick = 100;
                     }
                     try {
-                        if (queryLinkService.isQueryLink(link)) {
-                            logger.trace(queryLinks.getCounter()+ "");
-                            consumeQueryLink(link);
-                            tick--;
-                        }
+                        //there is no need to check whether the link is a query-link here
+                        logger.trace(queryLinks.getCounter()+ "");
+                        consumeQueryLink(link);
+                        tick--;
                     } catch (Exception ex) {
                         //ignored
                         logger.error("runtime exception happen", ex);
@@ -113,6 +112,7 @@ public class UrlBaseScheduler extends Scheduler {
             //if can't push info links into message queue
             //maybe because the message queue is full(this situation is hard to happen, just possible)
             //directly consume the info links in current thread
+            //consider this as a feedback mechanism
             if (!msgQueue.offer(info)) {
                 consumeInfoLink(info);
             }

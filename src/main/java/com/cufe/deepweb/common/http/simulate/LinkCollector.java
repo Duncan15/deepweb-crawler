@@ -55,7 +55,7 @@ public abstract class LinkCollector {
         }
 
         //if want to use xpath to indicate the information address, should point out infoLinkXpath and payloadXpath
-        if (StringUtils.isNotBlank(infoLinkXpath) && StringUtils.isNotBlank(payloadXpath)) {
+        if (StringUtils.isNotBlank(infoLinkXpath)) {
             links = collectByXpath(rootNode, infoLinkXpath, payloadXpath);
         } else {
             links = commonCollect(rootNode);
@@ -75,30 +75,37 @@ public abstract class LinkCollector {
 
     public List<Info> collectByXpath(TagNode root, String infoLinkXpath, String payloadXpath) {
         List<Info> links = new ArrayList<>();
-        String[] slices = payloadXpath.split(",");//0:xpath 1:attribute
         try {
             Object[] is = root.evaluateXPath(infoLinkXpath);
-            Object[] ps = root.evaluateXPath(slices[0]);
-            int len = is.length > ps.length ? ps.length : is.length;
-            for (int i = 0; i < len; i ++) {
-                TagNode node = (TagNode) is[i];
+            for (Object i : is) {
+                TagNode node = (TagNode) i;
                 String href = node.getAttributeByName("href");
-
-                node = (TagNode) ps[i];
-                String payload = "";
-                Map<String, String> attributes = node.getAttributes();
-                for (int j = 1; j < slices.length; j++) {//if have pointed some attribute name, just collect them
-                    payload += attributes.get(slices[j]);
-                }
-                if (slices.length == 1) {//if haven't specified any attribute name, just collect all of them
-                    for (Map.Entry<String, String> attribute : attributes.entrySet()) {
-                        payload += attribute.getValue();
-                    }
-                }
-                links.add(Info.link(href).addPayLoad(Constant.FT_INDEX_FIELD, payload));
+                links.add(Info.link(href));
             }
         } catch (XPatherException ex) {
-            logger.error("xpath format error");
+            logger.error("info-link xpath format error");
+        }
+        String[] slices = payloadXpath.split(",");//0:xpath 1:attribute
+        try {
+            Object[] ps = root.evaluateXPath(slices[0]);
+            if (links.size() == ps.length) {
+                for (int i = 0; i < ps.length; i++) {
+                    TagNode node = (TagNode) ps[i];
+                    String payload = "";
+                    Map<String, String> attributes = node.getAttributes();
+                    for (int j = 1; j < slices.length; j++) {//if have pointed some attribute name, just collect them
+                        payload += attributes.get(slices[j]);
+                    }
+                    if (slices.length == 1) {//if haven't specified any attribute name, just collect all of them
+                        for (Map.Entry<String, String> attribute : attributes.entrySet()) {
+                            payload += attribute.getValue();
+                        }
+                    }
+                    links.get(i).addPayLoad(Constant.FT_INDEX_FIELD, payload);
+                }
+            }
+        } catch (XPatherException ex) {
+            logger.error("payload xpath format error");
         }
         return links;
     }
@@ -110,8 +117,7 @@ public abstract class LinkCollector {
             String href = node.getAttributeByName("href");
             if (StringUtils.isNotBlank(href)) {
                 Matcher m = pattern.matcher(href);
-                if (m.lookingAt()) {//match the prefix of href, because sometimes the href is not format
-                    href = href.substring(0, m.end());
+                if (m.matches()) {//match the href
                     links.add(Info.link(href));
                 }
             }
