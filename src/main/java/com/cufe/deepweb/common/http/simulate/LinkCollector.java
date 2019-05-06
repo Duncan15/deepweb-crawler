@@ -85,28 +85,32 @@ public abstract class LinkCollector {
         } catch (XPatherException ex) {
             logger.error("info-link xpath format error");
         }
-        String[] slices = payloadXpath.split(",");//0:xpath 1:attribute
-        try {
-            Object[] ps = root.evaluateXPath(slices[0]);
-            if (links.size() == ps.length) {
-                for (int i = 0; i < ps.length; i++) {
-                    TagNode node = (TagNode) ps[i];
-                    String payload = "";
-                    Map<String, String> attributes = node.getAttributes();
-                    for (int j = 1; j < slices.length; j++) {//if have pointed some attribute name, just collect them
-                        payload += attributes.get(slices[j]);
-                    }
-                    if (slices.length == 1) {//if haven't specified any attribute name, just collect all of them
-                        for (Map.Entry<String, String> attribute : attributes.entrySet()) {
-                            payload += attribute.getValue();
+
+        if (Objects.nonNull(payloadXpath)) {
+            String[] slices = payloadXpath.split(",");//0:xpath 1:attribute
+            try {
+                Object[] ps = root.evaluateXPath(slices[0]);
+                if (links.size() == ps.length) {
+                    for (int i = 0; i < ps.length; i++) {
+                        TagNode node = (TagNode) ps[i];
+                        String payload = "";
+                        Map<String, String> attributes = node.getAttributes();
+                        for (int j = 1; j < slices.length; j++) {//if have pointed some attribute name, just collect them
+                            payload += attributes.get(slices[j]);
                         }
+                        if (slices.length == 1) {//if haven't specified any attribute name, just collect all of them
+                            for (Map.Entry<String, String> attribute : attributes.entrySet()) {
+                                payload += attribute.getValue();
+                            }
+                        }
+                        links.get(i).addPayLoad(Constant.FT_INDEX_FIELD, payload);
                     }
-                    links.get(i).addPayLoad(Constant.FT_INDEX_FIELD, payload);
                 }
+            } catch (XPatherException ex) {
+                logger.error("payload xpath format error");
             }
-        } catch (XPatherException ex) {
-            logger.error("payload xpath format error");
         }
+
         return links;
     }
 
