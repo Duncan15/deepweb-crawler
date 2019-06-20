@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.*;

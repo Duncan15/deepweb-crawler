@@ -68,7 +68,7 @@ public class InfoLinkService extends LinkService {
                 List<String> strings = new ArrayList<>();
                 if (objects != null && objects.length != 0) {//if can find data by the xpath
                     for (Object o : objects) {
-                        TagNode node = (TagNode)o;
+                        TagNode node = (TagNode) o;
                         strings.add(node.getText().toString());
                     }
                     fieldContentMap.put(pattern.getKey(), StringUtils.join(strings,"\t"));
